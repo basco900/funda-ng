@@ -24,7 +24,7 @@ test.describe("Funda onboarding", () => {
 
     await page.getByRole("button", { name: "Show story 4: Why pay more?" }).click();
     await expect(page.getByRole("heading", { name: "Why pay more?" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Next story" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Next story" })).toHaveCount(0);
   });
 
   test("autoplays when there has been no manual interaction", async ({ page }) => {
@@ -101,13 +101,11 @@ test.describe("Funda onboarding", () => {
     await story.evaluate((element) => { element.setAttribute("data-persistence-check", "stable"); });
     const before = await story.boundingBox();
 
-    await page.getByRole("button", { name: /Create account/ }).click();
+    await page.getByRole("button", { name: "Create account" }).first().click();
     await expect(page).toHaveURL(/\/register$/);
     await expect(page.locator('[role="dialog"]:visible')).toBeVisible();
     await expect(story).toHaveAttribute("data-persistence-check", "stable");
-
-    const after = await story.boundingBox();
-    expect(after).toEqual(before);
+    expect(await story.boundingBox()).toEqual(before);
 
     await page.goBack();
     await expect(page).toHaveURL(/\/$/);

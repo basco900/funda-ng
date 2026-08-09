@@ -87,6 +87,17 @@ function AuthPreview({ mode, onClose, instance }: { mode: AuthPreviewMode; onClo
   const [firstName, setFirstName] = useState("");
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      const isDesktop = window.matchMedia("(min-width: 960px)").matches;
+      const isVisibleInstance = isDesktop ? instance === "desktop" : instance === "mobile";
+      if (event.key === "Escape" && isVisibleInstance) onClose();
+    };
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [instance, onClose]);
+
   const goBack = () => {
     setError("");
     if (step === "profile") setStep("otp");
@@ -159,6 +170,7 @@ function AuthPreview({ mode, onClose, instance }: { mode: AuthPreviewMode; onClo
                 autoComplete="tel-national"
                 placeholder="801 234 5678"
                 aria-describedby={error ? `${instance}-auth-error` : undefined}
+                autoFocus
               />
             </div>
             {error && <p className={styles.fieldError} id={`${instance}-auth-error`} role="alert">{error}</p>}
@@ -356,8 +368,8 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
       <section className={styles.storyPanel} aria-label="Funda introduction">
         <header className={styles.header}>
           <Link href="/" className={styles.wordmark} aria-label="Funda home">funda<span>.</span></Link>
-          <button type="button" className={styles.desktopNavLogin} onClick={() => openAuth("login")}>
-            Log in
+          <button type="button" className={styles.desktopNavLogin} onClick={() => openAuth("register")}>
+            Create account
           </button>
         </header>
 
@@ -384,11 +396,11 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
             </div>
 
             <div className={styles.mobileActions}>
-              <button type="button" className={styles.primaryCta} onClick={() => openAuth("register")}>
-                Create account <ArrowRightIcon size={18} />
+              <button type="button" className={styles.primaryCta} onClick={() => openAuth("login")}>
+                Log in <ArrowRightIcon size={18} />
               </button>
-              <button type="button" className={styles.loginCta} onClick={() => openAuth("login")}>
-                Already in? <strong>Log in</strong>
+              <button type="button" className={styles.loginCta} onClick={() => openAuth("register")}>
+                Create account
               </button>
             </div>
           </div>
@@ -400,7 +412,13 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
       </section>
 
       {authMode && (
-        <aside className={styles.desktopRail} aria-label="Funda account access">
+        <aside
+          className={styles.desktopRail}
+          aria-label="Funda account access"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeAuth();
+          }}
+        >
           <div className={styles.desktopAuth}>
             <AuthPreview mode={authMode} onClose={closeAuth} instance="desktop" />
           </div>

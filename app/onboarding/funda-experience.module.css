@@ -138,6 +138,7 @@
   min-width: 0;
   min-height: 0;
   flex-direction: column;
+  pointer-events: none;
 }
 
 .storyContent {
@@ -344,45 +345,59 @@
 .mobileActions {
   position: relative;
   z-index: 5;
-  margin-top: 14px;
+  margin-top: 24px;
   padding: 0;
   background: transparent;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
 }
 
 .primaryCta {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  width: 100%;
-  min-height: 52px;
+  min-height: 54px;
+  padding: 0 30px;
   border: 0;
   border-radius: 999px;
   background: var(--warm-white);
-  box-shadow: none;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
   color: var(--graphite);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 650;
+  letter-spacing: -0.01em;
   transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
 .primaryCta:hover {
   background: #ffffff;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.3);
-  transform: translateY(-1px);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.38);
+  transform: translateY(-2px);
 }
 
 .loginCta {
-  min-height: 36px;
-  border: 0;
-  background: transparent;
-  color: var(--silver);
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 0 26px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--warm-white);
+  font-size: 16px;
+  font-weight: 600;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 
-.loginCta strong {
-  color: var(--warm-white);
-  font-weight: 620;
+.loginCta:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 767px) {
@@ -1696,55 +1711,69 @@
   }
 }
 
-/* One centered desktop shell keeps the navigation and story on the same grid. */
+/* One centered desktop shell keeps the navigation floating above a centered, narrower story layout. */
 @media (min-width: 960px) {
   .header {
-    top: 18px;
-    left: 50%;
-    right: auto;
-    width: min(1040px, calc(100% - 72px));
+    position: absolute;
+    top: 24px;
+    left: 0;
+    right: 0;
+    width: min(1080px, calc(100% - 48px));
     max-width: none;
-    height: 58px;
-    margin: 0;
-    padding: 0 22px;
-    transform: translateX(-50%);
-    border: 0;
-    border-radius: 14px;
-    background: #d2d4d1;
-    box-shadow: none;
-    backdrop-filter: none;
+    height: 54px;
+    margin: 0 auto;
+    padding: 0 12px 0 26px;
+    transform: none;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 999px;
+    background: rgba(16, 18, 18, 0.88);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(28px) saturate(190%);
   }
 
   .storyPanel .header .wordmark,
   .storyPanel .header .wordmark span {
-    color: #101212;
+    color: var(--warm-white);
   }
 
   .desktopNavLogin {
-    min-width: auto;
-    min-height: 40px;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    color: #101212;
-    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 84px;
+    min-height: 38px;
+    margin-left: auto;
+    padding: 0 20px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--warm-white);
+    font-size: 13px;
+    font-weight: 550;
+    transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
   }
 
   .desktopNavLogin:hover {
-    background: transparent;
-    opacity: 0.62;
-    transform: none;
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.28);
+    transform: translateY(-1px);
   }
 
   .storyContent {
-    inset: 102px 0 96px;
-    width: min(1040px, calc(100% - 72px));
+    position: absolute;
+    top: 104px;
+    bottom: 70px;
+    left: 0;
+    right: 0;
+    width: min(940px, calc(100% - 48px));
     max-width: none;
     margin: 0 auto;
+    transform: none;
     padding: 0;
-    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-    gap: 64px;
+    display: grid;
+    grid-template-columns: minmax(320px, 1fr) minmax(360px, 1.05fr);
+    align-items: center;
+    gap: clamp(32px, 4vw, 56px);
   }
 
   .mobileStoryCard {
@@ -1767,11 +1796,54 @@
   }
 
   .copyBlock h1 {
-    font-size: clamp(56px, 4.6vw, 76px);
+    font-size: clamp(52px, 4.2vw, 72px);
+    letter-spacing: -0.065em;
+    line-height: 0.94;
+    max-width: 9.5ch;
+  }
+
+  .copyBlock p {
+    font-size: clamp(14px, 1vw, 16px);
+    max-width: 36ch;
+    margin-top: 20px;
+    color: rgba(246, 247, 243, 0.6);
   }
 
   .mobileActions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     justify-content: flex-start;
+    gap: 14px;
+    margin-top: 28px;
+  }
+
+  .mobileActions .primaryCta {
+    width: auto;
+    min-width: 130px;
+    min-height: 54px;
+    padding: 0 32px;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 650;
+  }
+
+  .mobileActions .loginCta {
+    width: auto;
+    min-width: 160px;
+    min-height: 54px;
+    padding: 0 28px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--warm-white);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .mobileActions .loginCta:hover {
+    border-color: rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.14);
   }
 
   .artworkColumn {
