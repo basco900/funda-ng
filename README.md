@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Funda
 
-## Getting Started
+Funda is a mobile-first Nigerian utility web app. The current public release is a full-viewport onboarding and authentication design prototype; it does not send OTPs or create accounts yet.
 
-First, run the development server:
+## Public experience
+
+- `/` contains four keyboard, wheel, touch, and auto-advancing brand stories.
+- `/login` and `/register` open the interactive auth preview directly.
+- Use `123456` as the demonstration OTP. Preview data is held only in component state and resets on refresh.
+- `/api/health` is the dependency-free container health check.
+- `/test` remains the isolated live/sandbox VTU engine test harness.
+
+## Local development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`. Useful checks are:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm run test:e2e
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Install the Playwright Chromium browser once before the first E2E run:
 
-## Learn More
+```bash
+npx playwright install chromium
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Dokploy deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The repository includes a multi-stage Node 22 `Dockerfile` and uses Next.js standalone output.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Create a Dokploy application from this repository and select Dockerfile deployment.
+2. Expose container port `3000` and attach `funda.ng` with HTTPS enabled.
+3. Set the health check path to `/api/health`.
+4. Add provider environment variables through Dokploy rather than baking `.env` into the image.
+5. Keep one running instance initially; if multiple instances are introduced, move in-memory `/test` state and cache coordination to shared infrastructure first.
 
-## Deploy on Vercel
+The production container runs as a non-root user and includes its own health check.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Reserved Supabase architecture
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Real authentication is intentionally deferred. The next phase will run Supabase on a separate Dokploy-managed VPS, expose its public APIs at `https://api.funda.ng`, and keep Studio on a private protected hostname. Phone OTP will use a Supabase Send SMS Hook connected to Termii and Cloudflare Turnstile. No Supabase or Termii keys are needed for the current onboarding prototype.
+
+## Core engine test
+
+The mobile-first test console is available at `http://localhost:3000/test`.
+
+1. Copy `.env.example` to `.env.local`.
+2. Add Flutterwave sandbox credentials and a webhook secret hash.
+3. Add VTpass sandbox API, public, and secret keys.
+4. Add the SMEPlug private key when you are ready to call its live-only API.
+5. Add the GladTidings API token to enable its data and airtime routes.
+6. Add the Pairgate API key. Keep `PAIRGATE_TEST_MODE=true` until test purchases pass.
+7. Start the app with `npm run dev`.
+
+Wallet funding is collected through Flutterwave. Airtime and data purchases debit the in-memory test wallet and are fulfilled by the selected provider adapter. Restarting the server resets wallet and transaction state.
+
+Configure these provider callback URLs on a publicly accessible deployment or tunnel:
+
+```text
+Flutterwave: https://YOUR_HOST/api/test/flutterwave/webhook
+VTpass:      https://YOUR_HOST/api/test/vtpass/webhook?token=VTPASS_WEBHOOK_SECRET
+SMEPlug:     https://YOUR_HOST/api/test/smeplug/webhook?token=SMEPLUG_WEBHOOK_SECRET
+Pairgate:    https://YOUR_HOST/api/test/pairgate/webhook?token=PAIRGATE_WEBHOOK_SECRET
+```
+
+Keep `TRANSACTION_MODE=sandbox` until Flutterwave and VTpass sandbox purchases pass. SMEPlug's published API uses `https://smeplug.ng/api/v1` and does not publish a separate sandbox URL, so adding its private key may spend its real provider wallet balance.
