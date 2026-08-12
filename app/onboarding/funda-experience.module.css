@@ -1416,6 +1416,269 @@
   }
 }
 
+/* Header menu and slide-over navigation */
+.menuToggleButton {
+  position: relative;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  width: 36px;
+  height: 36px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--warm-white);
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.menuToggleButton:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: none;
+}
+
+.menuToggleButton:focus-visible,
+.drawerCloseBtn:focus-visible,
+.menuItem:focus-visible,
+.drawerLoginBtn:focus-visible,
+.drawerRegisterBtn:focus-visible {
+  outline: 2px solid var(--warm-white);
+  outline-offset: 3px;
+}
+
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  padding: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.46);
+  cursor: default;
+  animation: drawerFadeIn 220ms ease both;
+}
+
+.sidebarDrawer {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  width: min(340px, calc(100vw - 24px));
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  background: #151717;
+  color: var(--warm-white);
+  box-shadow: -12px 0 36px rgba(0, 0, 0, 0.32);
+  transform: translateX(calc(100% + 28px));
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 320ms;
+}
+
+.sidebarDrawerOpen {
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(0);
+  transition-delay: 0s;
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 12px 14px 10px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.drawerWordmark {
+  font-size: 21px;
+  font-weight: 680;
+  letter-spacing: -0.065em;
+}
+
+.drawerWordmark span {
+  color: var(--accent);
+}
+
+.drawerCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 12px;
+}
+
+.drawerSectionTag {
+  display: block;
+  margin: 0 8px 12px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.menuList {
+  display: grid;
+  gap: 2px;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.menuItem:hover {
+  border-color: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.065);
+}
+
+.menuItemLeft {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 13px;
+}
+
+.menuIconBox {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.menuTextGroup {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.menuTitle {
+  font-size: 14px;
+  font-weight: 620;
+}
+
+.menuDesc {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menuChevron {
+  flex: 0 0 auto;
+  margin-left: 12px;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.drawerFooter {
+  display: grid;
+  grid-template-columns: 0.82fr 1.18fr;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.drawerLoginBtn,
+.drawerRegisterBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.drawerLoginBtn {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--warm-white);
+}
+
+.drawerRegisterBtn {
+  gap: 8px;
+  border: 1px solid var(--warm-white);
+  background: var(--warm-white);
+  color: #111313;
+}
+
+@keyframes drawerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 959px) {
+  .header {
+    grid-template-columns: auto 1fr;
+  }
+
+  .menuToggleButton {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 520px) {
+  .sidebarDrawer {
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: calc(100vw - 16px);
+    border-radius: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebarDrawer,
+  .drawerBackdrop,
+  .menuToggleButton {
+    animation: none;
+    transition-duration: 0.01ms;
+  }
+}
+
 @media (min-width: 960px) {
   .experience {
     display: block;

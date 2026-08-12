@@ -12,10 +12,17 @@ import {
   type TouchEvent,
 } from "react";
 import {
+  AboutInfoIcon,
+  AppMenuToggleIcon,
   ArrowRightIcon,
   BackIcon,
   CheckIcon,
+  ChevronRightIcon,
   CloseIcon,
+  ContactChatIcon,
+  FaqHelpIcon,
+  PoliciesShieldIcon,
+  ServicesGridIcon,
   ShieldIcon,
 } from "./icons";
 import type {
@@ -23,6 +30,7 @@ import type {
   AuthPreviewStep,
   StoryDefinition,
 } from "./stories";
+import { ContentSheetView, type SheetType } from "./content-sheets";
 import styles from "./funda-experience.module.css";
 
 type FundaExperienceProps = {
@@ -253,11 +261,25 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
   const reducedMotion = useReducedMotion();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [manualNavigation, setManualNavigation] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
   const authMode: AuthPreviewMode | null = pathname === "/login"
     ? "login"
     : pathname === "/register"
       ? "register"
       : null;
+
+  const activeSheet: SheetType | null =
+    pathname === "/about" ? "about"
+    : pathname === "/services" ? "services"
+    : pathname === "/contact" ? "contact"
+    : pathname === "/policies" ? "policies"
+    : pathname === "/privacy" ? "privacy"
+    : pathname === "/terms" ? "terms"
+    : pathname === "/refunds" ? "refunds"
+    : pathname === "/faq" ? "faq"
+    : null;
+
   const touchStart = useRef<number | null>(null);
   const wheelLocked = useRef(false);
   const autoplayTimer = useRef<number | null>(null);
@@ -294,17 +316,17 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
   }, [stopAutoplay, stories.length]);
 
   useEffect(() => {
-    if (manualNavigation || reducedMotion || authMode || currentIndex >= stories.length - 1) return;
+    if (manualNavigation || reducedMotion || authMode || activeSheet || menuOpen || currentIndex >= stories.length - 1) return;
     autoplayTimer.current = window.setTimeout(() => {
       autoplayTimer.current = null;
       setCurrentIndex((index) => Math.min(index + 1, stories.length - 1));
     }, AUTOPLAY_DELAY);
     return stopAutoplay;
-  }, [authMode, currentIndex, manualNavigation, reducedMotion, stopAutoplay, stories.length]);
+  }, [authMode, activeSheet, menuOpen, currentIndex, manualNavigation, reducedMotion, stopAutoplay, stories.length]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (authMode) return;
+      if (authMode || activeSheet || menuOpen) return;
       if (["ArrowDown", "ArrowRight", "PageDown"].includes(event.key)) {
         event.preventDefault();
         moveBy(1);
@@ -316,21 +338,21 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [authMode, moveBy]);
+  }, [authMode, activeSheet, menuOpen, moveBy]);
 
   const onWheel = (event: React.WheelEvent) => {
-    if (authMode || Math.abs(event.deltaY) < 28 || wheelLocked.current) return;
+    if (authMode || activeSheet || menuOpen || Math.abs(event.deltaY) < 28 || wheelLocked.current) return;
     wheelLocked.current = true;
     moveBy(event.deltaY > 0 ? 1 : -1);
     window.setTimeout(() => { wheelLocked.current = false; }, WHEEL_COOLDOWN);
   };
 
   const onTouchStart = (event: TouchEvent) => {
-    if (!authMode) touchStart.current = event.touches[0]?.clientY ?? null;
+    if (!authMode && !activeSheet && !menuOpen) touchStart.current = event.touches[0]?.clientY ?? null;
   };
 
   const onTouchEnd = (event: TouchEvent) => {
-    if (authMode || touchStart.current === null) return;
+    if (authMode || activeSheet || menuOpen || touchStart.current === null) return;
     const end = event.changedTouches[0]?.clientY ?? touchStart.current;
     const distance = touchStart.current - end;
     touchStart.current = null;
@@ -340,6 +362,7 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
   const openAuth = (mode: AuthPreviewMode) => {
     stopAutoplay();
     setManualNavigation(true);
+    setMenuOpen(false);
     openedAuthHere.current = true;
     window.history.pushState(null, "", mode === "login" ? "/login" : "/register");
   };
@@ -350,11 +373,41 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
       window.history.back();
       return;
     }
-
     window.history.pushState(null, "", "/");
   };
 
+  const navigateToSheet = (target: SheetType) => {
+    stopAutoplay();
+    setManualNavigation(true);
+    setMenuOpen(false);
+    window.history.pushState(null, "", `/${target}`);
+  };
+
+  const closeSheet = () => {
+    window.history.pushState(null, "", "/");
+  };
+
+  const toggleMenu = () => {
+    stopAutoplay();
+    setManualNavigation(true);
+    setMenuOpen((prev) => !prev);
+  };
+
   const story = stories[currentIndex];
+
+  const getSheetTitle = (type: SheetType) => {
+    switch (type) {
+      case "about": return "About Funda";
+      case "services": return "Services & Products";
+      case "contact": return "Contact & Support";
+      case "policies":
+      case "privacy":
+      case "terms":
+      case "refunds": return "Policies & Security";
+      case "faq": return "Help & FAQ";
+      default: return "Funda";
+    }
+  };
 
   return (
     <main
@@ -367,9 +420,19 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
       <div className={styles.ambient} aria-hidden="true" />
       <section className={styles.storyPanel} aria-label="Funda introduction">
         <header className={styles.header}>
-          <Link href="/" className={styles.wordmark} aria-label="Funda home">funda<span>.</span></Link>
-          <button type="button" className={styles.desktopNavLogin} onClick={() => openAuth("register")}>
-            Create account
+          <Link href="/" className={styles.wordmark} aria-label="Funda home" onClick={() => { setMenuOpen(false); closeSheet(); }}>
+            funda<span>.</span>
+          </Link>
+          
+          {/* iOS-Style Sleek Menu Toggle Button Top Right */}
+          <button
+            type="button"
+            className={styles.menuToggleButton}
+            onClick={toggleMenu}
+            aria-label={menuOpen ? "Close menu" : "Open sidebar menu"}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? <CloseIcon size={20} /> : <AppMenuToggleIcon size={20} />}
           </button>
         </header>
 
@@ -411,6 +474,137 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
         </div>
       </section>
 
+      {/* ---------------------------------------------------- */}
+      {/* SIDEBAR MENU DRAWER */}
+      {/* ---------------------------------------------------- */}
+      {menuOpen && (
+        <button
+          type="button"
+          className={styles.drawerBackdrop}
+          onClick={() => setMenuOpen(false)}
+          aria-label="Close menu backdrop"
+        />
+      )}
+
+      <aside className={`${styles.sidebarDrawer} ${menuOpen ? styles.sidebarDrawerOpen : ""}`} aria-label="Main menu">
+        <div className={styles.drawerHeader}>
+          <span className={styles.drawerWordmark}>funda<span>.</span></span>
+          <button type="button" className={styles.drawerCloseBtn} onClick={() => setMenuOpen(false)} aria-label="Close menu">
+            <CloseIcon size={18} />
+          </button>
+        </div>
+
+        <div className={styles.drawerBody}>
+          <span className={styles.drawerSectionTag}>Navigation</span>
+
+          <nav className={styles.menuList}>
+            <button type="button" className={styles.menuItem} onClick={() => navigateToSheet("about")}>
+              <div className={styles.menuItemLeft}>
+                <span className={styles.menuIconBox}><AboutInfoIcon size={19} /></span>
+                <div className={styles.menuTextGroup}>
+                  <span className={styles.menuTitle}>About Funda</span>
+                  <span className={styles.menuDesc}>Our story, mission & tech</span>
+                </div>
+              </div>
+              <ChevronRightIcon size={16} className={styles.menuChevron} />
+            </button>
+
+            <button type="button" className={styles.menuItem} onClick={() => navigateToSheet("services")}>
+              <div className={styles.menuItemLeft}>
+                <span className={styles.menuIconBox}><ServicesGridIcon size={19} /></span>
+                <div className={styles.menuTextGroup}>
+                  <span className={styles.menuTitle}>Services</span>
+                  <span className={styles.menuDesc}>Data, airtime & electricity</span>
+                </div>
+              </div>
+              <ChevronRightIcon size={16} className={styles.menuChevron} />
+            </button>
+
+            <button type="button" className={styles.menuItem} onClick={() => navigateToSheet("contact")}>
+              <div className={styles.menuItemLeft}>
+                <span className={styles.menuIconBox}><ContactChatIcon size={19} /></span>
+                <div className={styles.menuTextGroup}>
+                  <span className={styles.menuTitle}>Contact & Support</span>
+                  <span className={styles.menuDesc}>WhatsApp & 24/7 help line</span>
+                </div>
+              </div>
+              <ChevronRightIcon size={16} className={styles.menuChevron} />
+            </button>
+
+            <button type="button" className={styles.menuItem} onClick={() => navigateToSheet("policies")}>
+              <div className={styles.menuItemLeft}>
+                <span className={styles.menuIconBox}><PoliciesShieldIcon size={19} /></span>
+                <div className={styles.menuTextGroup}>
+                  <span className={styles.menuTitle}>Policies & Security</span>
+                  <span className={styles.menuDesc}>Privacy, terms & refund policy</span>
+                </div>
+              </div>
+              <ChevronRightIcon size={16} className={styles.menuChevron} />
+            </button>
+
+            <button type="button" className={styles.menuItem} onClick={() => navigateToSheet("faq")}>
+              <div className={styles.menuItemLeft}>
+                <span className={styles.menuIconBox}><FaqHelpIcon size={19} /></span>
+                <div className={styles.menuTextGroup}>
+                  <span className={styles.menuTitle}>FAQ</span>
+                  <span className={styles.menuDesc}>Answers to common questions</span>
+                </div>
+              </div>
+              <ChevronRightIcon size={16} className={styles.menuChevron} />
+            </button>
+          </nav>
+        </div>
+
+        <div className={styles.drawerFooter}>
+          <button type="button" className={styles.drawerLoginBtn} onClick={() => openAuth("login")}>
+            Log in
+          </button>
+          <button type="button" className={styles.drawerRegisterBtn} onClick={() => openAuth("register")}>
+            Create account <ArrowRightIcon size={16} />
+          </button>
+        </div>
+      </aside>
+
+      {/* ---------------------------------------------------- */}
+      {/* NATIVE MOBILE APP POPUP CONTENT SHEET MODAL */}
+      {/* ---------------------------------------------------- */}
+      {activeSheet && (
+        <>
+          <button
+            type="button"
+            className={styles.sheetBackdrop}
+            onClick={closeSheet}
+            aria-label="Close sheet backdrop"
+          />
+          <div className={styles.sheetModalWrap} role="dialog" aria-modal="true" aria-label={getSheetTitle(activeSheet)}>
+            {/* iOS Mobile Top Drag Handle */}
+            <div className={styles.sheetDragHandle} aria-hidden="true" />
+
+            <div className={styles.sheetHeader}>
+              <button type="button" className={styles.sheetHeaderBackBtn} onClick={closeSheet} aria-label="Go back">
+                <BackIcon size={18} />
+              </button>
+              <span className={styles.sheetHeaderTitle}>{getSheetTitle(activeSheet)}</span>
+              <button type="button" className={styles.sheetHeaderCloseBtn} onClick={closeSheet} aria-label="Close sheet">
+                <CloseIcon size={18} />
+              </button>
+            </div>
+
+            {/* INTERNAL SCROLL CONTAINER - Scrolling happens inside popup */}
+            <div className={styles.sheetScrollContent}>
+              <ContentSheetView
+                type={activeSheet}
+                onNavigate={navigateToSheet}
+                onOpenAuth={openAuth}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* AUTH PREVIEW MODALS */}
+      {/* ---------------------------------------------------- */}
       {authMode && (
         <aside
           className={styles.desktopRail}
