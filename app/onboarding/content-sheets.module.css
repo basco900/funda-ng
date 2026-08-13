@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding: 8px 4px 32px;
+  padding: 16px 20px 32px;
   color: #f6f7f3;
 }
 
@@ -239,7 +239,7 @@
 .serviceCardHeader {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
 
 .serviceIconWrap {
@@ -268,49 +268,49 @@
 .serviceCardHeader h3 {
   margin: 0;
   color: #ffffff;
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 600;
 }
 
 .serviceDesc {
-  margin: 14px 0 0;
+  margin: 16px 0 0;
   color: #949a96;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .providerSection,
 .highlightsSection {
-  margin-top: 18px;
-  padding-top: 14px;
+  margin-top: 22px;
+  padding-top: 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .providerSection h4,
 .highlightsSection h4 {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   color: #c7cbc8;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 650;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
 }
 
 .providerTags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
 .providerTag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  border-radius: 10px;
+  padding: 7px 14px;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.05);
   color: #d1d5d2;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 

@@ -16,14 +16,17 @@ import {
   AppMenuToggleIcon,
   ArrowRightIcon,
   BackIcon,
+  BoltIcon,
   CheckIcon,
   ChevronRightIcon,
   CloseIcon,
   ContactChatIcon,
   FaqHelpIcon,
+  LockIcon,
   PoliciesShieldIcon,
   ServicesGridIcon,
   ShieldIcon,
+  SignalIcon,
 } from "./icons";
 import type {
   AuthPreviewMode,
@@ -31,6 +34,7 @@ import type {
   StoryDefinition,
 } from "./stories";
 import { ContentSheetView, type SheetType } from "./content-sheets";
+import AuthPanel from "../auth/auth-panel";
 import styles from "./funda-experience.module.css";
 
 type FundaExperienceProps = {
@@ -273,6 +277,35 @@ function AuthPreview({ mode, onClose, instance }: { mode: AuthPreviewMode; onClo
   );
 }
 
+function MinimalBottomBar({ onNavigate }: { onNavigate: (target: SheetType) => void }) {
+  return (
+    <footer className={styles.minimalFooter} aria-label="Quick links and system status">
+      <div className={styles.minimalStatus}>
+        <span className={styles.minimalPulseDot} aria-hidden="true" />
+        <span>Instant Delivery • 99.9% Uptime</span>
+      </div>
+
+      <span className={styles.minimalGroupSep} aria-hidden="true">•</span>
+
+      <div className={styles.minimalNav}>
+        <button type="button" onClick={() => onNavigate("services")}>Services</button>
+        <span className={styles.minimalSep}>/</span>
+        <button type="button" onClick={() => onNavigate("policies")}>Security</button>
+        <span className={styles.minimalSep}>/</span>
+        <button type="button" onClick={() => onNavigate("contact")}>Support</button>
+        <span className={styles.minimalSep}>/</span>
+        <button type="button" onClick={() => onNavigate("faq")}>FAQ</button>
+      </div>
+
+      <span className={styles.minimalGroupSep} aria-hidden="true">•</span>
+
+      <div className={styles.minimalLegal}>
+        <span>© {new Date().getFullYear()} Funda</span>
+      </div>
+    </footer>
+  );
+}
+
 export default function FundaExperience({ stories }: FundaExperienceProps) {
   const pathname = usePathname();
   const reducedMotion = useReducedMotion();
@@ -481,6 +514,9 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
             <StoryArtwork story={story} index={currentIndex} />
           </div>
         </div>
+
+        {/* Sleek Grounded Bottom Footer Bar */}
+        <MinimalBottomBar onNavigate={navigateToSheet} />
       </section>
 
       {/* ---------------------------------------------------- */}
@@ -623,13 +659,13 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
           }}
         >
           <div className={styles.desktopAuth}>
-            <AuthPreview mode={authMode} onClose={closeAuth} instance="desktop" />
+            <AuthPanel mode={authMode} onClose={closeAuth} instance="desktop" />
           </div>
         </aside>
       )}
 
       {authMode && <button className={styles.mobileBackdrop} type="button" onClick={closeAuth} aria-label="Close authentication preview" />}
-      {authMode && <div className={styles.mobileAuth}><AuthPreview mode={authMode} onClose={closeAuth} instance="mobile" /></div>}
+      {authMode && <div className={styles.mobileAuth}><AuthPanel mode={authMode} onClose={closeAuth} instance="mobile" /></div>}
     </main>
   );
 }

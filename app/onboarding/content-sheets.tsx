@@ -8,7 +8,6 @@ import {
   BoltIcon,
   CheckIcon,
   ChevronDownIcon,
-  ChevronRightIcon,
   ContactChatIcon,
   FaqHelpIcon,
   LockIcon,

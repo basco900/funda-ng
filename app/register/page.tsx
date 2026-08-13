@@ -4,7 +4,7 @@ import { stories } from "../onboarding/stories";
 
 export const metadata: Metadata = {
   title: "Create account",
-  description: "Preview the Funda registration experience.",
+  description: "Create your secure Funda account.",
 };
 
 export default function RegisterPage() {
