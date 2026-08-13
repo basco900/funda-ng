@@ -2406,3 +2406,245 @@
     min-height: 58px;
   }
 }
+
+/* Comfortable, inset mobile composition */
+@media (max-width: 959px) {
+  .storyPanel {
+    padding:
+      max(34px, calc(env(safe-area-inset-top) + 18px))
+      20px
+      max(22px, env(safe-area-inset-bottom));
+  }
+
+  .header {
+    height: 44px;
+  }
+
+  .storyContent {
+    top: max(98px, calc(env(safe-area-inset-top) + 82px));
+    right: 20px;
+    bottom: max(28px, calc(env(safe-area-inset-bottom) + 18px));
+    left: 20px;
+  }
+
+  .sidebarDrawer {
+    top: max(18px, calc(env(safe-area-inset-top) + 12px));
+    right: 14px;
+    bottom: max(18px, calc(env(safe-area-inset-bottom) + 12px));
+    width: min(350px, calc(100vw - 28px));
+    border-radius: 24px;
+  }
+
+  .drawerHeader {
+    min-height: 70px;
+    padding: 14px 16px 10px 22px;
+  }
+
+  .drawerBody {
+    padding: 22px 14px 18px;
+  }
+
+  .sheetModalWrap {
+    top: auto;
+    right: 14px;
+    bottom: max(16px, calc(env(safe-area-inset-bottom) + 10px));
+    left: 14px;
+    width: auto;
+    max-height: min(78dvh, 720px);
+    border-radius: 26px;
+  }
+
+  .sheetDragHandle {
+    margin-top: 12px;
+  }
+
+  .sheetHeader {
+    min-height: 62px;
+    padding: 0 16px;
+  }
+
+  .mobileAuth {
+    right: 14px;
+    bottom: max(16px, calc(env(safe-area-inset-bottom) + 10px));
+    left: 14px;
+    width: auto;
+    max-height: min(82dvh, 700px);
+  }
+
+  .authWrap {
+    max-height: min(82dvh, 700px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 26px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  }
+
+  .mobileHandle {
+    margin-top: 12px;
+  }
+
+  .authTopbar {
+    padding: 12px 18px 10px;
+  }
+}
+
+@media (max-width: 959px) and (max-height: 690px) {
+  .storyPanel {
+    padding-top: max(24px, calc(env(safe-area-inset-top) + 12px));
+  }
+
+  .storyContent {
+    top: max(78px, calc(env(safe-area-inset-top) + 68px));
+  }
+
+  .sheetModalWrap,
+  .mobileAuth,
+  .authWrap {
+    max-height: 84dvh;
+  }
+}
+
+/* Readable type hierarchy across onboarding, navigation, and auth */
+.copyBlock p {
+  font-size: clamp(15px, 1.1vw, 17px);
+  line-height: 1.55;
+}
+
+.previewNotice {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.authEyebrow {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.authBody form > p,
+.completeState > p {
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.textField,
+.phoneField input {
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.textField::placeholder,
+.phoneField input::placeholder,
+.otpField::placeholder {
+  color: #858a87;
+  font-size: 17px;
+  font-weight: 520;
+  opacity: 1;
+}
+
+.fieldError {
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.authPrimary {
+  font-size: 15px;
+}
+
+.authQuiet {
+  font-size: 13px;
+}
+
+.drawerSectionTag {
+  font-size: 12px;
+}
+
+.menuTitle {
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.menuDesc {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.drawerLoginBtn,
+.drawerRegisterBtn {
+  font-size: 14px;
+}
+
+.sheetHeaderTitle {
+  font-size: 16px;
+}
+
+@media (min-width: 960px) {
+  .previewNotice {
+    font-size: 12px;
+  }
+
+  .authEyebrow {
+    font-size: 11px;
+  }
+
+  .authBody form > p,
+  .completeState > p {
+    font-size: 15px;
+  }
+
+  .fieldLabel {
+    font-size: 13px;
+  }
+
+  .textField,
+  .textField::placeholder,
+  .phoneField input,
+  .phoneField input::placeholder {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 959px) {
+  .copyBlock p {
+    font-size: 15px;
+  }
+
+  .previewNotice {
+    font-size: 12px;
+  }
+
+  .authEyebrow {
+    font-size: 11px;
+  }
+
+  .authBody h2 {
+    font-size: clamp(34px, 9.4vw, 43px);
+  }
+
+  .authBody form > p,
+  .completeState > p {
+    font-size: 14px;
+  }
+
+  .fieldLabel {
+    font-size: 13px;
+  }
+
+  .textField,
+  .textField::placeholder,
+  .phoneField input,
+  .phoneField input::placeholder {
+    font-size: 16px;
+  }
+
+  .menuTitle {
+    font-size: 15px;
+  }
+
+  .menuDesc {
+    font-size: 12px;
+  }
+}

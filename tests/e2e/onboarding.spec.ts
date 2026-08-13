@@ -62,7 +62,7 @@ test.describe("Funda onboarding", () => {
     const dialog = page.locator('[role="dialog"]:visible');
     await expect(dialog.getByText(/no SMS or account will be created/i)).toBeVisible();
 
-    const phone = dialog.getByLabel("Phone number");
+    const phone = dialog.getByLabel("Email or phone number");
     await phone.fill("08012345678");
     await dialog.getByRole("button", { name: /Continue/ }).click();
 

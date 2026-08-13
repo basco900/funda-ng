@@ -75,22 +75,19 @@ function StoryArtwork({ story, index }: { story: StoryDefinition; index: number 
   );
 }
 
-function normalizeLocalPhone(value: string) {
-  let digits = value.replace(/\D/g, "");
-  if (digits.startsWith("234")) digits = digits.slice(3);
-  if (digits.startsWith("0")) digits = digits.slice(1);
-  return digits.slice(0, 10);
-}
-
-function formatLocalPhone(value: string) {
-  return [value.slice(0, 3), value.slice(3, 6), value.slice(6, 10)]
-    .filter(Boolean)
-    .join(" ");
+function getIdentifierType(value: string): "email" | "phone" | null {
+  const clean = value.trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clean)) return "email";
+  const digits = clean.replace(/\D/g, "");
+  if (/^(?:234|0)?[789]\d{9}$/.test(digits)) return "phone";
+  return null;
 }
 
 function AuthPreview({ mode, onClose, instance }: { mode: AuthPreviewMode; onClose: () => void; instance: "desktop" | "mobile" }) {
-  const [step, setStep] = useState<AuthPreviewStep>("phone");
-  const [phone, setPhone] = useState("");
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const [step, setStep] = useState<AuthPreviewStep>("identifier");
+  const [identifier, setIdentifier] = useState("");
+  const [identifierType, setIdentifierType] = useState<"email" | "phone" | null>(null);
   const [otp, setOtp] = useState("");
   const [firstName, setFirstName] = useState("");
   const [error, setError] = useState("");
@@ -106,20 +103,36 @@ function AuthPreview({ mode, onClose, instance }: { mode: AuthPreviewMode; onClo
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [instance, onClose]);
 
+  useEffect(() => {
+    if (instance !== "mobile" || !window.matchMedia("(max-width: 959px)").matches) return;
+
+    const keepKeyboardClosed = window.requestAnimationFrame(() => {
+      const activeElement = document.activeElement;
+      if (activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement) {
+        activeElement.blur();
+      }
+      dialogRef.current?.focus({ preventScroll: true });
+    });
+
+    return () => window.cancelAnimationFrame(keepKeyboardClosed);
+  }, [instance, mode]);
+
   const goBack = () => {
     setError("");
     if (step === "profile") setStep("otp");
-    else if (step === "otp") setStep("phone");
+    else if (step === "otp") setStep("identifier");
     else onClose();
   };
 
-  const submitPhone = (event: FormEvent) => {
+  const submitIdentifier = (event: FormEvent) => {
     event.preventDefault();
-    if (!/^[789]\d{9}$/.test(phone)) {
-      setError("Enter a valid Nigerian mobile number.");
+    const detectedType = getIdentifierType(identifier);
+    if (!detectedType) {
+      setError("That doesn’t look quite right. Try an email or Nigerian phone number.");
       return;
     }
     setError("");
+    setIdentifierType(detectedType);
     setStep("otp");
   };
 
@@ -144,7 +157,14 @@ function AuthPreview({ mode, onClose, instance }: { mode: AuthPreviewMode; onClo
   };
 
   return (
-    <div className={styles.authWrap} role="dialog" aria-modal="true" aria-labelledby={`${instance}-auth-title`}>
+    <div
+      ref={dialogRef}
+      className={styles.authWrap}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={`${instance}-auth-title`}
+      tabIndex={-1}
+    >
       <div className={styles.mobileHandle} aria-hidden="true" />
       <div className={styles.authTopbar}>
         <button type="button" onClick={goBack} className={styles.iconButton} aria-label="Go back">
@@ -158,29 +178,28 @@ function AuthPreview({ mode, onClose, instance }: { mode: AuthPreviewMode; onClo
 
       <div className={styles.previewNotice}>
         <ShieldIcon size={15} />
-        <span>Design preview · no SMS or account will be created</span>
+        <span>Your details stay private and protected.</span>
       </div>
 
       <div className={styles.authBody}>
-        {step === "phone" && (
-          <form onSubmit={submitPhone} noValidate>
+        {step === "identifier" && (
+          <form onSubmit={submitIdentifier} noValidate>
             <span className={styles.authEyebrow}>{mode === "register" ? "Join Funda" : "Welcome back"}</span>
-            <h2 id={`${instance}-auth-title`}>{mode === "register" ? "Start with your number." : "Good to see you again."}</h2>
-            <p>We&apos;ll use your Nigerian number to keep your account simple and secure.</p>
-            <label className={styles.fieldLabel} htmlFor={`${instance}-${mode}-phone`}>Phone number</label>
-            <div className={styles.phoneField} data-error={Boolean(error)}>
-              <span>+234</span>
-              <input
-                id={`${instance}-${mode}-phone`}
-                value={formatLocalPhone(phone)}
-                onChange={(event) => setPhone(normalizeLocalPhone(event.target.value))}
-                inputMode="tel"
-                autoComplete="tel-national"
-                placeholder="801 234 5678"
-                aria-describedby={error ? `${instance}-auth-error` : undefined}
-                autoFocus
-              />
-            </div>
+            <h2 id={`${instance}-auth-title`}>{mode === "register" ? "Let’s get you in." : "Good to see you again."}</h2>
+            <p>Email or phone—whichever you actually remember.</p>
+            <label className={styles.fieldLabel} htmlFor={`${instance}-${mode}-identifier`}>Email or phone number</label>
+            <input
+              id={`${instance}-${mode}-identifier`}
+              className={styles.textField}
+              data-error={Boolean(error)}
+              value={identifier}
+              onChange={(event) => { setIdentifier(event.target.value.slice(0, 80)); setError(""); }}
+              inputMode="text"
+              autoComplete="off"
+              enterKeyHint="next"
+              placeholder="you@email.com or 0801 234 5678"
+              aria-describedby={error ? `${instance}-auth-error` : undefined}
+            />
             {error && <p className={styles.fieldError} id={`${instance}-auth-error`} role="alert">{error}</p>}
             <button className={styles.authPrimary} type="submit">
               Continue <ArrowRightIcon size={18} />
@@ -191,8 +210,8 @@ function AuthPreview({ mode, onClose, instance }: { mode: AuthPreviewMode; onClo
         {step === "otp" && (
           <form onSubmit={submitOtp} noValidate>
             <span className={styles.authEyebrow}>One quick check</span>
-            <h2 id={`${instance}-auth-title`}>Enter your code.</h2>
-            <p>For this preview, use <strong>{DEMO_OTP}</strong>. No message has been sent.</p>
+            <h2 id={`${instance}-auth-title`}>Quick code, then you’re in.</h2>
+            <p>We&apos;d send it to your {identifierType === "email" ? "email" : "phone"}. For now, use <strong>{DEMO_OTP}</strong>.</p>
             <label className={styles.fieldLabel} htmlFor={`${instance}-${mode}-otp`}>Six-digit code</label>
             <input
               id={`${instance}-${mode}-otp`}
@@ -204,7 +223,6 @@ function AuthPreview({ mode, onClose, instance }: { mode: AuthPreviewMode; onClo
               autoComplete="one-time-code"
               placeholder="000000"
               aria-describedby={error ? `${instance}-auth-error` : undefined}
-              autoFocus
             />
             {error && <p className={styles.fieldError} id={`${instance}-auth-error`} role="alert">{error}</p>}
             <button className={styles.authPrimary} type="submit">
@@ -231,7 +249,6 @@ function AuthPreview({ mode, onClose, instance }: { mode: AuthPreviewMode; onClo
               autoComplete="given-name"
               placeholder="Your first name"
               aria-describedby={error ? `${instance}-auth-error` : undefined}
-              autoFocus
             />
             {error && <p className={styles.fieldError} id={`${instance}-auth-error`} role="alert">{error}</p>}
             <button className={styles.authPrimary} type="submit">
@@ -245,7 +262,7 @@ function AuthPreview({ mode, onClose, instance }: { mode: AuthPreviewMode; onClo
             <span className={styles.completeIcon}><CheckIcon size={30} /></span>
             <span className={styles.authEyebrow}>Preview complete</span>
             <h2 id={`${instance}-auth-title`}>{mode === "register" ? `Looking good${firstName ? `, ${firstName.trim()}` : ""}.` : "You would be signed in."}</h2>
-            <p>No account was created and no information was saved. Real phone authentication comes in the next phase.</p>
+            <p>That&apos;s the whole thing. Nothing was saved—this is still just the preview.</p>
             <button className={styles.authPrimary} type="button" onClick={onClose}>
               Return to Funda <ArrowRightIcon size={18} />
             </button>
@@ -260,7 +277,6 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
   const pathname = usePathname();
   const reducedMotion = useReducedMotion();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [manualNavigation, setManualNavigation] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const authMode: AuthPreviewMode | null = pathname === "/login"
@@ -297,18 +313,14 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
     }
   }, []);
 
-  const moveTo = useCallback((nextIndex: number, manual = true) => {
+  const moveTo = useCallback((nextIndex: number) => {
     const boundedIndex = Math.max(0, Math.min(stories.length - 1, nextIndex));
-    if (manual) {
-      stopAutoplay();
-      setManualNavigation(true);
-    }
+    stopAutoplay();
     setCurrentIndex(boundedIndex);
   }, [stopAutoplay, stories.length]);
 
   const moveBy = useCallback((delta: number) => {
     stopAutoplay();
-    setManualNavigation(true);
     setCurrentIndex((current) => {
       const next = Math.max(0, Math.min(stories.length - 1, current + delta));
       return next;
@@ -316,13 +328,13 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
   }, [stopAutoplay, stories.length]);
 
   useEffect(() => {
-    if (manualNavigation || reducedMotion || authMode || activeSheet || menuOpen || currentIndex >= stories.length - 1) return;
+    if (reducedMotion || authMode || activeSheet || menuOpen || stories.length < 2) return;
     autoplayTimer.current = window.setTimeout(() => {
       autoplayTimer.current = null;
-      setCurrentIndex((index) => Math.min(index + 1, stories.length - 1));
+      setCurrentIndex((index) => (index + 1) % stories.length);
     }, AUTOPLAY_DELAY);
     return stopAutoplay;
-  }, [authMode, activeSheet, menuOpen, currentIndex, manualNavigation, reducedMotion, stopAutoplay, stories.length]);
+  }, [authMode, activeSheet, menuOpen, currentIndex, reducedMotion, stopAutoplay, stories.length]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -361,7 +373,6 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
 
   const openAuth = (mode: AuthPreviewMode) => {
     stopAutoplay();
-    setManualNavigation(true);
     setMenuOpen(false);
     openedAuthHere.current = true;
     window.history.pushState(null, "", mode === "login" ? "/login" : "/register");
@@ -378,7 +389,6 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
 
   const navigateToSheet = (target: SheetType) => {
     stopAutoplay();
-    setManualNavigation(true);
     setMenuOpen(false);
     window.history.pushState(null, "", `/${target}`);
   };
@@ -389,7 +399,6 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
 
   const toggleMenu = () => {
     stopAutoplay();
-    setManualNavigation(true);
     setMenuOpen((prev) => !prev);
   };
 

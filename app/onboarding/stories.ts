@@ -11,7 +11,7 @@ export type StoryDefinition = {
 
 export type AuthPreviewMode = "login" | "register";
 
-export type AuthPreviewStep = "phone" | "otp" | "profile" | "complete";
+export type AuthPreviewStep = "identifier" | "otp" | "profile" | "complete";
 
 export const stories: StoryDefinition[] = [
   {
