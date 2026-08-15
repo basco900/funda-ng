@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   AboutInfoIcon,
   ArrowRightIcon,
-  ArrowUpRightIcon,
   BoltIcon,
   CheckIcon,
   ChevronDownIcon,
@@ -141,10 +140,73 @@ function AboutSheetContent({ onNavigate, onOpenAuth }: { onNavigate: (type: Shee
 }
 
 // ----------------------------------------------------
-// SERVICES CONTENT
+// SERVICES CONTENT WITH INTERACTIVE CALCULATOR
 // ----------------------------------------------------
+type NetworkKey = "mtn" | "airtel" | "glo" | "9mobile";
+
+interface BundleOption {
+  size: string;
+  price: number;
+  telcoPrice: number;
+  validity: string;
+}
+
+const NETWORK_BUNDLES: Record<NetworkKey, { name: string; brandColor: string; bundles: BundleOption[] }> = {
+  mtn: {
+    name: "MTN Nigeria",
+    brandColor: "#FFCC00",
+    bundles: [
+      { size: "1 GB", price: 240, telcoPrice: 1000, validity: "30 Days" },
+      { size: "2.5 GB", price: 600, telcoPrice: 2000, validity: "30 Days" },
+      { size: "5 GB", price: 1200, telcoPrice: 3500, validity: "30 Days" },
+      { size: "10 GB", price: 2350, telcoPrice: 5000, validity: "30 Days" },
+      { size: "20 GB", price: 4600, telcoPrice: 8000, validity: "30 Days" },
+    ],
+  },
+  airtel: {
+    name: "Airtel Nigeria",
+    brandColor: "#E40000",
+    bundles: [
+      { size: "1 GB", price: 250, telcoPrice: 1000, validity: "30 Days" },
+      { size: "2.5 GB", price: 625, telcoPrice: 2000, validity: "30 Days" },
+      { size: "5 GB", price: 1240, telcoPrice: 3500, validity: "30 Days" },
+      { size: "10 GB", price: 2450, telcoPrice: 5000, validity: "30 Days" },
+      { size: "20 GB", price: 4800, telcoPrice: 8000, validity: "30 Days" },
+    ],
+  },
+  glo: {
+    name: "Glo Mobile",
+    brandColor: "#28B446",
+    bundles: [
+      { size: "1 GB", price: 230, telcoPrice: 1000, validity: "30 Days" },
+      { size: "2.5 GB", price: 580, telcoPrice: 2000, validity: "30 Days" },
+      { size: "5 GB", price: 1150, telcoPrice: 3500, validity: "30 Days" },
+      { size: "10 GB", price: 2280, telcoPrice: 5000, validity: "30 Days" },
+      { size: "20 GB", price: 4500, telcoPrice: 8000, validity: "30 Days" },
+    ],
+  },
+  "9mobile": {
+    name: "9mobile",
+    brandColor: "#006848",
+    bundles: [
+      { size: "1 GB", price: 260, telcoPrice: 1000, validity: "30 Days" },
+      { size: "2.5 GB", price: 650, telcoPrice: 2000, validity: "30 Days" },
+      { size: "5 GB", price: 1290, telcoPrice: 3500, validity: "30 Days" },
+      { size: "10 GB", price: 2500, telcoPrice: 5000, validity: "30 Days" },
+      { size: "20 GB", price: 4950, telcoPrice: 8000, validity: "30 Days" },
+    ],
+  },
+};
+
 function ServicesSheetContent({ onOpenAuth }: { onOpenAuth: (mode: "login" | "register") => void }) {
   const [selectedCategory, setSelectedCategory] = useState<string>("data");
+  const [selectedNetwork, setSelectedNetwork] = useState<NetworkKey>("mtn");
+  const [selectedBundleIdx, setSelectedBundleIdx] = useState<number>(0);
+
+  const activeNetworkData = NETWORK_BUNDLES[selectedNetwork];
+  const activeBundle = activeNetworkData.bundles[selectedBundleIdx] ?? activeNetworkData.bundles[0];
+  const savings = activeBundle.telcoPrice - activeBundle.price;
+  const savingsPercent = Math.round((savings / activeBundle.telcoPrice) * 100);
 
   const services = [
     {
@@ -152,7 +214,7 @@ function ServicesSheetContent({ onOpenAuth }: { onOpenAuth: (mode: "login" | "re
       title: "Mobile Data Bundles",
       icon: <SignalIcon size={22} />,
       badge: "SME & Direct",
-      desc: "Buy SME, Gifting, and Corporate Data bundles across all major Nigerian networks with up to 30% savings.",
+      desc: "Buy SME, Gifting, and Corporate Data bundles across all major Nigerian networks with up to 75% savings.",
       providers: ["MTN Nigeria", "Airtel Nigeria", "Glo Mobile", "9mobile"],
       highlights: ["Instant auto-crediting", "Balances valid up to 30 days", "Rollover supported"],
     },
@@ -211,7 +273,75 @@ function ServicesSheetContent({ onOpenAuth }: { onOpenAuth: (mode: "login" | "re
         ))}
       </div>
 
-      {/* Active Service Card */}
+      {/* Live Interactive Bundle Calculator (When Data is selected) */}
+      {selectedCategory === "data" && (
+        <div className={styles.calculatorCard}>
+          <div className={styles.calcHeader}>
+            <div>
+              <span className={styles.calcEyebrow}>Live Price Calculator</span>
+              <h3 className={styles.calcTitle}>Compare & Save</h3>
+            </div>
+            <span className={styles.savingsBadge}>Save {savingsPercent}%</span>
+          </div>
+
+          {/* Network Selector Pills */}
+          <div className={styles.networkGrid}>
+            {(Object.keys(NETWORK_BUNDLES) as NetworkKey[]).map((key) => {
+              const net = NETWORK_BUNDLES[key];
+              const isSelected = selectedNetwork === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`${styles.networkBtn} ${isSelected ? styles.networkBtnActive : ""}`}
+                  onClick={() => setSelectedNetwork(key)}
+                  style={{
+                    borderColor: isSelected ? net.brandColor : undefined,
+                  }}
+                >
+                  <span className={styles.networkDot} style={{ background: net.brandColor }} />
+                  <span>{key.toUpperCase()}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Bundle Size Selector */}
+          <div className={styles.bundleOptionsGrid}>
+            {activeNetworkData.bundles.map((b, idx) => (
+              <button
+                key={b.size}
+                type="button"
+                className={`${styles.bundleOptionBtn} ${selectedBundleIdx === idx ? styles.bundleOptionBtnActive : ""}`}
+                onClick={() => setSelectedBundleIdx(idx)}
+              >
+                <span className={styles.bundleSize}>{b.size}</span>
+                <span className={styles.bundlePrice}>₦{b.price.toLocaleString()}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Price Breakdown Banner */}
+          <div className={styles.priceSummaryBox}>
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Funda Price</span>
+              <span className={styles.summaryValueHighlight}>₦{activeBundle.price.toLocaleString()}</span>
+            </div>
+            <div className={styles.summaryDivider} />
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Telco Retail</span>
+              <span className={styles.summaryValueStrike}>₦{activeBundle.telcoPrice.toLocaleString()}</span>
+            </div>
+            <div className={styles.summaryDivider} />
+            <div className={styles.summaryItem}>
+              <span className={styles.summaryLabel}>Your Savings</span>
+              <span className={styles.summarySavings}>₦{savings.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Active Service Card Details */}
       {services.map((item) => {
         if (item.id !== selectedCategory) return null;
         return (
@@ -260,13 +390,20 @@ function ServicesSheetContent({ onOpenAuth }: { onOpenAuth: (mode: "login" | "re
 }
 
 // ----------------------------------------------------
-// CONTACT & SUPPORT CONTENT
+// CONTACT & SUPPORT CONTENT WITH 1-CLICK COPY
 // ----------------------------------------------------
 function ContactSheetContent() {
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+
+  const handleCopy = (text: string, key: string) => {
+    void navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2400);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -286,20 +423,27 @@ function ContactSheetContent() {
         Have questions about a meter token, pending data delivery, or business integration? Reach out directly.
       </p>
 
-      {/* Contact Channels */}
+      {/* Contact Channels with 1-click copy */}
       <div className={styles.channelGrid}>
-        <a href="https://wa.me/2348000000000" target="_blank" rel="noreferrer" className={styles.channelCard}>
+        <div className={styles.channelCard}>
           <div className={styles.channelIcon}>
             <ContactChatIcon size={20} />
           </div>
           <div className={styles.channelInfo}>
             <h4>WhatsApp Support</h4>
-            <span>Instant responses & token lookup</span>
+            <span>+234 800 3863 264</span>
           </div>
-          <ArrowUpRightIcon size={16} className={styles.channelArrow} />
-        </a>
+          <button
+            type="button"
+            className={styles.copyBtn}
+            onClick={() => handleCopy("+2348003863264", "wa")}
+            aria-label="Copy WhatsApp Number"
+          >
+            {copiedKey === "wa" ? <span className={styles.copiedText}>Copied! ✓</span> : <span className={styles.copyLabel}>Copy</span>}
+          </button>
+        </div>
 
-        <a href="mailto:support@funda.ng" className={styles.channelCard}>
+        <div className={styles.channelCard}>
           <div className={styles.channelIcon}>
             <AboutInfoIcon size={20} />
           </div>
@@ -307,8 +451,15 @@ function ContactSheetContent() {
             <h4>Email Support</h4>
             <span>support@funda.ng</span>
           </div>
-          <ArrowUpRightIcon size={16} className={styles.channelArrow} />
-        </a>
+          <button
+            type="button"
+            className={styles.copyBtn}
+            onClick={() => handleCopy("support@funda.ng", "email")}
+            aria-label="Copy Email Address"
+          >
+            {copiedKey === "email" ? <span className={styles.copiedText}>Copied! ✓</span> : <span className={styles.copyLabel}>Copy</span>}
+          </button>
+        </div>
       </div>
 
       {/* Message Form */}
@@ -316,7 +467,7 @@ function ContactSheetContent() {
         <h3>Send us a message</h3>
         {formSubmitted ? (
           <div className={styles.formSuccessState}>
-            <CheckIcon size={28} />
+            <span className={styles.successIconBubble}><CheckIcon size={28} /></span>
             <h4>Message Received</h4>
             <p>Thanks for reaching out! Our support team typically responds in under 15 minutes.</p>
             <button type="button" className={styles.ashBtn} onClick={() => setFormSubmitted(false)}>
@@ -486,7 +637,7 @@ function PoliciesSheetContent({ initialTab = "privacy", onNavigate }: { initialT
 }
 
 // ----------------------------------------------------
-// FAQ CONTENT
+// FAQ CONTENT WITH SMOOTH ACCORDION
 // ----------------------------------------------------
 function FaqSheetContent({ onNavigate }: { onNavigate: (type: SheetType) => void }) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);

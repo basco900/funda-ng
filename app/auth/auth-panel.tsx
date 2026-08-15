@@ -11,6 +11,95 @@ import styles from "../onboarding/funda-experience.module.css";
 type Mode = "login" | "register";
 type Step = "identifier" | "method" | "password" | "code" | "profile" | "password-choice" | "recovery-sent" | "complete";
 
+function OtpDigitBoxes({
+  value,
+  onChange,
+  onComplete,
+  error,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  onComplete?: () => void;
+  error?: boolean;
+}) {
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const digits = Array.from({ length: 6 }, (_, i) => value[i] ?? "");
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !digits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, "");
+    if (!val) {
+      const next = value.slice(0, index) + value.slice(index + 1);
+      onChange(next);
+      return;
+    }
+
+    if (val.length > 1) {
+      // Pasted full 6-digit code
+      const clean = val.slice(0, 6);
+      onChange(clean);
+      const nextIdx = Math.min(clean.length, 5);
+      inputRefs.current[nextIdx]?.focus();
+      if (clean.length === 6 && onComplete) onComplete();
+      return;
+    }
+
+    const nextArr = [...digits];
+    nextArr[index] = val;
+    const combined = nextArr.join("").slice(0, 6);
+    onChange(combined);
+
+    if (index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    } else if (combined.length === 6 && onComplete) {
+      onComplete();
+    }
+  };
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "8px", margin: "10px 0 16px" }}>
+      {Array.from({ length: 6 }).map((_, idx) => (
+        <input
+          key={idx}
+          ref={(el) => { inputRefs.current[idx] = el; }}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={6}
+          value={digits[idx] || ""}
+          onChange={(e) => handleChange(idx, e)}
+          onKeyDown={(e) => handleKeyDown(idx, e)}
+          autoFocus={idx === 0}
+          style={{
+            width: "100%",
+            height: "54px",
+            textAlign: "center",
+            fontSize: "22px",
+            fontWeight: "700",
+            fontFamily: "var(--font-geist-mono), monospace",
+            borderRadius: "14px",
+            border: error
+              ? "1.5px solid #ef4444"
+              : digits[idx]
+                ? "1.5px solid #c084fc"
+                : "1px solid rgba(0, 0, 0, 0.14)",
+            background: digits[idx] ? "rgba(168, 85, 247, 0.05)" : "#ffffff",
+            color: "#111313",
+            boxShadow: digits[idx] ? "0 0 0 3px rgba(168, 85, 247, 0.18)" : "none",
+            outline: "none",
+            transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onClose: () => void; instance: "desktop" | "mobile" }) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -36,6 +125,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
     return createClient().auth;
   };
   const parsed = parseIdentifier(identifier);
+  const isPhone = parsed?.type === "phone" || /^[0-9+() -]{4,}$/.test(identifier.trim());
 
   const begin = (event: FormEvent) => {
     event.preventDefault();
@@ -74,8 +164,8 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
     finally { setBusy(false); }
   };
 
-  const verifyCode = async (event: FormEvent) => {
-    event.preventDefault();
+  const verifyCode = async (event?: FormEvent) => {
+    if (event) event.preventDefault();
     if (!identifierType || code.length !== 6) return fail("Pop in the six-digit code.");
     setBusy(true); setError("");
     try {
@@ -147,60 +237,180 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
       <div className={styles.previewNotice}><ShieldIcon size={15} /><span>Your details stay private and protected.</span></div>
 
       <div className={styles.authBody}>
-        {step === "identifier" && <form onSubmit={begin} noValidate>
-          <span className={styles.authEyebrow}>{mode === "register" ? "Join Funda" : recovery ? "Password rescue" : "Welcome back"}</span>
-          <h2 id={`${instance}-auth-title`}>{mode === "register" ? "Let’s get you in." : recovery ? "We’ve got you." : "Good to see you again."}</h2>
-          <p>{recovery ? "Drop your email or phone. Getting back in is pleasantly easy." : "Email or phone—whichever you actually remember."}</p>
-          <label className={styles.fieldLabel} htmlFor={`${instance}-${mode}-identifier`}>Email or phone number</label>
-          <input id={`${instance}-${mode}-identifier`} className={styles.textField} value={identifier} onChange={(e) => { setIdentifier(e.target.value); setError(""); }} autoComplete="username" inputMode="text" placeholder="you@email.com or 0801 234 5678" />
-          {error && <p className={styles.fieldError} role="alert">{error}</p>}
-          <button className={styles.authPrimary} disabled={busy} type="submit">{busy ? "One sec…" : recovery ? "Help me back in" : "Continue"} <ArrowRightIcon size={18} /></button>
-        </form>}
+        {step === "identifier" && (
+          <form onSubmit={begin} noValidate>
+            <span className={styles.authEyebrow}>{mode === "register" ? "Join Funda" : recovery ? "Password rescue" : "Welcome back"}</span>
+            <h2 id={`${instance}-auth-title`}>{mode === "register" ? "Let’s get you in." : recovery ? "We’ve got you." : "Good to see you again."}</h2>
+            <p>{recovery ? "Drop your email or phone. Getting back in is pleasantly easy." : "Email or phone—whichever you actually remember."}</p>
+            <label className={styles.fieldLabel} htmlFor={`${instance}-${mode}-identifier`}>Email or phone number</label>
 
-        {step === "method" && <div>
-          <span className={styles.authEyebrow}>Your call</span><h2 id={`${instance}-auth-title`}>How are we doing this?</h2><p>Use your password, or get a fresh code. Both are secure.</p>
-          <button className={styles.authPrimary} type="button" onClick={() => setStep("password")}>Use my password <ArrowRightIcon size={18} /></button>
-          <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void sendCode(identifierType, identifier, false)}>Send me a code</button>
-          <button className={styles.authQuiet} type="button" onClick={() => { setRecovery(true); setStep("identifier"); }}>Forgot password? Easy fix.</button>
-          {error && <p className={styles.fieldError} role="alert">{error}</p>}
-        </div>}
+            <div style={{ position: "relative" }}>
+              {isPhone && (
+                <span
+                  style={{
+                    position: "absolute",
+                    left: "14px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "13px",
+                    fontFamily: "var(--font-geist-mono), monospace",
+                    fontWeight: "600",
+                    color: "#59605c",
+                    pointerEvents: "none",
+                  }}
+                >
+                  🇳🇬 +234
+                </span>
+              )}
+              <input
+                id={`${instance}-${mode}-identifier`}
+                className={styles.textField}
+                value={identifier}
+                onChange={(e) => { setIdentifier(e.target.value); setError(""); }}
+                autoComplete="username"
+                inputMode="text"
+                placeholder={isPhone ? "801 234 5678" : "you@email.com or 0801 234 5678"}
+                style={{
+                  paddingLeft: isPhone ? "82px" : "15px",
+                }}
+              />
+            </div>
 
-        {step === "password" && <form onSubmit={recovery || mode === "register" ? savePassword : signInWithPassword} noValidate>
-          <span className={styles.authEyebrow}>{recovery || mode === "register" ? "Fresh start" : "Password time"}</span><h2 id={`${instance}-auth-title`}>{recovery || mode === "register" ? "Pick a strong one." : "You know the drill."}</h2>
-          <p>{recovery || mode === "register" ? "Make it strong. If it ever slips your mind, getting it back is easy." : "No peeking—we only ever send this securely to Supabase Auth."}</p>
-          <label className={styles.fieldLabel} htmlFor={`${instance}-password`}>Password</label>
-          <input id={`${instance}-password`} className={styles.textField} type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={recovery || mode === "register" ? "new-password" : "current-password"} placeholder={recovery || mode === "register" ? "12+ strong characters" : "Your password"} />
-          {error && <p className={styles.fieldError} role="alert">{error}</p>}
-          <button className={styles.authPrimary} disabled={busy} type="submit">{busy ? "Checking…" : recovery || mode === "register" ? "Save password" : "Log me in"} <ArrowRightIcon size={18} /></button>
-          {!recovery && <button className={styles.authQuiet} type="button" onClick={() => { setRecovery(true); setStep("identifier"); }}>Forgot it? We’ll sort it.</button>}
-        </form>}
+            {error && <p className={styles.fieldError} role="alert">{error}</p>}
+            <button className={styles.authPrimary} disabled={busy} type="submit">
+              {busy ? "One sec…" : recovery ? "Help me back in" : "Continue"} <ArrowRightIcon size={18} />
+            </button>
+          </form>
+        )}
 
-        {step === "code" && <form onSubmit={verifyCode} noValidate>
-          <span className={styles.authEyebrow}>One quick check</span><h2 id={`${instance}-auth-title`}>Code, please.</h2><p>We sent six digits to your {identifierType}. Tiny code, big security energy.</p>
-          <label className={styles.fieldLabel} htmlFor={`${instance}-code`}>Six-digit code</label>
-          <input id={`${instance}-code`} className={styles.otpField} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="000000" />
-          {error && <p className={styles.fieldError} role="alert">{error}</p>}
-          <button className={styles.authPrimary} disabled={busy} type="submit">{busy ? "Checking…" : "Verify code"} <ArrowRightIcon size={18} /></button>
-          <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void sendCode()}>Send a fresh code</button>
-        </form>}
+        {step === "method" && (
+          <div>
+            <span className={styles.authEyebrow}>Your call</span>
+            <h2 id={`${instance}-auth-title`}>How are we doing this?</h2>
+            <p>Use your password, or get a fresh code. Both are secure.</p>
+            <button className={styles.authPrimary} type="button" onClick={() => setStep("password")}>
+              Use my password <ArrowRightIcon size={18} />
+            </button>
+            <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void sendCode(identifierType, identifier, false)}>
+              Send me a code
+            </button>
+            <button className={styles.authQuiet} type="button" onClick={() => { setRecovery(true); setStep("identifier"); }}>
+              Forgot password? Easy fix.
+            </button>
+            {error && <p className={styles.fieldError} role="alert">{error}</p>}
+          </div>
+        )}
 
-        {step === "profile" && <form onSubmit={saveProfile} noValidate>
-          <span className={styles.authEyebrow}>Nice to meet you</span><h2 id={`${instance}-auth-title`}>What’s your full name?</h2><p>The proper version—first and last. We’ll keep it friendly everywhere else.</p>
-          <label className={styles.fieldLabel} htmlFor={`${instance}-full-name`}>Full name</label>
-          <input id={`${instance}-full-name`} className={styles.textField} value={fullName} onChange={(e) => setFullName(e.target.value.slice(0, 100))} autoComplete="name" placeholder="Adaeze Okafor" />
-          {error && <p className={styles.fieldError} role="alert">{error}</p>}
-          <button className={styles.authPrimary} disabled={busy} type="submit">Keep going <ArrowRightIcon size={18} /></button>
-        </form>}
+        {step === "password" && (
+          <form onSubmit={recovery || mode === "register" ? savePassword : signInWithPassword} noValidate>
+            <span className={styles.authEyebrow}>{recovery || mode === "register" ? "Fresh start" : "Password time"}</span>
+            <h2 id={`${instance}-auth-title`}>{recovery || mode === "register" ? "Pick a strong one." : "You know the drill."}</h2>
+            <p>{recovery || mode === "register" ? "Make it strong. If it ever slips your mind, getting it back is easy." : "No peeking—we only ever send this securely to Supabase Auth."}</p>
+            <label className={styles.fieldLabel} htmlFor={`${instance}-password`}>Password</label>
+            <input
+              id={`${instance}-password`}
+              className={styles.textField}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete={recovery || mode === "register" ? "new-password" : "current-password"}
+              placeholder={recovery || mode === "register" ? "12+ strong characters" : "Your password"}
+            />
+            {error && <p className={styles.fieldError} role="alert">{error}</p>}
+            <button className={styles.authPrimary} disabled={busy} type="submit">
+              {busy ? "Checking…" : recovery || mode === "register" ? "Save password" : "Log me in"} <ArrowRightIcon size={18} />
+            </button>
+            {!recovery && (
+              <button className={styles.authQuiet} type="button" onClick={() => { setRecovery(true); setStep("identifier"); }}>
+                Forgot it? We’ll sort it.
+              </button>
+            )}
+          </form>
+        )}
 
-        {step === "password-choice" && <div>
-          <span className={styles.authEyebrow}>Last little choice</span><h2 id={`${instance}-auth-title`}>Password or codes?</h2><p>Add a password for quick logins, or skip it and we’ll send a code whenever you come back.</p>
-          <button className={styles.authPrimary} type="button" onClick={() => setStep("password")}>Add a password <ArrowRightIcon size={18} /></button>
-          <button className={styles.authQuiet} type="button" onClick={finish}>Codes are fine by me</button>
-          <p>Password recovery is easy, by the way. No lifelong commitment here.</p>
-        </div>}
+        {step === "code" && (
+          <form onSubmit={verifyCode} noValidate>
+            <span className={styles.authEyebrow}>One quick check</span>
+            <h2 id={`${instance}-auth-title`}>Code, please.</h2>
+            <p>We sent six digits to your {identifierType === "email" ? "email" : "phone"}.</p>
+            <label className={styles.fieldLabel}>Six-digit code</label>
 
-        {step === "recovery-sent" && <div className={styles.completeState}><span className={styles.completeIcon}><CheckIcon size={30} /></span><span className={styles.authEyebrow}>Check your inbox</span><h2 id={`${instance}-auth-title`}>Help is on the way.</h2><p>If that account exists, the reset link is already heading there. Nice and private.</p></div>}
-        {step === "complete" && <div className={styles.completeState}><span className={styles.completeIcon}><CheckIcon size={30} /></span><span className={styles.authEyebrow}>You’re in</span><h2 id={`${instance}-auth-title`}>Lovely stuff.</h2><p>Taking you to your dashboard now.</p></div>}
+            {/* 6-box discrete OTP inputs */}
+            <OtpDigitBoxes
+              value={code}
+              onChange={(val) => { setCode(val); setError(""); }}
+              onComplete={() => {
+                if (code.length === 6) void verifyCode();
+              }}
+              error={Boolean(error)}
+            />
+
+            {error && <p className={styles.fieldError} role="alert">{error}</p>}
+            <button className={styles.authPrimary} disabled={busy || code.length !== 6} type="submit">
+              {busy ? "Checking…" : "Verify code"} <ArrowRightIcon size={18} />
+            </button>
+            <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void sendCode()}>
+              Send a fresh code
+            </button>
+          </form>
+        )}
+
+        {step === "profile" && (
+          <form onSubmit={saveProfile} noValidate>
+            <span className={styles.authEyebrow}>Nice to meet you</span>
+            <h2 id={`${instance}-auth-title`}>What’s your full name?</h2>
+            <p>The proper version—first and last. We’ll keep it friendly everywhere else.</p>
+            <label className={styles.fieldLabel} htmlFor={`${instance}-full-name`}>Full name</label>
+            <input
+              id={`${instance}-full-name`}
+              className={styles.textField}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value.slice(0, 100))}
+              autoComplete="name"
+              placeholder="Adaeze Okafor"
+            />
+            {error && <p className={styles.fieldError} role="alert">{error}</p>}
+            <button className={styles.authPrimary} disabled={busy} type="submit">
+              Keep going <ArrowRightIcon size={18} />
+            </button>
+          </form>
+        )}
+
+        {step === "password-choice" && (
+          <div>
+            <span className={styles.authEyebrow}>Last little choice</span>
+            <h2 id={`${instance}-auth-title`}>Password or codes?</h2>
+            <p>Add a password for quick logins, or skip it and we’ll send a code whenever you come back.</p>
+            <button className={styles.authPrimary} type="button" onClick={() => setStep("password")}>
+              Add a password <ArrowRightIcon size={18} />
+            </button>
+            <button className={styles.authQuiet} type="button" onClick={finish}>
+              Codes are fine by me
+            </button>
+            <p>Password recovery is easy, by the way. No lifelong commitment here.</p>
+          </div>
+        )}
+
+        {step === "recovery-sent" && (
+          <div className={styles.completeState}>
+            <span className={styles.completeIcon}><CheckIcon size={30} /></span>
+            <span className={styles.authEyebrow}>Check your inbox</span>
+            <h2 id={`${instance}-auth-title`}>Help is on the way.</h2>
+            <p>If that account exists, the reset link is already heading there. Nice and private.</p>
+          </div>
+        )}
+
+        {step === "complete" && (
+          <div className={styles.completeState}>
+            <span className={styles.completeIcon}><CheckIcon size={30} /></span>
+            <span className={styles.authEyebrow}>You’re in</span>
+            <h2 id={`${instance}-auth-title`}>Lovely stuff.</h2>
+            <p>Taking you to your dashboard now.</p>
+          </div>
+        )}
       </div>
     </div>
   );

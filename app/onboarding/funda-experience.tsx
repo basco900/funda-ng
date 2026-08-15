@@ -8,7 +8,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type FormEvent,
   type TouchEvent,
 } from "react";
 import {
@@ -16,21 +15,15 @@ import {
   AppMenuToggleIcon,
   ArrowRightIcon,
   BackIcon,
-  BoltIcon,
-  CheckIcon,
   ChevronRightIcon,
   CloseIcon,
   ContactChatIcon,
   FaqHelpIcon,
-  LockIcon,
   PoliciesShieldIcon,
   ServicesGridIcon,
-  ShieldIcon,
-  SignalIcon,
 } from "./icons";
 import type {
   AuthPreviewMode,
-  AuthPreviewStep,
   StoryDefinition,
 } from "./stories";
 import { ContentSheetView, type SheetType } from "./content-sheets";
@@ -43,7 +36,6 @@ type FundaExperienceProps = {
 
 const AUTOPLAY_DELAY = 6000;
 const WHEEL_COOLDOWN = 720;
-const DEMO_OTP = "123456";
 
 function useReducedMotion() {
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -59,9 +51,40 @@ function useReducedMotion() {
   return reducedMotion;
 }
 
+function useParallaxTilt(enabled = true) {
+  useEffect(() => {
+    if (!enabled) return;
+    let rafId: number | null = null;
+
+    const handleMove = (e: MouseEvent) => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        const { innerWidth, innerHeight } = window;
+        const x = ((e.clientX / innerWidth - 0.5) * 2).toFixed(3);
+        const y = ((e.clientY / innerHeight - 0.5) * 2).toFixed(3);
+        document.documentElement.style.setProperty("--tilt-x", x);
+        document.documentElement.style.setProperty("--tilt-y", y);
+        rafId = null;
+      });
+    };
+
+    window.addEventListener("mousemove", handleMove, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      if (rafId !== null) window.cancelAnimationFrame(rafId);
+      document.documentElement.style.removeProperty("--tilt-x");
+      document.documentElement.style.removeProperty("--tilt-y");
+    };
+  }, [enabled]);
+}
+
 function StoryArtwork({ story, index }: { story: StoryDefinition; index: number }) {
   return (
-    <div className={styles.artworkScene} data-visual={story.visual} key={story.id}>
+    <div
+      className={styles.artworkScene}
+      data-visual={story.visual}
+      key={story.id}
+    >
       <span className={styles.artGlow} aria-hidden="true" />
       <span className={styles.orbitOne} aria-hidden="true" />
       <span className={styles.orbitTwo} aria-hidden="true" />
@@ -71,235 +94,44 @@ function StoryArtwork({ story, index }: { story: StoryDefinition; index: number 
           alt={story.artworkAlt}
           fill
           sizes="(max-width: 767px) 86vw, (max-width: 1180px) 36vw, 32vw"
-          preload={index === 0}
-          loading={index === 0 ? undefined : "lazy"}
+          priority={index === 0}
+          loading={index === 0 ? "eager" : "lazy"}
         />
       </div>
     </div>
   );
 }
 
-function getIdentifierType(value: string): "email" | "phone" | null {
-  const clean = value.trim();
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clean)) return "email";
-  const digits = clean.replace(/\D/g, "");
-  if (/^(?:234|0)?[789]\d{9}$/.test(digits)) return "phone";
-  return null;
-}
 
-function AuthPreview({ mode, onClose, instance }: { mode: AuthPreviewMode; onClose: () => void; instance: "desktop" | "mobile" }) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState<AuthPreviewStep>("identifier");
-  const [identifier, setIdentifier] = useState("");
-  const [identifierType, setIdentifierType] = useState<"email" | "phone" | null>(null);
-  const [otp, setOtp] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [error, setError] = useState("");
 
-  useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      const isDesktop = window.matchMedia("(min-width: 960px)").matches;
-      const isVisibleInstance = isDesktop ? instance === "desktop" : instance === "mobile";
-      if (event.key === "Escape" && isVisibleInstance) onClose();
-    };
-
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [instance, onClose]);
-
-  useEffect(() => {
-    if (instance !== "mobile" || !window.matchMedia("(max-width: 959px)").matches) return;
-
-    const keepKeyboardClosed = window.requestAnimationFrame(() => {
-      const activeElement = document.activeElement;
-      if (activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement) {
-        activeElement.blur();
-      }
-      dialogRef.current?.focus({ preventScroll: true });
-    });
-
-    return () => window.cancelAnimationFrame(keepKeyboardClosed);
-  }, [instance, mode]);
-
-  const goBack = () => {
-    setError("");
-    if (step === "profile") setStep("otp");
-    else if (step === "otp") setStep("identifier");
-    else onClose();
-  };
-
-  const submitIdentifier = (event: FormEvent) => {
-    event.preventDefault();
-    const detectedType = getIdentifierType(identifier);
-    if (!detectedType) {
-      setError("That doesn’t look quite right. Try an email or Nigerian phone number.");
-      return;
-    }
-    setError("");
-    setIdentifierType(detectedType);
-    setStep("otp");
-  };
-
-  const submitOtp = (event: FormEvent) => {
-    event.preventDefault();
-    if (otp !== DEMO_OTP) {
-      setError(`Use ${DEMO_OTP} for this design preview.`);
-      return;
-    }
-    setError("");
-    setStep(mode === "register" ? "profile" : "complete");
-  };
-
-  const submitProfile = (event: FormEvent) => {
-    event.preventDefault();
-    if (firstName.trim().length < 2) {
-      setError("Tell us your first name.");
-      return;
-    }
-    setError("");
-    setStep("complete");
-  };
-
+function FloatingGlassDock({ onNavigate }: { onNavigate: (target: SheetType) => void }) {
   return (
-    <div
-      ref={dialogRef}
-      className={styles.authWrap}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={`${instance}-auth-title`}
-      tabIndex={-1}
-    >
-      <div className={styles.mobileHandle} aria-hidden="true" />
-      <div className={styles.authTopbar}>
-        <button type="button" onClick={goBack} className={styles.iconButton} aria-label="Go back">
-          <BackIcon size={19} />
+    <footer className={styles.floatingDock} aria-label="Quick links and system status">
+      <div className={styles.dockStatus}>
+        <span className={styles.livePulseDot} aria-hidden="true" />
+        <span>99.9% Uptime <span className={styles.statusPing}>· 12ms</span></span>
+      </div>
+
+      <span className={styles.dockDivider} aria-hidden="true" />
+
+      <div className={styles.dockNav}>
+        <button type="button" className={styles.dockBtn} onClick={() => onNavigate("services")}>
+          Services
         </button>
-        <span className={styles.authWordmark}>funda.</span>
-        <button type="button" onClick={onClose} className={styles.iconButton} aria-label="Close preview">
-          <CloseIcon size={19} />
+        <button type="button" className={styles.dockBtn} onClick={() => onNavigate("policies")}>
+          Security
+        </button>
+        <button type="button" className={styles.dockBtn} onClick={() => onNavigate("contact")}>
+          Support
+        </button>
+        <button type="button" className={styles.dockBtn} onClick={() => onNavigate("faq")}>
+          FAQ
         </button>
       </div>
 
-      <div className={styles.previewNotice}>
-        <ShieldIcon size={15} />
-        <span>Your details stay private and protected.</span>
-      </div>
+      <span className={styles.dockDivider} aria-hidden="true" />
 
-      <div className={styles.authBody}>
-        {step === "identifier" && (
-          <form onSubmit={submitIdentifier} noValidate>
-            <span className={styles.authEyebrow}>{mode === "register" ? "Join Funda" : "Welcome back"}</span>
-            <h2 id={`${instance}-auth-title`}>{mode === "register" ? "Let’s get you in." : "Good to see you again."}</h2>
-            <p>Email or phone—whichever you actually remember.</p>
-            <label className={styles.fieldLabel} htmlFor={`${instance}-${mode}-identifier`}>Email or phone number</label>
-            <input
-              id={`${instance}-${mode}-identifier`}
-              className={styles.textField}
-              data-error={Boolean(error)}
-              value={identifier}
-              onChange={(event) => { setIdentifier(event.target.value.slice(0, 80)); setError(""); }}
-              inputMode="text"
-              autoComplete="off"
-              enterKeyHint="next"
-              placeholder="you@email.com or 0801 234 5678"
-              aria-describedby={error ? `${instance}-auth-error` : undefined}
-            />
-            {error && <p className={styles.fieldError} id={`${instance}-auth-error`} role="alert">{error}</p>}
-            <button className={styles.authPrimary} type="submit">
-              Continue <ArrowRightIcon size={18} />
-            </button>
-          </form>
-        )}
-
-        {step === "otp" && (
-          <form onSubmit={submitOtp} noValidate>
-            <span className={styles.authEyebrow}>One quick check</span>
-            <h2 id={`${instance}-auth-title`}>Quick code, then you’re in.</h2>
-            <p>We&apos;d send it to your {identifierType === "email" ? "email" : "phone"}. For now, use <strong>{DEMO_OTP}</strong>.</p>
-            <label className={styles.fieldLabel} htmlFor={`${instance}-${mode}-otp`}>Six-digit code</label>
-            <input
-              id={`${instance}-${mode}-otp`}
-              className={styles.otpField}
-              data-error={Boolean(error)}
-              value={otp}
-              onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              placeholder="000000"
-              aria-describedby={error ? `${instance}-auth-error` : undefined}
-            />
-            {error && <p className={styles.fieldError} id={`${instance}-auth-error`} role="alert">{error}</p>}
-            <button className={styles.authPrimary} type="submit">
-              Verify code <ArrowRightIcon size={18} />
-            </button>
-            <button className={styles.authQuiet} type="button" onClick={() => setOtp(DEMO_OTP)}>
-              Fill demo code
-            </button>
-          </form>
-        )}
-
-        {step === "profile" && (
-          <form onSubmit={submitProfile} noValidate>
-            <span className={styles.authEyebrow}>Nearly there</span>
-            <h2 id={`${instance}-auth-title`}>What should we call you?</h2>
-            <p>This is the only profile detail in the Funda registration preview.</p>
-            <label className={styles.fieldLabel} htmlFor={`${instance}-first-name`}>First name</label>
-            <input
-              id={`${instance}-first-name`}
-              className={styles.textField}
-              data-error={Boolean(error)}
-              value={firstName}
-              onChange={(event) => setFirstName(event.target.value.slice(0, 40))}
-              autoComplete="given-name"
-              placeholder="Your first name"
-              aria-describedby={error ? `${instance}-auth-error` : undefined}
-            />
-            {error && <p className={styles.fieldError} id={`${instance}-auth-error`} role="alert">{error}</p>}
-            <button className={styles.authPrimary} type="submit">
-              Finish preview <ArrowRightIcon size={18} />
-            </button>
-          </form>
-        )}
-
-        {step === "complete" && (
-          <div className={styles.completeState}>
-            <span className={styles.completeIcon}><CheckIcon size={30} /></span>
-            <span className={styles.authEyebrow}>Preview complete</span>
-            <h2 id={`${instance}-auth-title`}>{mode === "register" ? `Looking good${firstName ? `, ${firstName.trim()}` : ""}.` : "You would be signed in."}</h2>
-            <p>That&apos;s the whole thing. Nothing was saved—this is still just the preview.</p>
-            <button className={styles.authPrimary} type="button" onClick={onClose}>
-              Return to Funda <ArrowRightIcon size={18} />
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function MinimalBottomBar({ onNavigate }: { onNavigate: (target: SheetType) => void }) {
-  return (
-    <footer className={styles.minimalFooter} aria-label="Quick links and system status">
-      <div className={styles.minimalStatus}>
-        <span className={styles.minimalPulseDot} aria-hidden="true" />
-        <span>Instant Delivery • 99.9% Uptime</span>
-      </div>
-
-      <span className={styles.minimalGroupSep} aria-hidden="true">•</span>
-
-      <div className={styles.minimalNav}>
-        <button type="button" onClick={() => onNavigate("services")}>Services</button>
-        <span className={styles.minimalSep}>/</span>
-        <button type="button" onClick={() => onNavigate("policies")}>Security</button>
-        <span className={styles.minimalSep}>/</span>
-        <button type="button" onClick={() => onNavigate("contact")}>Support</button>
-        <span className={styles.minimalSep}>/</span>
-        <button type="button" onClick={() => onNavigate("faq")}>FAQ</button>
-      </div>
-
-      <span className={styles.minimalGroupSep} aria-hidden="true">•</span>
-
-      <div className={styles.minimalLegal}>
+      <div className={styles.dockLegal}>
         <span>© {new Date().getFullYear()} Funda</span>
       </div>
     </footer>
@@ -309,8 +141,10 @@ function MinimalBottomBar({ onNavigate }: { onNavigate: (target: SheetType) => v
 export default function FundaExperience({ stories }: FundaExperienceProps) {
   const pathname = usePathname();
   const reducedMotion = useReducedMotion();
+  useParallaxTilt(!reducedMotion);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   const authMode: AuthPreviewMode | null = pathname === "/login"
     ? "login"
@@ -331,7 +165,6 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
 
   const touchStart = useRef<number | null>(null);
   const wheelLocked = useRef(false);
-  const autoplayTimer = useRef<number | null>(null);
   const openedAuthHere = useRef(false);
 
   useEffect(() => {
@@ -339,51 +172,48 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
     return () => { delete document.documentElement.dataset.fundaReady; };
   }, []);
 
-  const stopAutoplay = useCallback(() => {
-    if (autoplayTimer.current !== null) {
-      window.clearTimeout(autoplayTimer.current);
-      autoplayTimer.current = null;
-    }
-  }, []);
-
   const moveTo = useCallback((nextIndex: number) => {
     const boundedIndex = Math.max(0, Math.min(stories.length - 1, nextIndex));
-    stopAutoplay();
     setCurrentIndex(boundedIndex);
-  }, [stopAutoplay, stories.length]);
+  }, [stories.length]);
 
   const moveBy = useCallback((delta: number) => {
-    stopAutoplay();
     setCurrentIndex((current) => {
-      const next = Math.max(0, Math.min(stories.length - 1, current + delta));
+      const next = (current + delta + stories.length) % stories.length;
       return next;
     });
-  }, [stopAutoplay, stories.length]);
+  }, [stories.length]);
 
+  // Clean 6s auto-advance timer (smooth fill is driven by CSS animation, 0 render overhead)
   useEffect(() => {
-    if (reducedMotion || authMode || activeSheet || menuOpen || stories.length < 2) return;
-    autoplayTimer.current = window.setTimeout(() => {
-      autoplayTimer.current = null;
-      setCurrentIndex((index) => (index + 1) % stories.length);
+    if (reducedMotion || authMode || activeSheet || menuOpen || isPaused || stories.length < 2) return;
+
+    const timer = window.setTimeout(() => {
+      setCurrentIndex((idx) => (idx + 1) % stories.length);
     }, AUTOPLAY_DELAY);
-    return stopAutoplay;
-  }, [authMode, activeSheet, menuOpen, currentIndex, reducedMotion, stopAutoplay, stories.length]);
+
+    return () => window.clearTimeout(timer);
+  }, [authMode, activeSheet, menuOpen, isPaused, reducedMotion, stories.length, currentIndex]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (authMode || activeSheet || menuOpen) return;
-      if (["ArrowDown", "ArrowRight", "PageDown"].includes(event.key)) {
+      if (["ArrowRight", "PageDown"].includes(event.key)) {
         event.preventDefault();
         moveBy(1);
       }
-      if (["ArrowUp", "ArrowLeft", "PageUp"].includes(event.key)) {
+      if (["ArrowLeft", "PageUp"].includes(event.key)) {
         event.preventDefault();
         moveBy(-1);
+      }
+      if (["1", "2", "3", "4"].includes(event.key)) {
+        const num = parseInt(event.key, 10) - 1;
+        if (num < stories.length) moveTo(num);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [authMode, activeSheet, menuOpen, moveBy]);
+  }, [authMode, activeSheet, menuOpen, moveBy, moveTo, stories.length]);
 
   const onWheel = (event: React.WheelEvent) => {
     if (authMode || activeSheet || menuOpen || Math.abs(event.deltaY) < 28 || wheelLocked.current) return;
@@ -405,13 +235,14 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
   };
 
   const openAuth = (mode: AuthPreviewMode) => {
-    stopAutoplay();
+    setIsPaused(true);
     setMenuOpen(false);
     openedAuthHere.current = true;
     window.history.pushState(null, "", mode === "login" ? "/login" : "/register");
   };
 
   const closeAuth = () => {
+    setIsPaused(false);
     if (openedAuthHere.current) {
       openedAuthHere.current = false;
       window.history.back();
@@ -421,17 +252,18 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
   };
 
   const navigateToSheet = (target: SheetType) => {
-    stopAutoplay();
+    setIsPaused(true);
     setMenuOpen(false);
     window.history.pushState(null, "", `/${target}`);
   };
 
   const closeSheet = () => {
+    setIsPaused(false);
     window.history.pushState(null, "", "/");
   };
 
   const toggleMenu = () => {
-    stopAutoplay();
+    setIsPaused((prev) => !prev);
     setMenuOpen((prev) => !prev);
   };
 
@@ -460,7 +292,13 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
       data-auth-open={Boolean(authMode)}
     >
       <div className={styles.ambient} aria-hidden="true" />
-      <section className={styles.storyPanel} aria-label="Funda introduction">
+      <section
+        className={styles.storyPanel}
+        data-paused={isPaused || Boolean(menuOpen) || Boolean(authMode) || Boolean(activeSheet)}
+        aria-label="Funda introduction"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
         <header className={styles.header}>
           <Link href="/" className={styles.wordmark} aria-label="Funda home" onClick={() => { setMenuOpen(false); closeSheet(); }}>
             funda<span>.</span>
@@ -481,7 +319,17 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
         <div className={styles.storyContent} key={story.id}>
           <div className={styles.mobileStoryCard}>
             <div className={styles.copyBlock}>
-              <h1>{story.headline}</h1>
+              <h1>
+                {story.headline.split("\n")[0]}
+                {story.headline.includes("\n") && (
+                  <>
+                    <br />
+                    <span className={styles.gradientHighlight}>
+                      {story.headline.split("\n")[1]}
+                    </span>
+                  </>
+                )}
+              </h1>
               <p>{story.body}</p>
             </div>
 
@@ -495,9 +343,34 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
                   aria-label={`Show story ${index + 1}: ${item.headline.replace("\n", " ")}`}
                   aria-current={index === currentIndex ? "step" : undefined}
                 >
-                  <span data-complete={index < currentIndex} data-active={index === currentIndex} />
+                  <span
+                    key={index === currentIndex ? `active-${currentIndex}` : `idle-${index}`}
+                    data-complete={index < currentIndex}
+                    data-active={index === currentIndex}
+                  />
                 </button>
               ))}
+
+              <div className={styles.slideControls} aria-label="Slide navigation">
+                <button
+                  type="button"
+                  className={styles.slideArrowBtn}
+                  onClick={() => moveBy(-1)}
+                  aria-label="Previous slide"
+                  title="Previous slide (Left Arrow)"
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  className={styles.slideArrowBtn}
+                  onClick={() => moveBy(1)}
+                  aria-label="Next slide"
+                  title="Next slide (Right Arrow)"
+                >
+                  →
+                </button>
+              </div>
             </div>
 
             <div className={styles.mobileActions}>
@@ -515,8 +388,8 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
           </div>
         </div>
 
-        {/* Sleek Grounded Bottom Footer Bar */}
-        <MinimalBottomBar onNavigate={navigateToSheet} />
+        {/* Sleek Grounded Floating Glass Dock */}
+        <FloatingGlassDock onNavigate={navigateToSheet} />
       </section>
 
       {/* ---------------------------------------------------- */}
@@ -543,7 +416,7 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
           <span className={styles.drawerSectionTag}>Navigation</span>
 
           <nav className={styles.menuList}>
-            <button type="button" className={styles.menuItem} onClick={() => navigateToSheet("about")}>
+            <button type="button" className={styles.menuItem} data-category="about" onClick={() => navigateToSheet("about")}>
               <div className={styles.menuItemLeft}>
                 <span className={styles.menuIconBox}><AboutInfoIcon size={19} /></span>
                 <div className={styles.menuTextGroup}>
@@ -554,7 +427,7 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
               <ChevronRightIcon size={16} className={styles.menuChevron} />
             </button>
 
-            <button type="button" className={styles.menuItem} onClick={() => navigateToSheet("services")}>
+            <button type="button" className={styles.menuItem} data-category="services" onClick={() => navigateToSheet("services")}>
               <div className={styles.menuItemLeft}>
                 <span className={styles.menuIconBox}><ServicesGridIcon size={19} /></span>
                 <div className={styles.menuTextGroup}>
@@ -565,7 +438,7 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
               <ChevronRightIcon size={16} className={styles.menuChevron} />
             </button>
 
-            <button type="button" className={styles.menuItem} onClick={() => navigateToSheet("contact")}>
+            <button type="button" className={styles.menuItem} data-category="contact" onClick={() => navigateToSheet("contact")}>
               <div className={styles.menuItemLeft}>
                 <span className={styles.menuIconBox}><ContactChatIcon size={19} /></span>
                 <div className={styles.menuTextGroup}>
@@ -576,7 +449,7 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
               <ChevronRightIcon size={16} className={styles.menuChevron} />
             </button>
 
-            <button type="button" className={styles.menuItem} onClick={() => navigateToSheet("policies")}>
+            <button type="button" className={styles.menuItem} data-category="policies" onClick={() => navigateToSheet("policies")}>
               <div className={styles.menuItemLeft}>
                 <span className={styles.menuIconBox}><PoliciesShieldIcon size={19} /></span>
                 <div className={styles.menuTextGroup}>
@@ -587,7 +460,7 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
               <ChevronRightIcon size={16} className={styles.menuChevron} />
             </button>
 
-            <button type="button" className={styles.menuItem} onClick={() => navigateToSheet("faq")}>
+            <button type="button" className={styles.menuItem} data-category="faq" onClick={() => navigateToSheet("faq")}>
               <div className={styles.menuItemLeft}>
                 <span className={styles.menuIconBox}><FaqHelpIcon size={19} /></span>
                 <div className={styles.menuTextGroup}>

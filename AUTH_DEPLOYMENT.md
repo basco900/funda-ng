@@ -19,6 +19,10 @@ The application uses Supabase Auth for identity and password storage. Passwords 
 - Enable email and phone providers.
 - Require email and phone confirmation.
 - Configure custom SMTP and branded confirmation/recovery templates.
+- `MAILER_TEMPLATES_MAGIC_LINK=https://funda.ng/auth-emails/login-code.html`
+- `MAILER_SUBJECTS_MAGIC_LINK=Your Funda login code`
+- `MAILER_TEMPLATES_RECOVERY=https://funda.ng/auth-emails/recovery.html`
+- `MAILER_SUBJECTS_RECOVERY=Reset your Funda password`
 - Configure the SMS provider or Send SMS Hook.
 - Set OTP expiry to 5–10 minutes and resend cooldown to at least 60 seconds.
 - Set password minimum to 12 with uppercase, lowercase, number and symbol requirements.
@@ -39,4 +43,3 @@ Copy the Supabase values from `.env.example` into Coolify. The public URL and pu
 ## Security reality
 
 No system is “impenetrable.” Production security comes from layered controls, timely patching, least privilege, RLS, rate limits, monitoring, backups, incident response, and regular independent penetration testing.
-
