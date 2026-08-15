@@ -442,15 +442,15 @@
   overflow: hidden auto;
   border: 0;
   border-radius: 28px 28px 0 0;
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--warm-white);
+  color: #121414;
   box-shadow: 0 -20px 64px rgba(21, 23, 23, 0.24);
 }
 
 .mobileHandle {
   width: 36px;
   height: 4px;
-  margin: 10px auto 2px;
+  margin: 9px auto 2px;
   border-radius: 999px;
   background: rgba(9, 10, 10, 0.16);
 }
@@ -459,15 +459,14 @@
   display: grid;
   grid-template-columns: 40px 1fr 40px;
   align-items: center;
-  padding: 12px 20px 8px;
+  padding: 10px 18px 8px;
 }
 
 .authWordmark {
-  font-size: 19px;
-  font-weight: 750;
-  letter-spacing: -0.055em;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.065em;
   text-align: center;
-  color: #0f172a;
 }
 
 .iconButton {
@@ -477,102 +476,90 @@
   height: 38px;
   border: 0;
   border-radius: 50%;
-  background: rgba(9, 10, 10, 0.04);
-  color: #334155;
-  transition: background 180ms ease, transform 180ms ease, color 180ms ease;
+  background: rgba(9, 10, 10, 0.035);
+  color: #151717;
+  transition: background 180ms ease, transform 180ms ease;
 }
 
 .iconButton:hover {
   background: rgba(9, 10, 10, 0.08);
-  color: #0f172a;
-  transform: scale(1.04);
+  transform: scale(1.03);
 }
 
 .previewNotice {
   display: flex;
   align-items: center;
-  gap: 9px;
-  margin: 6px 20px 0;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  color: #475569;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.4;
+  gap: 8px;
+  margin: 4px 20px 0;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: rgba(9, 10, 10, 0.055);
+  color: #5e6561;
+  font-size: 9px;
+  line-height: 1.3;
 }
 
 .previewNotice svg {
   flex: 0 0 auto;
-  color: #7c3aed;
+  color: #286779;
 }
 
 .authBody {
   display: flex;
-  flex: 1 1 auto;
+  flex: 1;
   flex-direction: column;
-  justify-content: flex-start;
-  padding: 20px 22px max(26px, env(safe-area-inset-bottom));
-}
-
-.authForm {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
+  justify-content: center;
+  padding: 24px 22px max(26px, env(safe-area-inset-bottom));
 }
 
 .authEyebrow {
-  display: inline-block;
-  color: #7c3aed;
+  color: #59605c;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
-  margin-bottom: 6px;
 }
 
 .authBody h2 {
-  margin: 2px 0 8px;
-  color: #0f172a;
-  font-size: clamp(26px, 7vw, 34px);
-  font-weight: 750;
-  letter-spacing: -0.035em;
-  line-height: 1.18;
+  max-width: 12ch;
+  margin: 12px 0 0;
+  color: #101212;
+  font-size: clamp(31px, 9vw, 42px);
+  font-weight: 570;
+  letter-spacing: -0.06em;
+  line-height: 0.98;
 }
 
 .authBody form > p,
-.authBody div > p,
-.authForm > p,
 .completeState > p {
-  margin: 0 0 18px;
-  color: #64748b;
-  font-size: 15px;
+  max-width: 38ch;
+  margin: 13px 0 0;
+  color: #6b716e;
+  font-size: 12px;
   line-height: 1.55;
 }
 
 .authBody p strong {
-  color: #0f172a;
+  color: #202323;
   font-family: var(--font-geist-mono), monospace;
 }
 
 .fieldLabel {
   display: block;
-  margin: 16px 0 8px;
-  color: #1e293b;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.35;
+  margin: 24px 0 8px;
+  color: #2f3431;
+  font-size: 10px;
+  font-weight: 650;
 }
 
 .phoneField {
   display: flex;
   align-items: center;
-  height: 54px;
+  height: 56px;
   overflow: hidden;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
+  border: 1px solid rgba(9, 10, 10, 0.13);
+  border-radius: 16px;
   background: #ffffff;
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
@@ -580,27 +567,27 @@
 .phoneField:focus-within,
 .otpField:focus,
 .textField:focus {
-  border-color: #a855f7;
-  box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.14);
+  border-color: #2f91a8;
+  box-shadow: 0 0 0 4px rgba(86, 177, 198, 0.14);
 }
 
 .phoneField[data-error="true"],
 .otpField[data-error="true"],
 .textField[data-error="true"] {
-  border-color: #ef4444;
+  border-color: #c4664a;
 }
 
 .phoneField > span {
   display: grid;
   place-items: center;
   align-self: stretch;
-  padding: 0 14px;
-  border-right: 1px solid #e2e8f0;
-  background: #f8fafc;
-  color: #475569;
+  padding: 0 13px;
+  border-right: 1px solid rgba(9, 10, 10, 0.08);
+  background: #f0f1ec;
+  color: #4c534f;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 620;
 }
 
 .phoneField input,
@@ -609,56 +596,47 @@
   min-width: 0;
   border: 0;
   outline: 0;
-  color: #0f172a;
+  color: #121414;
 }
 
 .phoneField input {
   flex: 1;
   height: 100%;
-  padding: 0 16px;
+  padding: 0 14px;
   background: transparent;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 570;
 }
 
 .textField,
 .otpField {
   width: 100%;
-  height: 54px;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
+  height: 56px;
+  border: 1px solid rgba(9, 10, 10, 0.13);
+  border-radius: 16px;
   background: #ffffff;
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .textField {
-  padding: 0 16px;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.textField::placeholder,
-.phoneField input::placeholder {
-  color: #94a3b8;
+  padding: 0 15px;
   font-size: 15px;
-  font-weight: 450;
-  opacity: 1;
+  font-weight: 570;
 }
 
 .otpField {
   padding: 0 17px 0 23px;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 21px;
+  font-weight: 650;
   letter-spacing: 0.55em;
 }
 
 .fieldError {
-  margin: 8px 2px 0 !important;
-  color: #dc2626 !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  line-height: 1.45 !important;
+  margin: 7px 2px 0 !important;
+  color: #aa4b31 !important;
+  font-size: 10px !important;
+  line-height: 1.4 !important;
 }
 
 .authPrimary {
@@ -667,95 +645,31 @@
   justify-content: center;
   gap: 9px;
   width: 100%;
-  min-height: 52px;
-  margin-top: 20px;
+  min-height: 54px;
+  margin-top: 18px;
   border: 0;
-  border-radius: 14px;
-  background: #0f172a;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
-  transition: background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  border-radius: 999px;
+  background: #111313;
+  color: var(--warm-white);
+  font-size: 13px;
+  font-weight: 640;
+  transition: background 180ms ease, transform 180ms ease;
 }
 
-.authPrimary:hover:not(:disabled) {
-  background: #1e293b;
+.authPrimary:hover {
+  background: #252828;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.22);
-}
-
-.authPrimary:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-.authSecondary {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 50px;
-  margin-top: 10px;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
-  background: transparent;
-  color: #1e293b;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 180ms ease;
-}
-
-.authSecondary:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #0f172a;
-}
-
-.authSecondary:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-.authActionStack {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  margin-top: 4px;
 }
 
 .authQuiet {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 8px 14px;
-  margin: 8px auto 0;
+  display: block;
+  min-height: 40px;
+  margin: 4px auto 0;
   border: 0;
-  border-radius: 10px;
   background: transparent;
-  color: #64748b;
-  font-size: 14.5px;
-  font-weight: 550;
-  cursor: pointer;
-  transition: color 180ms ease, background 180ms ease;
-}
-
-.authQuiet:hover:not(:disabled) {
-  color: #0f172a;
-  background: rgba(0, 0, 0, 0.04);
-}
-
-.helperNotice {
-  margin: 16px 0 0 !important;
-  color: #64748b;
-  font-size: 13.5px;
-  line-height: 1.5;
-  text-align: center;
+  color: #59605c;
+  font-size: 10px;
+  font-weight: 600;
 }
 
 .completeState {
@@ -2085,39 +1999,28 @@
   .desktopRail {
     position: fixed;
     inset: 0;
-    z-index: 50;
+    z-index: 20;
     display: flex;
     justify-content: flex-end;
-    background: rgba(5, 6, 8, 0.55);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    animation: fade-in 220ms ease both;
+    background: rgba(5, 6, 6, 0.62);
+    backdrop-filter: blur(8px);
   }
 
   .desktopAuth {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    width: min(620px, 48vw);
-    min-width: 480px;
+    display: block;
+    width: min(470px, 100%);
     height: 100%;
     overflow: hidden;
     border-radius: 0;
-    background: #ffffff;
-    border-left: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: -24px 0 80px rgba(0, 0, 0, 0.45);
-    animation: panel-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    background: var(--warm-white);
+    box-shadow: -32px 0 90px rgba(0, 0, 0, 0.35);
   }
 
   .authWrap {
-    width: 100%;
     height: 100%;
     max-height: none;
-    overflow-y: auto;
-    overflow-x: hidden;
     border-radius: 0;
-    background: #ffffff;
-    box-shadow: none;
   }
 
   .mobileHandle {
@@ -2125,64 +2028,21 @@
   }
 
   .desktopRail .authTopbar {
-    display: grid;
-    grid-template-columns: 44px 1fr 44px;
-    align-items: center;
-    padding: 24px 38px 14px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .desktopRail .authWordmark {
-    font-size: 20px;
-    font-weight: 750;
-    letter-spacing: -0.055em;
-    color: #0f172a;
-    text-align: center;
+    padding: 26px 30px 12px;
   }
 
   .desktopRail .iconButton {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.04);
-    color: #334155;
-    transition: all 180ms ease;
-  }
-
-  .desktopRail .iconButton:hover {
-    background: rgba(0, 0, 0, 0.08);
-    color: #0f172a;
-    transform: scale(1.05);
+    background: transparent;
   }
 
   .desktopRail .previewNotice {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 18px 38px 0;
-    padding: 12px 18px;
-    border-radius: 14px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    color: #475569;
-    font-size: 13.5px;
-    font-weight: 500;
-  }
-
-  .desktopRail .previewNotice svg {
-    color: #7c3aed;
-    flex-shrink: 0;
+    margin: 5px 32px 0;
+    padding: 0;
+    background: transparent;
   }
 
   .desktopRail .authBody {
-    flex: 1 1 auto;
-    justify-content: flex-start;
-    padding: 28px clamp(36px, 4vw, 56px) 44px;
-    max-width: 520px;
-    width: 100%;
-    margin: 0 auto;
+    padding: 28px clamp(38px, 4vw, 58px) 40px;
   }
 }
 
@@ -2737,70 +2597,63 @@
   }
 }
 
-/* Readable, balanced type hierarchy across onboarding, navigation, and auth */
+/* Readable type hierarchy across onboarding, navigation, and auth */
 .copyBlock p {
   font-size: clamp(15px, 1.1vw, 17px);
   line-height: 1.55;
 }
 
 .previewNotice {
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
 .authEyebrow {
-  font-size: 12px;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  letter-spacing: 0.12em;
 }
 
 .authBody form > p,
-.authBody div > p,
-.authForm > p,
 .completeState > p {
   font-size: 15px;
   line-height: 1.55;
 }
 
 .fieldLabel {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.35;
 }
 
 .textField,
 .phoneField input {
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.2;
 }
 
 .textField::placeholder,
 .phoneField input::placeholder,
 .otpField::placeholder {
-  color: #94a3b8;
-  font-size: 15px;
-  font-weight: 450;
+  color: #858a87;
+  font-size: 17px;
+  font-weight: 520;
   opacity: 1;
 }
 
 .fieldError {
-  font-size: 13px !important;
+  font-size: 12px !important;
   line-height: 1.45 !important;
 }
 
 .authPrimary {
-  font-size: 16px;
-}
-
-.authSecondary {
   font-size: 15px;
 }
 
 .authQuiet {
-  font-size: 14.5px;
+  font-size: 13px;
 }
 
 .drawerSectionTag {
-  font-size: 11.5px;
-  letter-spacing: 0.12em;
+  font-size: 12px;
 }
 
 .menuTitle {
@@ -2815,7 +2668,7 @@
 
 .drawerLoginBtn,
 .drawerRegisterBtn {
-  font-size: 14.5px;
+  font-size: 14px;
 }
 
 .sheetHeaderTitle {
@@ -2824,43 +2677,27 @@
 
 @media (min-width: 960px) {
   .previewNotice {
-    font-size: 13px;
-  }
-
-  .authEyebrow {
     font-size: 12px;
   }
 
-  .authBody h2 {
-    font-size: 32px;
-    letter-spacing: -0.035em;
+  .authEyebrow {
+    font-size: 11px;
   }
 
   .authBody form > p,
-  .authBody div > p,
-  .authForm > p,
   .completeState > p {
     font-size: 15px;
   }
 
   .fieldLabel {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .textField,
   .textField::placeholder,
   .phoneField input,
   .phoneField input::placeholder {
-    font-size: 16px;
-  }
-
-  .sidebarDrawer {
-    width: min(380px, calc(100vw - 32px));
-  }
-
-  .sheetModalWrap {
-    width: min(840px, calc(100vw - 96px));
-    max-height: min(88vh, 860px);
+    font-size: 17px;
   }
 }
 
@@ -2870,26 +2707,24 @@
   }
 
   .previewNotice {
-    font-size: 12.5px;
+    font-size: 12px;
   }
 
   .authEyebrow {
-    font-size: 11.5px;
+    font-size: 11px;
   }
 
   .authBody h2 {
-    font-size: clamp(26px, 7.5vw, 32px);
+    font-size: clamp(34px, 9.4vw, 43px);
   }
 
   .authBody form > p,
-  .authBody div > p,
-  .authForm > p,
   .completeState > p {
-    font-size: 14.5px;
+    font-size: 14px;
   }
 
   .fieldLabel {
-    font-size: 13.5px;
+    font-size: 13px;
   }
 
   .textField,
@@ -2902,6 +2737,7 @@
   .menuTitle {
     font-size: 15px;
   }
+
 }
 
 /* ---------------------------------------------------- */

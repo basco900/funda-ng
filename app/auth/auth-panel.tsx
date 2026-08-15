@@ -71,7 +71,7 @@ function OtpDigitBoxes({
   };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "10px", margin: "14px 0 20px" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "8px", margin: "10px 0 16px" }}>
       {Array.from({ length: 6 }).map((_, idx) => (
         <input
           key={idx}
@@ -85,20 +85,20 @@ function OtpDigitBoxes({
           onKeyDown={(e) => handleKeyDown(idx, e)}
           style={{
             width: "100%",
-            height: "56px",
+            height: "54px",
             textAlign: "center",
-            fontSize: "24px",
+            fontSize: "22px",
             fontWeight: "700",
             fontFamily: "var(--font-geist-mono), monospace",
             borderRadius: "14px",
             border: error
               ? "1.5px solid #ef4444"
               : digits[idx]
-                ? "1.5px solid #a855f7"
-                : "1.5px solid #e2e8f0",
+                ? "1.5px solid #c084fc"
+                : "1px solid rgba(0, 0, 0, 0.14)",
             background: digits[idx] ? "rgba(168, 85, 247, 0.05)" : "#ffffff",
-            color: "#0f172a",
-            boxShadow: digits[idx] ? "0 0 0 3.5px rgba(168, 85, 247, 0.16)" : "none",
+            color: "#111313",
+            boxShadow: digits[idx] ? "0 0 0 3px rgba(168, 85, 247, 0.18)" : "none",
             outline: "none",
             transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
@@ -155,7 +155,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
   const isPhone = parsed?.type === "phone" || /^[0-9+() -]{4,}$/.test(identifier.trim());
   const settingPassword = recovery || creatingPassword || (mode === "register" && step === "password");
 
-  const begin = (event: FormEvent) => {
+  const begin = async (event: FormEvent) => {
     event.preventDefault();
     const result = parseIdentifier(identifier);
     if (!result) return fail("Try a proper email or Nigerian phone number.");
@@ -174,8 +174,12 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
       }
       return;
     }
-    setStep(mode === "register" ? "code" : "method");
-    if (mode === "register") void sendCode(result.type, result.value, true);
+    if (mode === "register") {
+      await sendCode(result.type, result.value, true);
+      return;
+    }
+    if (!password) return fail("Add your password, or ask for a code instead.");
+    await loginWithPassword(result);
   };
 
   const sendCode = async (type = identifierType, value = identifier, createUser = mode === "register") => {
@@ -215,17 +219,31 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
     finally { setBusy(false); }
   };
 
-  const signInWithPassword = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!parsed || !password) return fail("Add your password and we’ll take it from there.");
+  const loginWithPassword = async (account: NonNullable<ReturnType<typeof parseIdentifier>>) => {
+    if (!password) return fail("Add your password, or ask for a code instead.");
     setBusy(true); setError("");
     try {
-      const credentials = parsed.type === "email" ? { email: parsed.value, password } : { phone: parsed.value, password };
+      const credentials = account.type === "email" ? { email: account.value, password } : { phone: account.value, password };
       const { data, error: signInError } = await auth().signInWithPassword(credentials);
       if (signInError) return fail("Those details don’t match. Try again or reset the password—easy fix.");
       if (data.user) await continueAuthenticatedUser(data.user);
     } catch (cause) { fail(cause instanceof Error ? cause.message : "Couldn’t log you in."); }
     finally { setBusy(false); }
+  };
+
+  const signInWithPassword = async (event: FormEvent) => {
+    event.preventDefault();
+    const account = parseIdentifier(identifier);
+    if (!account) return fail("Try a proper email or Nigerian phone number.");
+    await loginWithPassword(account);
+  };
+
+  const requestLoginCode = async () => {
+    const account = parseIdentifier(identifier);
+    if (!account) return fail("Add your email or Nigerian phone number first.");
+    setIdentifier(account.value);
+    setIdentifierType(account.type);
+    await sendCode(account.type, account.value, false);
   };
 
   const saveProfile = async (event: FormEvent) => {
@@ -324,7 +342,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
   const back = () => {
     setError("");
     if (step === "method") setStep("identifier");
-    else if (step === "code") setStep(mode === "register" ? "identifier" : "method");
+    else if (step === "code") setStep("identifier");
     else if (step === "password") setStep(recovery ? "identifier" : settingPassword ? "password-choice" : "method");
     else if (step === "recovery-sent") setStep("identifier");
     else if (["profile", "password-choice"].includes(step)) onClose();
@@ -339,14 +357,18 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         <span className={styles.authWordmark}>funda.</span>
         <button type="button" onClick={onClose} className={styles.iconButton} aria-label="Close"><CloseIcon size={19} /></button>
       </div>
-      <div className={styles.previewNotice}><ShieldIcon size={16} /><span>Your details stay private and protected.</span></div>
+      <div className={styles.previewNotice}><ShieldIcon size={15} /><span>Your details stay private and protected.</span></div>
 
       <div className={styles.authBody}>
         {step === "identifier" && (
-          <form onSubmit={begin} noValidate className={styles.authForm}>
+          <form onSubmit={begin} noValidate>
             <span className={styles.authEyebrow}>{mode === "register" ? "Join Funda" : recovery ? "Password rescue" : "Welcome back"}</span>
             <h2 id={`${instance}-auth-title`}>{mode === "register" ? "Let’s get you in." : recovery ? "We’ve got you." : "Good to see you again."}</h2>
-            <p>{recovery ? "Drop your email or phone. Getting back in is pleasantly easy." : "Email or phone—whichever you actually remember."}</p>
+            <p>{recovery
+              ? "Drop your email or phone. Getting back in is pleasantly easy."
+              : mode === "login"
+                ? "Password if you have one. A fresh code if you don’t."
+                : "Email or phone—whichever you actually remember."}</p>
             <label className={styles.fieldLabel} htmlFor={`${instance}-${mode}-identifier`}>Email or phone number</label>
 
             <div style={{ position: "relative" }}>
@@ -360,10 +382,10 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "4px",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontFamily: "var(--font-geist-mono), monospace",
                     fontWeight: "600",
-                    color: "#475569",
+                    color: "#59605c",
                     pointerEvents: "none",
                   }}
                 >
@@ -379,40 +401,77 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
                 inputMode="text"
                 placeholder={isPhone ? "801 234 5678" : "you@email.com or 0801 234 5678"}
                 style={{
-                  paddingLeft: isPhone ? "86px" : "16px",
+                  paddingLeft: isPhone ? "82px" : "15px",
                 }}
               />
             </div>
 
+            {mode === "login" && !recovery && (
+              <>
+                <label className={styles.fieldLabel} htmlFor={`${instance}-login-password`}>Password</label>
+                <input
+                  id={`${instance}-login-password`}
+                  className={styles.textField}
+                  type="password"
+                  value={password}
+                  onChange={(event) => { setPassword(event.target.value); setError(""); }}
+                  autoComplete="current-password"
+                  placeholder="Your password"
+                />
+              </>
+            )}
+
             {error && <p className={styles.fieldError} role="alert">{error}</p>}
-            <button className={styles.authPrimary} disabled={busy} type="submit">
-              {busy ? "One sec…" : recovery ? "Help me back in" : "Continue"} <ArrowRightIcon size={18} />
-            </button>
+            {mode === "login" && !recovery ? (
+              <div>
+                <button className={styles.authPrimary} disabled={busy} type="submit">
+                  {busy ? "One sec…" : "Log me in"} <ArrowRightIcon size={18} />
+                </button>
+                <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void requestLoginCode()}>
+                  Send me a code instead
+                </button>
+                <button className={styles.authQuiet} type="button" onClick={() => { setRecovery(true); setPassword(""); }}>
+                  Forgot password? Easy fix.
+                </button>
+              </div>
+            ) : (
+              <button className={styles.authPrimary} disabled={busy} type="submit">
+                {busy ? "One sec…" : recovery ? "Help me back in" : "Continue"} <ArrowRightIcon size={18} />
+              </button>
+            )}
           </form>
         )}
 
         {step === "method" && (
-          <div className={styles.authForm}>
+          <form onSubmit={signInWithPassword} noValidate>
             <span className={styles.authEyebrow}>Your call</span>
-            <h2 id={`${instance}-auth-title`}>How are we doing this?</h2>
-            <p>Use your password, or get a fresh code. Both are secure.</p>
-            <div className={styles.authActionStack}>
-              <button className={styles.authPrimary} type="button" onClick={() => { setCreatingPassword(false); setStep("password"); }}>
-                Use my password <ArrowRightIcon size={18} />
-              </button>
-              <button className={styles.authSecondary} disabled={busy} type="button" onClick={() => void sendCode(identifierType, identifier, false)}>
-                Send me a code
-              </button>
-              <button className={styles.authQuiet} type="button" onClick={() => { setRecovery(true); setStep("identifier"); }}>
-                Forgot password? Easy fix.
-              </button>
-            </div>
+            <h2 id={`${instance}-auth-title`}>Welcome back.</h2>
+            <p>Add your password, or get a fresh code. No extra ceremony.</p>
+            <label className={styles.fieldLabel} htmlFor={`${instance}-quick-password`}>Password</label>
+            <input
+              id={`${instance}-quick-password`}
+              className={styles.textField}
+              type="password"
+              value={password}
+              onChange={(event) => { setPassword(event.target.value); setError(""); }}
+              autoComplete="current-password"
+              placeholder="Your password"
+            />
             {error && <p className={styles.fieldError} role="alert">{error}</p>}
-          </div>
+            <button className={styles.authPrimary} disabled={busy} type="submit">
+              {busy ? "One sec…" : "Log me in"} <ArrowRightIcon size={18} />
+            </button>
+            <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void sendCode(identifierType, identifier, false)}>
+              Send me a code instead
+            </button>
+            <button className={styles.authQuiet} type="button" onClick={() => { setRecovery(true); setStep("identifier"); }}>
+              Forgot password? Easy fix.
+            </button>
+          </form>
         )}
 
         {step === "password" && (
-          <form onSubmit={settingPassword ? savePassword : signInWithPassword} noValidate className={styles.authForm}>
+          <form onSubmit={settingPassword ? savePassword : signInWithPassword} noValidate>
             <span className={styles.authEyebrow}>{settingPassword ? "Fresh start" : "Password time"}</span>
             <h2 id={`${instance}-auth-title`}>{settingPassword ? "Pick one you’ll remember." : "You know the drill."}</h2>
             <p>{settingPassword ? "Six characters minimum. If it slips your mind later, getting it back is easy." : "No peeking—we only ever send this securely to Supabase Auth."}</p>
@@ -440,7 +499,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         )}
 
         {step === "code" && (
-          <form onSubmit={verifyCode} noValidate className={styles.authForm}>
+          <form onSubmit={verifyCode} noValidate>
             <span className={styles.authEyebrow}>One quick check</span>
             <h2 id={`${instance}-auth-title`}>Code, please.</h2>
             <p>We sent six digits to your {identifierType === "email" ? "email" : "phone"}.</p>
@@ -465,7 +524,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         )}
 
         {step === "profile" && (
-          <form onSubmit={saveProfile} noValidate className={styles.authForm}>
+          <form onSubmit={saveProfile} noValidate>
             <span className={styles.authEyebrow}>Nice to meet you</span>
             <h2 id={`${instance}-auth-title`}>What’s your full name?</h2>
             <p>The proper version—first and last. We’ll keep it friendly everywhere else.</p>
@@ -486,19 +545,17 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         )}
 
         {step === "password-choice" && (
-          <div className={styles.authForm}>
+          <div>
             <span className={styles.authEyebrow}>Last little choice</span>
             <h2 id={`${instance}-auth-title`}>Password or codes?</h2>
             <p>Add a password for quick logins, or skip it and we’ll send a code whenever you come back.</p>
-            <div className={styles.authActionStack}>
-              <button className={styles.authPrimary} type="button" onClick={() => { setCreatingPassword(true); setStep("password"); }}>
-                Add a password <ArrowRightIcon size={18} />
-              </button>
-              <button className={styles.authSecondary} disabled={busy} type="button" onClick={() => void finishWithCodes()}>
-                {busy ? "Saving…" : "Codes are fine by me"}
-              </button>
-            </div>
-            <p className={styles.helperNotice}>Password recovery is easy, by the way. No lifelong commitment here.</p>
+            <button className={styles.authPrimary} type="button" onClick={() => { setCreatingPassword(true); setStep("password"); }}>
+              Add a password <ArrowRightIcon size={18} />
+            </button>
+            <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void finishWithCodes()}>
+              {busy ? "Saving…" : "Codes are fine by me"}
+            </button>
+            <p>Password recovery is easy, by the way. No lifelong commitment here.</p>
           </div>
         )}
 
