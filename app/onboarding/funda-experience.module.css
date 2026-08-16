@@ -442,7 +442,10 @@
   overflow: hidden auto;
   border: 0;
   border-radius: 28px 28px 0 0;
-  background: var(--warm-white);
+  background:
+    radial-gradient(circle at 92% 4%, rgba(168, 85, 247, 0.11), transparent 27%),
+    radial-gradient(circle at 5% 96%, rgba(47, 145, 168, 0.09), transparent 30%),
+    var(--warm-white);
   color: #121414;
   box-shadow: 0 -20px 64px rgba(21, 23, 23, 0.24);
 }
@@ -463,6 +466,7 @@
 }
 
 .authWordmark {
+  color: #765096;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.065em;
@@ -482,7 +486,8 @@
 }
 
 .iconButton:hover {
-  background: rgba(9, 10, 10, 0.08);
+  background: rgba(168, 85, 247, 0.09);
+  color: #704394;
   transform: scale(1.03);
 }
 
@@ -614,7 +619,7 @@
   height: 56px;
   border: 1px solid rgba(9, 10, 10, 0.13);
   border-radius: 16px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.88);
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
@@ -649,7 +654,7 @@
   margin-top: 18px;
   border: 0;
   border-radius: 999px;
-  background: #111313;
+  background: linear-gradient(105deg, #151318 0%, #2d2038 58%, #453058 100%);
   color: var(--warm-white);
   font-size: 13px;
   font-weight: 640;
@@ -657,7 +662,7 @@
 }
 
 .authPrimary:hover {
-  background: #252828;
+  background: linear-gradient(105deg, #201a25 0%, #3a2749 58%, #563a6d 100%);
   transform: translateY(-1px);
 }
 
@@ -2009,7 +2014,8 @@
   .desktopAuth {
     position: relative;
     display: block;
-    width: min(470px, 100%);
+    width: clamp(570px, 44vw, 760px);
+    max-width: 100%;
     height: 100%;
     overflow: hidden;
     border-radius: 0;
@@ -2043,6 +2049,12 @@
 
   .desktopRail .authBody {
     padding: 28px clamp(38px, 4vw, 58px) 40px;
+  }
+
+  .desktopRail .authBody > form,
+  .desktopRail .completeState {
+    width: min(100%, 540px);
+    margin-inline: auto;
   }
 }
 
@@ -2635,7 +2647,7 @@
 .otpField::placeholder {
   color: #858a87;
   font-size: 17px;
-  font-weight: 520;
+  font-weight: 400;
   opacity: 1;
 }
 
@@ -2650,6 +2662,30 @@
 
 .authQuiet {
   font-size: 13px;
+}
+
+.loginForm h2 {
+  max-width: none;
+  margin-top: 0;
+}
+
+.loginForm .fieldLabel:first-of-type {
+  margin-top: 28px;
+}
+
+.loginAltActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 8px;
+  color: #a0a5a2;
+}
+
+.loginAltActions .authQuiet {
+  min-height: 36px;
+  margin: 0;
+  padding: 0 4px;
 }
 
 .drawerSectionTag {

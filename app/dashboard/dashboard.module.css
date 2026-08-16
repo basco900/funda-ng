@@ -1,2 +1,2014 @@
-.page{min-height:100dvh;padding:28px clamp(22px,5vw,76px) 60px;background:#0d0f10;color:#f6f7f3}.page header{display:flex;align-items:center;justify-content:space-between}.brand{color:inherit;font-size:25px;font-weight:700;letter-spacing:-.06em;text-decoration:none}.page header button{padding:11px 18px;border:1px solid #ffffff26;border-radius:999px;background:#ffffff0d;color:inherit;font-size:14px}.hero{max-width:780px;margin-top:clamp(78px,13vh,150px)}.hero>span,.empty>span{color:#929894;font-size:12px;letter-spacing:.13em;text-transform:uppercase}.hero h1{margin:14px 0 0;font-size:clamp(56px,9vw,126px);font-weight:500;letter-spacing:-.07em;line-height:.9}.hero p{max-width:520px;color:#9ca19e;font-size:clamp(17px,1.5vw,21px);line-height:1.55}.balance{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-top:72px;padding:28px;border:1px solid #ffffff1a;border-radius:28px;background:linear-gradient(135deg,#202323,#151717)}.balance div{display:grid;gap:8px}.balance span{color:#929894;font-size:13px}.balance strong{font-size:clamp(38px,6vw,70px);letter-spacing:-.055em}.balance button{padding:14px 22px;border:0;border-radius:999px;font-size:14px;font-weight:700}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}.grid article{min-height:210px;padding:24px;border:1px solid #ffffff14;border-radius:24px;background:#151717}.grid article>span{color:#747a76;font-size:12px}.grid h2{margin:58px 0 6px;font-size:24px}.grid p,.empty p{color:#929894;font-size:14px}.empty{margin-top:14px;padding:28px;border:1px dashed #ffffff1a;border-radius:24px}@media(max-width:720px){.page{padding-top:max(24px,env(safe-area-inset-top))}.hero{margin-top:80px}.grid{grid-template-columns:1fr}.balance{align-items:stretch;flex-direction:column}.balance button{align-self:flex-start}.grid article{min-height:160px}.grid h2{margin-top:34px}}
+/* ==========================================================================
+   FUNDA PRO iOS DASHBOARD - COOL MINIMALIST AESTHETIC
+   Inspired by Apple & PayPal Clean Slate Dark Design
+   ========================================================================== */
 
+.iosViewport {
+  --funda-canvas: #050811;
+  --funda-graphite: #0c111e;
+  --funda-surface: rgba(16, 22, 36, 0.85);
+  --funda-surface-hover: rgba(24, 32, 52, 0.95);
+  --funda-border: rgba(255, 255, 255, 0.09);
+  --funda-border-highlight: rgba(192, 132, 252, 0.28);
+  --funda-text-primary: #ffffff;
+  --funda-text-secondary: #8e9cb2;
+  --funda-text-muted: #57657d;
+
+  --accent-violet: #a855f7;
+  --accent-violet-bright: #c084fc;
+  --accent-cyan: #06b6d4;
+  --accent-cyan-bright: #22d3ee;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+  --accent-blue: #3b82f6;
+
+  position: relative;
+  min-height: 100dvh;
+  background-color: var(--funda-canvas);
+  background-image:
+    radial-gradient(ellipse at 50% -10%, rgba(28, 72, 150, 0.38) 0%, rgba(12, 28, 62, 0.2) 45%, #050811 80%),
+    linear-gradient(180deg, #060b17 0%, #04060c 100%);
+  color: var(--funda-text-primary);
+  font-family: var(--font-satoshi), -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+  overflow-x: clip;
+  color-scheme: dark;
+}
+
+/* --------------------------------------------------------------------------
+   COOL ATMOSPHERIC BACKGROUND
+   -------------------------------------------------------------------------- */
+.ambientMeshContainer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.ambientMeshContainer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(circle at 50% 25%, black, transparent 75%);
+}
+
+.glowOrbPrimary {
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(92vw, 600px);
+  height: 360px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.22) 0%, rgba(168, 85, 247, 0.1) 45%, transparent 70%);
+  filter: blur(85px);
+  border-radius: 50%;
+}
+
+.glowOrbSecondary {
+  position: absolute;
+  top: 40%;
+  right: -90px;
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 65%);
+  filter: blur(95px);
+  border-radius: 50%;
+}
+
+.glowOrbAccent {
+  position: absolute;
+  bottom: 8%;
+  left: -80px;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.07) 0%, transparent 65%);
+  filter: blur(100px);
+  border-radius: 50%;
+}
+
+/* --------------------------------------------------------------------------
+   APP CONTAINER
+   -------------------------------------------------------------------------- */
+.appContainer {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 540px);
+  margin: 0 auto;
+  min-height: 100dvh;
+  padding: max(16px, env(safe-area-inset-top)) 20px 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* --------------------------------------------------------------------------
+   FLOATING ACTION TOAST
+   -------------------------------------------------------------------------- */
+.floatingToast {
+  position: fixed;
+  top: max(20px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.95);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 650;
+  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.35);
+  backdrop-filter: blur(16px);
+  animation: toastIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.toastIcon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, -15px) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+/* --------------------------------------------------------------------------
+   TOP HEADER (PayPal-style wordmark + frosted right capsule)
+   -------------------------------------------------------------------------- */
+.iosTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+}
+
+.brandProfile {
+  display: flex;
+  align-items: center;
+}
+
+.brandBadge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brandLetter {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #3b82f6 0%, #a855f7 100%);
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.appName {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.appNameDot {
+  color: #c084fc;
+}
+
+.liveStatusBeacon {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #34d399;
+}
+
+.beaconDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #34d399;
+  box-shadow: 0 0 8px #34d399;
+  animation: beaconPulse 2s ease-in-out infinite;
+}
+
+@keyframes beaconPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.topBarRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.frostedIconButton {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  cursor: pointer;
+  backdrop-filter: blur(20px);
+  transition: all 180ms ease;
+}
+
+.frostedIconButton:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.unreadBadgeDot {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c084fc;
+  border: 1.5px solid var(--funda-canvas);
+}
+
+.profileAvatarBtn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 750;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35);
+  transition: transform 180ms ease;
+}
+
+.profileAvatarBtn:hover {
+  transform: scale(1.06);
+}
+
+/* --------------------------------------------------------------------------
+   GREETING HEADER
+   -------------------------------------------------------------------------- */
+.greetingHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.greetingText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.todayDateText {
+  font-size: 11px;
+  font-weight: 650;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.greetingTitle {
+  margin: 0;
+  font-size: clamp(24px, 6vw, 30px);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  color: #ffffff;
+  line-height: 1.08;
+}
+
+.greetingDot {
+  color: #c084fc;
+}
+
+.tierPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   HERO: COOL SLEEK WALLET CARD (Inspired by PayPal Card Reference)
+   -------------------------------------------------------------------------- */
+.walletCardSection {
+  position: relative;
+  width: 100%;
+}
+
+/* Peeking Tabs Behind Card (like Visa / Mastercard in PayPal reference) */
+.peekingTabDeck {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 90%;
+  margin: 0 auto -18px;
+  position: relative;
+  z-index: 0;
+}
+
+.peekingTabItem {
+  height: 38px;
+  border-radius: 20px 20px 0 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  backdrop-filter: blur(12px);
+}
+
+.peekingTabItemSec {
+  height: 38px;
+  border-radius: 22px 22px 0 0;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-top: -24px;
+  backdrop-filter: blur(14px);
+}
+
+.peekingDotMaster {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 6px #f59e0b;
+}
+
+.peekingMono {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 10.5px;
+  color: #718096;
+}
+
+/* Main Hero Card */
+.proWalletHeroCard {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  border-radius: 28px;
+  padding: 22px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.3) 0%, transparent 60%),
+    linear-gradient(175deg, #111728 0%, #0b0f1a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 24px 50px rgba(0, 0, 0, 0.7),
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(24px);
+  overflow: hidden;
+}
+
+.cardInnerGlow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
+/* Card Top Row */
+.cardTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 2;
+}
+
+.cardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cardHeaderTitle {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+  letter-spacing: -0.01em;
+}
+
+.cardRightControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cardIconBtn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.cardIconBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.spinning svg {
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.virtualAccountChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  transition: all 160ms ease;
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.virtualAccountChip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.nigeriaFlagPill {
+  font-size: 12px;
+}
+
+/* Left-Aligned Balance Block */
+.balanceBlockLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  margin: 16px 0 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.balanceSubLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #7d8ea6;
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+}
+
+.balanceAmountRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.balanceValue {
+  font-size: clamp(38px, 9.5vw, 48px);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.currencyTag {
+  font-size: 14px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: -0.02em;
+}
+
+.cashbackBadgeRow {
+  margin-top: 8px;
+}
+
+.cashbackBadgePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  color: #6ee7b7;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cashbackBadgePill strong {
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   3 SIGNATURE ACTION BUTTONS (Pay, History, Add - Just like PayPal reference!)
+   -------------------------------------------------------------------------- */
+.heroThreeActionDock {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+.dockColumnItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dockIconIndicator {
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  height: 20px;
+}
+
+.whiteCurveActionBtn {
+  width: 100%;
+  height: 44px;
+  border-radius: 14px;
+  border: none;
+  background: #ffffff;
+  color: #07090e;
+  font-size: 13.5px;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: all 180ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.whiteCurveActionBtn:hover {
+  background: #f1f5f9;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.2);
+}
+
+.whiteCurveActionBtn:active {
+  transform: scale(0.97);
+}
+
+/* --------------------------------------------------------------------------
+   PRO BENTO SERVICES GRID (Calm & Understated, not shouty)
+   -------------------------------------------------------------------------- */
+.servicesGridSection {
+  position: relative;
+  scroll-margin-top: 20px;
+}
+
+.sectionHeaderRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sectionHeadingGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sectionEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #718096;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sectionMainTitle {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+
+.seeAllLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 650;
+  color: #94a3b8;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.seeAllLink:hover {
+  color: #ffffff;
+}
+
+.bentoServicesGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.bentoServiceTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 14px 6px 12px;
+  border-radius: 20px;
+  background: rgba(16, 22, 36, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  transition: all 180ms ease;
+}
+
+.bentoServiceTile:hover {
+  background: rgba(22, 30, 48, 0.85);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.bentoServiceTile:active {
+  transform: scale(0.96);
+}
+
+.tileIconBackdrop {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #e2e8f0;
+  transition: transform 160ms ease;
+}
+
+.bentoServiceTile:hover .tileIconBackdrop {
+  transform: scale(1.05);
+}
+
+.tileBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  font-size: 8px;
+  font-weight: 750;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: #3b82f6;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border: 1px solid var(--funda-canvas);
+}
+
+.tileName {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.tileSub {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--funda-text-secondary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+
+/* Subtle, Cool Pastel Icon Accents (No shouting neon) */
+.tileIconBackdrop[data-tone="violet"],
+.smartIconSquircle[data-tone="violet"],
+.sheetServiceIcon[data-tone="violet"],
+.menuItemIcon[data-tone="violet"] {
+  background: rgba(168, 85, 247, 0.12);
+  color: #d8b4fe;
+  border-color: rgba(192, 132, 252, 0.2);
+}
+
+.tileIconBackdrop[data-tone="coral"],
+.smartIconSquircle[data-tone="coral"],
+.sheetServiceIcon[data-tone="coral"],
+.menuItemIcon[data-tone="coral"] {
+  background: rgba(244, 63, 94, 0.12);
+  color: #fda4af;
+  border-color: rgba(251, 113, 133, 0.2);
+}
+
+.tileIconBackdrop[data-tone="amber"],
+.smartIconSquircle[data-tone="amber"],
+.sheetServiceIcon[data-tone="amber"],
+.menuItemIcon[data-tone="amber"] {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.2);
+}
+
+.tileIconBackdrop[data-tone="cyan"],
+.smartIconSquircle[data-tone="cyan"],
+.sheetServiceIcon[data-tone="cyan"],
+.menuItemIcon[data-tone="cyan"] {
+  background: rgba(6, 182, 212, 0.12);
+  color: #a5f3fc;
+  border-color: rgba(34, 211, 238, 0.2);
+}
+
+.tileIconBackdrop[data-tone="blue"],
+.smartIconSquircle[data-tone="blue"],
+.sheetServiceIcon[data-tone="blue"],
+.menuItemIcon[data-tone="blue"] {
+  background: rgba(59, 130, 246, 0.12);
+  color: #bfdbfe;
+  border-color: rgba(96, 165, 250, 0.2);
+}
+
+.tileIconBackdrop[data-tone="lime"],
+.smartIconSquircle[data-tone="lime"],
+.sheetServiceIcon[data-tone="lime"],
+.menuItemIcon[data-tone="lime"] {
+  background: rgba(16, 185, 129, 0.12);
+  color: #a7f3d0;
+  border-color: rgba(52, 211, 153, 0.2);
+}
+
+.tileIconBackdrop[data-tone="pink"],
+.smartIconSquircle[data-tone="pink"],
+.sheetServiceIcon[data-tone="pink"],
+.menuItemIcon[data-tone="pink"] {
+  background: rgba(236, 72, 153, 0.12);
+  color: #fbcfe8;
+  border-color: rgba(244, 114, 182, 0.2);
+}
+
+.tileIconBackdrop[data-tone="silver"],
+.smartIconSquircle[data-tone="silver"],
+.sheetServiceIcon[data-tone="silver"],
+.menuItemIcon[data-tone="silver"] {
+  background: rgba(148, 163, 184, 0.12);
+  color: #e2e8f0;
+  border-color: rgba(203, 213, 225, 0.2);
+}
+
+/* --------------------------------------------------------------------------
+   SMART REPEAT / RECENT BENEFICIARIES
+   -------------------------------------------------------------------------- */
+.smartAssistantSection {
+  position: relative;
+}
+
+.oneTapPill {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.smartRepeatScrollDeck {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.smartRepeatCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 136px;
+  padding: 13px;
+  border-radius: 20px;
+  background: rgba(16, 22, 36, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(16px);
+  transition: all 180ms ease;
+}
+
+.smartRepeatCard:hover {
+  background: rgba(22, 30, 48, 0.85);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.smartRepeatHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.smartIconSquircle {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.smartPriceTag {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.smartRepeatBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 8px 0 6px;
+}
+
+.smartTitle {
+  font-size: 11.5px;
+  font-weight: 750;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.smartRecipient {
+  font-size: 10px;
+  color: var(--funda-text-secondary);
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.smartRepeatBtn {
+  width: 100%;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.smartRepeatBtn:hover {
+  background: #ffffff;
+  color: #07080a;
+  border-color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   TRANSACTIONS SECTION (PayPal Reference Style: Transactions [View All] [Recent])
+   -------------------------------------------------------------------------- */
+.activitySection {
+  position: relative;
+  scroll-margin-top: 20px;
+}
+
+.txTogglePillGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.txTogglePill {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #8e9cb2;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.txTogglePill:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.txTogglePillActive {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.filterControlsRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.segmentedControl {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 3px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.segmentedBtn {
+  height: 30px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--funda-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.segmentedActive {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.searchBarWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  color: var(--funda-text-muted);
+  pointer-events: none;
+}
+
+.txSearchInput {
+  width: 100%;
+  height: 38px;
+  padding: 0 38px 0 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+  font-size: 12.5px;
+  outline: none;
+  transition: all 160ms ease;
+}
+
+.txSearchInput:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.clearSearchBtn {
+  position: absolute;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+/* Transaction List Cards */
+.txListContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.txItemCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+  border-radius: 18px;
+  background: rgba(16, 22, 36, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(16px);
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.txItemCard:hover {
+  background: rgba(22, 30, 48, 0.85);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.txIconWrapper {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+}
+
+.txIconWrapper[data-category="data"] { color: #d8b4fe; background: rgba(168, 85, 247, 0.12); }
+.txIconWrapper[data-category="electricity"] { color: #fde68a; background: rgba(245, 158, 11, 0.12); }
+.txIconWrapper[data-category="funding"] { color: #a7f3d0; background: rgba(16, 185, 129, 0.12); }
+.txIconWrapper[data-category="airtime"] { color: #fda4af; background: rgba(244, 63, 94, 0.12); }
+.txIconWrapper[data-category="tv"] { color: #a5f3fc; background: rgba(6, 182, 212, 0.12); }
+
+.txInfoCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.txTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.txTitle {
+  font-size: 13px;
+  font-weight: 650;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cashbackTag {
+  font-size: 9px;
+  font-weight: 700;
+  color: #34d399;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.txSubRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--funda-text-secondary);
+}
+
+.txDotSep {
+  color: var(--funda-text-muted);
+}
+
+.txAmountCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.amountPositive {
+  font-size: 13.5px;
+  font-weight: 750;
+  color: #34d399;
+}
+
+.amountNegative {
+  font-size: 13.5px;
+  font-weight: 750;
+  color: #ffffff;
+}
+
+.txStatusPill {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--funda-text-muted);
+  text-transform: capitalize;
+}
+
+.emptyStateBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 20px;
+  border-radius: 18px;
+  background: rgba(16, 22, 36, 0.4);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.emptyIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--funda-text-muted);
+  margin-bottom: 8px;
+}
+
+.emptyStateBox strong {
+  font-size: 13.5px;
+  color: #ffffff;
+}
+
+.emptyStateBox p {
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  color: var(--funda-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   SIGNATURE FLOATING iOS CAPSULE DOCK
+   -------------------------------------------------------------------------- */
+.floatingIosDock {
+  position: fixed;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  width: min(calc(100% - 32px), 480px);
+  height: 64px;
+  border-radius: 32px;
+  background: rgba(8, 12, 20, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(36px) saturate(180%);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  padding: 0 8px;
+}
+
+.dockTabBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--funda-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.dockTabBtn:hover {
+  color: #f1f5f9;
+}
+
+.dockTabActive {
+  color: #ffffff !important;
+}
+
+/* Elevated Center Floating + Button */
+.dockCenterElevatedContainer {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.dockCenterFloatingBtn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #07090e;
+  border: 3px solid rgba(8, 12, 20, 0.98);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transform: translateY(-14px);
+  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dockCenterFloatingBtn:hover {
+  transform: translateY(-16px) scale(1.05);
+}
+
+.dockCenterActive {
+  transform: translateY(-14px) rotate(45deg);
+  background: #f43f5e;
+  color: #ffffff;
+}
+
+/* Floating Popup Menu */
+.quickActionFloatingMenu {
+  position: absolute;
+  bottom: calc(100% + 20px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  padding: 8px;
+  border-radius: 20px;
+  background: rgba(12, 16, 26, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(30px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: menuIn 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.quickMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 160ms ease;
+  width: 100%;
+  text-align: left;
+}
+
+.quickMenuItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.menuItemIcon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+
+@keyframes menuIn {
+  from { opacity: 0; transform: translate(-50%, 10px) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+/* --------------------------------------------------------------------------
+   iOS BOTTOM SHEETS & MODALS
+   -------------------------------------------------------------------------- */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: overlayFade 200ms ease both;
+}
+
+@keyframes overlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.iosBottomSheet,
+.iosReceiptSheet,
+.sideDrawerSheet {
+  width: min(100%, 540px);
+  max-height: 90dvh;
+  overflow-y: auto;
+  border-radius: 30px 30px 0 0;
+  background: rgba(12, 16, 26, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: none;
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(40px);
+  padding: 12px 24px max(32px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: sheetSlideUp 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.sheetHandle {
+  width: 40px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 auto 6px;
+}
+
+.sheetHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sheetTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 750;
+  color: #ffffff;
+}
+
+.sheetSub {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--funda-text-secondary);
+}
+
+.sheetCloseBtn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.sheetCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.sheetServiceTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sheetServiceIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Virtual Dedicated Account Block */
+.virtualBankCard {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bankTag {
+  font-size: 9.5px;
+  font-weight: 750;
+  color: #94a3b8;
+  letter-spacing: 0.06em;
+}
+
+.bankDetailRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.bankLabel {
+  display: block;
+  font-size: 11px;
+  color: var(--funda-text-secondary);
+}
+
+.bankValue {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+.accountNumberCopyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.accountNumberText {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 18px;
+  font-weight: 750;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+}
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.copyBtn:hover {
+  background: #ffffff;
+  color: #07090e;
+}
+
+/* Modal Form Styles */
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.inputLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--funda-text-secondary);
+}
+
+.currencyInputBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.inputPrefix {
+  position: absolute;
+  left: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--funda-text-muted);
+}
+
+.textInput,
+.selectInput {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 14px;
+  outline: none;
+  transition: all 160ms ease;
+}
+
+.currencyInputBox .textInput {
+  padding-left: 32px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.textInput:focus,
+.selectInput:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.amountChipsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.amountChip {
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 160ms ease;
+}
+
+.amountChip:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.amountChipActive {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #07090e;
+}
+
+.networkSelectGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.networkSelectBtn {
+  height: 38px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.networkActive {
+  background: #ffffff;
+  color: #07090e;
+  border-color: #ffffff;
+}
+
+.cashbackBenefitNotice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  color: #34d399;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.submitPrimaryBtn {
+  width: 100%;
+  height: 50px;
+  border-radius: 15px;
+  border: none;
+  background: #ffffff;
+  color: #07090e;
+  font-size: 14px;
+  font-weight: 750;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: all 160ms ease;
+}
+
+.submitPrimaryBtn:hover {
+  background: #f1f5f9;
+  transform: translateY(-1px);
+}
+
+.submitPrimaryBtn:active {
+  transform: scale(0.98);
+}
+
+/* Receipt Sheet Details */
+.receiptTopHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px 0;
+}
+
+.receiptCheckIcon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  margin-bottom: 12px;
+}
+
+.receiptAmount {
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.04em;
+}
+
+.receiptStatusTag {
+  font-size: 11px;
+  font-weight: 700;
+  color: #34d399;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.receiptTitle {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--funda-text-secondary);
+}
+
+/* Electricity Token Callout */
+.tokenHighlightBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 15px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px dashed rgba(251, 191, 36, 0.3);
+}
+
+.tokenLabel {
+  font-size: 10px;
+  font-weight: 750;
+  color: #fbbf24;
+  letter-spacing: 0.08em;
+}
+
+.tokenCode {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 19px;
+  font-weight: 750;
+  color: #ffffff;
+  letter-spacing: 0.06em;
+}
+
+.copyTokenBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  background: rgba(245, 158, 11, 0.15);
+  color: #fde68a;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.copyTokenBtn:hover {
+  background: #f59e0b;
+  color: #07080a;
+}
+
+.receiptDetailsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.receiptRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--funda-text-secondary);
+}
+
+.receiptRow strong {
+  color: #ffffff;
+  font-weight: 650;
+}
+
+.receiptCopyValue {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.receiptRewardHighlight {
+  color: #34d399 !important;
+}
+
+.receiptActionsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.receiptSecondaryBtn {
+  height: 50px;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.receiptSecondaryBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Notifications Drawer */
+.drawerHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notificationList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notifCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.notifIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.notifCard strong {
+  display: block;
+  font-size: 13px;
+  color: #ffffff;
+}
+
+.notifCard p {
+  margin: 2px 0 4px;
+  font-size: 12px;
+  color: var(--funda-text-secondary);
+  line-height: 1.4;
+}
+
+.notifCard small {
+  font-size: 10px;
+  color: var(--funda-text-muted);
+}
+
+/* Profile / Account Drawer */
+.drawerProfileHero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.drawerAvatarLarge {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 750;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  margin-bottom: 10px;
+  box-shadow: 0 8px 24px rgba(244, 63, 94, 0.35);
+}
+
+.drawerUserName {
+  font-size: 18px;
+  color: #ffffff;
+}
+
+.drawerUserContact {
+  font-size: 12px;
+  color: var(--funda-text-secondary);
+  margin-top: 2px;
+}
+
+.drawerTierBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.drawerLinksList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drawerLinkItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 160ms ease;
+}
+
+.drawerLinkItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.drawerLinkChevron {
+  margin-left: auto;
+  color: var(--funda-text-muted);
+}
+
+.logoutForm {
+  margin-top: 4px;
+}
+
+.logoutBtn {
+  width: 100%;
+  height: 46px;
+  border-radius: 13px;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  background: rgba(244, 63, 94, 0.1);
+  color: #fda4af;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.logoutBtn:hover {
+  background: #e11d48;
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   DESKTOP AND RESPONSIVE BREAKPOINTS
+   -------------------------------------------------------------------------- */
+@media (min-width: 600px) {
+  .appContainer {
+    padding: 32px 24px 150px;
+  }
+
+  .iosBottomSheet,
+  .iosReceiptSheet,
+  .sideDrawerSheet {
+    border-radius: 30px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  }
+}
+
+@media (max-width: 380px) {
+  .appContainer {
+    padding-inline: 14px;
+  }
+
+  .balanceValue {
+    font-size: 32px;
+  }
+
+  .bentoServicesGrid {
+    gap: 8px;
+  }
+
+  .tileIconBackdrop {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beaconDot,
+  .floatingToast,
+  .iosBottomSheet,
+  .sideDrawerSheet,
+  .quickActionFloatingMenu {
+    animation: none !important;
+  }
+
+  .bentoServiceTile,
+  .whiteCurveActionBtn,
+  .dockCenterFloatingBtn {
+    transition: none !important;
+  }

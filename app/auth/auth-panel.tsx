@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import type { User } from "@supabase/supabase-js";
-import { ArrowRightIcon, BackIcon, CheckIcon, CloseIcon, ShieldIcon } from "../onboarding/icons";
+import type { AuthError, User } from "@supabase/supabase-js";
+import { ArrowRightIcon, BackIcon, CheckIcon, CloseIcon } from "../onboarding/icons";
 import { parseIdentifier, validFullName, validPassword, type IdentifierType } from "../../lib/auth/identifiers";
 import {
   completedOnboardingData,
@@ -19,6 +19,27 @@ import styles from "../onboarding/funda-experience.module.css";
 
 type Mode = "login" | "register";
 type Step = "identifier" | "method" | "password" | "code" | "profile" | "password-choice" | "recovery-sent" | "complete";
+
+function otpErrorMessage(error: AuthError, createUser: boolean) {
+  const detail = `${error.code ?? ""} ${error.message}`.toLowerCase();
+
+  if (error.status === 429 || detail.includes("rate limit") || detail.includes("rate_limit")) {
+    return "That button’s still warm. Give it a minute, then ask again.";
+  }
+  if (detail.includes("invalid") && detail.includes("email")) {
+    return "That email looks a little off. Give it a quick check.";
+  }
+  if (detail.includes("already") || detail.includes("registered")) {
+    return "You’re already with us. Log in and we’ll take it from there.";
+  }
+  if (detail.includes("smtp") || detail.includes("email") || detail.includes("send")) {
+    return "Email delivery is taking a breather. Try again shortly.";
+  }
+
+  return createUser
+    ? "Couldn’t send that code just yet. Try again in a moment."
+    : "Couldn’t send a code just yet. Try again in a moment.";
+}
 
 function OtpDigitBoxes({
   value,
@@ -195,9 +216,9 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         },
       };
       const result = type === "email"
-        ? await auth().signInWithOtp({ email: value, options: { ...options, emailRedirectTo: `${location.origin}/auth/callback?next=/dashboard` } })
+        ? await auth().signInWithOtp({ email: value, options })
         : await auth().signInWithOtp({ phone: value, options });
-      if (result.error) return fail(createUser ? "Couldn’t send that code. It may already be registered—try logging in." : "Couldn’t send a code. Check the details or try your password.");
+      if (result.error) return fail(otpErrorMessage(result.error, createUser));
       setStep("code");
     } catch (cause) { fail(cause instanceof Error ? cause.message : "Something got in the way. Try again."); }
     finally { setBusy(false); }
@@ -357,18 +378,24 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         <span className={styles.authWordmark}>funda.</span>
         <button type="button" onClick={onClose} className={styles.iconButton} aria-label="Close"><CloseIcon size={19} /></button>
       </div>
-      <div className={styles.previewNotice}><ShieldIcon size={15} /><span>Your details stay private and protected.</span></div>
-
       <div className={styles.authBody}>
         {step === "identifier" && (
-          <form onSubmit={begin} noValidate>
-            <span className={styles.authEyebrow}>{mode === "register" ? "Join Funda" : recovery ? "Password rescue" : "Welcome back"}</span>
-            <h2 id={`${instance}-auth-title`}>{mode === "register" ? "Let’s get you in." : recovery ? "We’ve got you." : "Good to see you again."}</h2>
-            <p>{recovery
-              ? "Drop your email or phone. Getting back in is pleasantly easy."
-              : mode === "login"
-                ? "Password if you have one. A fresh code if you don’t."
+          <form
+            className={mode === "login" && !recovery ? styles.loginForm : undefined}
+            onSubmit={begin}
+            noValidate
+          >
+            {!(mode === "login" && !recovery) && (
+              <span className={styles.authEyebrow}>{mode === "register" ? "Join Funda" : "Password rescue"}</span>
+            )}
+            <h2 id={`${instance}-auth-title`}>
+              {mode === "register" ? "Let’s get you in." : recovery ? "We’ve got you." : "Welcome back."}
+            </h2>
+            {!(mode === "login" && !recovery) && (
+              <p>{recovery
+                ? "Drop your email or phone. Getting back in is pleasantly easy."
                 : "Email or phone—whichever you actually remember."}</p>
+            )}
             <label className={styles.fieldLabel} htmlFor={`${instance}-${mode}-identifier`}>Email or phone number</label>
 
             <div style={{ position: "relative" }}>
@@ -425,14 +452,17 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
             {mode === "login" && !recovery ? (
               <div>
                 <button className={styles.authPrimary} disabled={busy} type="submit">
-                  {busy ? "One sec…" : "Log me in"} <ArrowRightIcon size={18} />
+                  {busy ? "One sec…" : "Log in"} <ArrowRightIcon size={18} />
                 </button>
-                <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void requestLoginCode()}>
-                  Send me a code instead
-                </button>
-                <button className={styles.authQuiet} type="button" onClick={() => { setRecovery(true); setPassword(""); }}>
-                  Forgot password? Easy fix.
-                </button>
+                <div className={styles.loginAltActions}>
+                  <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void requestLoginCode()}>
+                    Use a code
+                  </button>
+                  <span aria-hidden="true">·</span>
+                  <button className={styles.authQuiet} type="button" onClick={() => { setRecovery(true); setPassword(""); }}>
+                    Forgot password?
+                  </button>
+                </div>
               </div>
             ) : (
               <button className={styles.authPrimary} disabled={busy} type="submit">
