@@ -471,19 +471,6 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         {/* HERO: COOL SLEEK FUNDA WALLET CARD (Inspired by PayPal iOS Card)           */}
         {/* ========================================================================= */}
         <section className={styles.walletCardSection} aria-label="Wallet Overview">
-          {/* Subtle Peeking Top Tabs (Like Visa / Mastercard tabs in PayPal reference) */}
-          <div className={styles.peekingTabDeck}>
-            <div className={styles.peekingTabItem}>
-              <span className={styles.peekingDotMaster} />
-              <span>Dedicated Virtual Account</span>
-              <span className={styles.peekingMono}>•••• 4719</span>
-            </div>
-            <div className={styles.peekingTabItemSec}>
-              <span>⚡ Instant 3s VTU Engine</span>
-              <span className={styles.peekingMono}>ACTIVE</span>
-            </div>
-          </div>
-
           <div className={styles.proWalletHeroCard}>
             <div className={styles.cardInnerGlow} />
 
@@ -491,6 +478,9 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             <div className={styles.cardTopRow}>
               <div className={styles.cardHeaderLeft}>
                 <span className={styles.cardHeaderTitle}>Funda balance</span>
+              </div>
+
+              <div className={styles.cardRightControls}>
                 <button
                   type="button"
                   className={styles.virtualAccountChip}
@@ -501,16 +491,13 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                   <span>Wema • <strong>9920184719</strong></span>
                   <SvgIcon name={copiedField === "wema-top" ? "check" : "copy"} size={12} />
                 </button>
-              </div>
-
-              <div className={styles.cardRightControls}>
                 <button
                   type="button"
                   className={`${styles.cardIconBtn} ${isRefreshing ? styles.spinning : ""}`}
                   onClick={handleRefresh}
                   aria-label="Refresh wallet balance"
                 >
-                  <SvgIcon name="refresh" size={15} />
+                  <SvgIcon name="refresh" size={14} />
                 </button>
                 <button
                   type="button"
@@ -518,7 +505,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                   onClick={() => setShowBalance(!showBalance)}
                   aria-label={showBalance ? "Hide balance" : "Show balance"}
                 >
-                  <SvgIcon name={showBalance ? "eye" : "eye-off"} size={15} />
+                  <SvgIcon name={showBalance ? "eye" : "eye-off"} size={14} />
                 </button>
               </div>
             </div>
@@ -543,7 +530,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
               {/* Action 1: Buy Data (Primary) */}
               <div className={styles.dockColumnItem}>
                 <div className={styles.dockIconIndicator}>
-                  <SvgIcon name="data" size={17} />
+                  <SvgIcon name="data" size={16} />
                 </div>
                 <button
                   type="button"
@@ -560,7 +547,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
               {/* Action 2: Add Funds */}
               <div className={styles.dockColumnItem}>
                 <div className={styles.dockIconIndicator}>
-                  <SvgIcon name="plus" size={17} />
+                  <SvgIcon name="plus" size={16} />
                 </div>
                 <button
                   type="button"
@@ -574,7 +561,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
               {/* Action 3: Pay Bills */}
               <div className={styles.dockColumnItem}>
                 <div className={styles.dockIconIndicator}>
-                  <SvgIcon name="bolt" size={17} />
+                  <SvgIcon name="bolt" size={16} />
                 </div>
                 <button
                   type="button"
