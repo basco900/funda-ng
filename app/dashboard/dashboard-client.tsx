@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { loadBachs, type BachsCheckoutEvent } from "@bachs/js";
 import { useEffect, useState } from "react";
 import styles from "./dashboard.module.css";
 import ProfileCenter, { type ProfileCenterSettings, type ProfileCenterUser } from "./profile-center";
@@ -448,7 +449,57 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok || !body.checkoutUrl) throw new Error(body.error || "Unable to start payment.");
-      window.location.assign(body.checkoutUrl);
+
+      const reconcilePayment = async () => {
+        for (let attempt = 0; attempt < 15; attempt += 1) {
+          const statusResponse = await fetch(
+            `/api/payments/bachs/status?checkout_id=${encodeURIComponent(body.checkoutId)}`,
+            { cache: "no-store" },
+          );
+          const statusBody = await statusResponse.json().catch(() => ({}));
+          if (statusBody.status === "succeeded") {
+            setWalletBalance(Number(statusBody.balance));
+            setActionSuccessMsg(`₦${Number(statusBody.amount).toLocaleString()} added to your wallet.`);
+            window.setTimeout(() => setActionSuccessMsg(null), 5000);
+            return;
+          }
+          if (["failed", "underpaid", "expired"].includes(statusBody.status)) {
+            setFundingError(`Payment ${statusBody.status}. Your wallet was not credited.`);
+            setShowFundModal(true);
+            return;
+          }
+          await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        }
+        setFundingError("Payment is still processing. Your wallet will update after confirmation.");
+      };
+
+      const handleCheckoutEvent = (checkoutEvent: BachsCheckoutEvent) => {
+        if (checkoutEvent.type === "checkout.completed") {
+          setActionSuccessMsg("Payment received. Confirming your wallet credit…");
+          void reconcilePayment();
+        } else if (checkoutEvent.type === "checkout.failed" || checkoutEvent.type === "checkout.expired") {
+          setFundingError(checkoutEvent.type === "checkout.expired"
+            ? "Checkout expired. Please start again."
+            : "Payment failed. Please try again.");
+          setShowFundModal(true);
+        } else if (checkoutEvent.type === "checkout.error") {
+          const message = typeof checkoutEvent.data.message === "string"
+            ? checkoutEvent.data.message
+            : "Unable to display the secure checkout.";
+          setFundingError(message);
+          setShowFundModal(true);
+        }
+      };
+
+      const bachs = await loadBachs();
+      bachs.Initialize();
+      await bachs.Checkout.open({
+        checkoutUrl: body.checkoutUrl,
+        onEvent: handleCheckoutEvent,
+        options: { showCloseButton: true, autoCloseOnComplete: true },
+      });
+      setShowFundModal(false);
+      setFundingBusy(false);
     } catch (error) {
       setFundingBusy(false);
       setFundingError(error instanceof Error ? error.message : "Unable to start payment.");
