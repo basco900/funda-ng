@@ -14,8 +14,8 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({}));
     const amount = Number(body.amount);
-    if (!Number.isFinite(amount) || amount < 100 || amount > 500_000 || Math.round(amount * 100) !== amount * 100) {
-      return Response.json({ error: "Funding amount must be between ₦100 and ₦500,000." }, { status: 400 });
+    if (!Number.isFinite(amount) || amount < 1_000 || amount > 500_000 || Math.round(amount * 100) !== amount * 100) {
+      return Response.json({ error: "Funding amount must be between ₦1,000 and ₦500,000." }, { status: 400 });
     }
 
     const amountText = amount.toFixed(2);

@@ -1086,7 +1086,9 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
                     value={fundAmount}
                     onChange={(e) => setFundAmount(e.target.value)}
                     placeholder="5,000"
-                    min="100"
+                    min="1000"
+                    max="500000"
+                    step="0.01"
                     className={styles.textInput}
                     required
                   />

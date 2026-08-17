@@ -56,9 +56,21 @@ export async function createBachsCheckout(input: {
     signal: AbortSignal.timeout(20_000),
   });
 
-  const body = await response.json().catch(() => null) as { data?: BachsCheckout; message?: string; error?: { message?: string } } | BachsCheckout | null;
+  const body = await response.json().catch(() => null) as {
+    data?: BachsCheckout;
+    detail?: string;
+    message?: string;
+    error?: string | { message?: string };
+    errors?: Array<{ field?: string; message?: string }>;
+  } | BachsCheckout | null;
   if (!response.ok || !body) {
-    const message = body && "error" in body ? body.error?.message : body && "message" in body ? body.message : undefined;
+    const errorValue = body && "error" in body ? body.error : undefined;
+    const fieldError = body && "errors" in body ? body.errors?.find((item) => item.message)?.message : undefined;
+    const message = body && "detail" in body && body.detail
+      ? body.detail
+      : typeof errorValue === "string"
+        ? errorValue
+        : errorValue?.message || (body && "message" in body ? body.message : undefined) || fieldError;
     throw new Error(message || `Bachs checkout failed (${response.status}).`);
   }
   const checkout = "data" in body && body.data ? body.data : body as BachsCheckout;
