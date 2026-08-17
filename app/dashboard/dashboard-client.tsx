@@ -1,19 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./dashboard.module.css";
-import { signOut } from "./actions";
+import ProfileCenter, { type ProfileCenterSettings, type ProfileCenterUser } from "./profile-center";
 
 export interface DashboardClientProps {
-  user: {
-    id: string;
-    email?: string | null;
-    phone?: string | null;
-    fullName: string;
+  user: ProfileCenterUser & {
     firstName: string;
-    initials: string;
   };
+  settings: ProfileCenterSettings;
+  initialWalletBalance: number;
 }
 
 type ServiceItem = {
@@ -191,6 +188,13 @@ function SvgIcon({ name, size = 20, className }: { name: string; size?: number; 
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       );
+    case "wallet":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M20 7V6a2 2 0 0 0-2-2H5a3 3 0 0 0 0 6h15v8a2 2 0 0 1-2 2H5a3 3 0 0 1-3-3V7" />
+          <path d="M16 14h.01" />
+        </svg>
+      );
     case "clock":
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -319,8 +323,8 @@ function SvgIcon({ name, size = 20, className }: { name: string; size?: number; 
   }
 }
 
-export default function DashboardClient({ user }: DashboardClientProps) {
-  const [walletBalance, setWalletBalance] = useState(14850.0);
+export default function DashboardClient({ user, settings, initialWalletBalance }: DashboardClientProps) {
+  const [walletBalance, setWalletBalance] = useState(initialWalletBalance);
   const [cashbackBalance] = useState(420.0);
   const [showBalance, setShowBalance] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -339,9 +343,51 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
   // Form states for modals
   const [fundAmount, setFundAmount] = useState("5000");
+  const [fundingBusy, setFundingBusy] = useState(false);
+  const [fundingError, setFundingError] = useState<string | null>(null);
   const [serviceRecipient, setServiceRecipient] = useState("");
   const [servicePackage, setServicePackage] = useState("1000");
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const fundingState = params.get("funding");
+    const checkoutId = params.get("checkout_id");
+    if (fundingState === "cancelled") {
+      window.setTimeout(() => {
+        setFundingError("Payment was cancelled. Your wallet was not charged.");
+        setShowFundModal(true);
+      }, 0);
+      window.history.replaceState(null, "", "/dashboard");
+      return;
+    }
+    if (fundingState !== "return" || !checkoutId) return;
+
+    let cancelled = false;
+    let attempts = 0;
+    const checkStatus = async () => {
+      attempts += 1;
+      const response = await fetch(`/api/payments/bachs/status?checkout_id=${encodeURIComponent(checkoutId)}`, { cache: "no-store" });
+      const body = await response.json().catch(() => ({}));
+      if (cancelled) return;
+      if (body.status === "succeeded") {
+        setWalletBalance(Number(body.balance));
+        setActionSuccessMsg(`₦${Number(body.amount).toLocaleString()} added to your wallet.`);
+        window.history.replaceState(null, "", "/dashboard");
+        window.setTimeout(() => setActionSuccessMsg(null), 5000);
+        return;
+      }
+      if (["failed", "underpaid", "expired"].includes(body.status)) {
+        setFundingError(`Payment ${body.status}. Your wallet was not credited.`);
+        window.history.replaceState(null, "", "/dashboard");
+        return;
+      }
+      if (attempts < 15) window.setTimeout(checkStatus, 2000);
+      else setFundingError("Payment is still processing. Your wallet will update after confirmation.");
+    };
+    void checkStatus();
+    return () => { cancelled = true; };
+  }, []);
 
   // Filter transactions
   const filteredTransactions = RECENT_TRANSACTIONS.filter((tx) => {
@@ -390,9 +436,24 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     }, 1200);
   };
 
-  const formattedBalance = showBalance
-    ? `₦${walletBalance.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : `₦••••••••`;
+  const handleFundWallet = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setFundingBusy(true);
+    setFundingError(null);
+    try {
+      const response = await fetch("/api/payments/bachs/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: Number(fundAmount) }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok || !body.checkoutUrl) throw new Error(body.error || "Unable to start payment.");
+      window.location.assign(body.checkoutUrl);
+    } catch (error) {
+      setFundingBusy(false);
+      setFundingError(error instanceof Error ? error.message : "Unable to start payment.");
+    }
+  };
 
   return (
     <div className={styles.iosViewport}>
@@ -402,6 +463,31 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         <div className={styles.glowOrbSecondary} />
         <div className={styles.glowOrbAccent} />
       </div>
+
+      <header className={styles.desktopHomepageNav}>
+        <Link href="/" className={styles.desktopWordmark} aria-label="Funda home">
+          funda<span>.</span>
+        </Link>
+        <div className={styles.desktopNavActions}>
+          <button
+            type="button"
+            className={styles.frostedIconButton}
+            onClick={() => setShowNotificationDrawer(true)}
+            aria-label="Notifications"
+          >
+            <SvgIcon name="bell" size={19} />
+            <span className={styles.unreadBadgeDot} />
+          </button>
+          <button
+            type="button"
+            className={styles.profileAvatarBtn}
+            onClick={() => setShowAccountDrawer(true)}
+            aria-label="Profile and settings"
+          >
+            <span>{user.initials}</span>
+          </button>
+        </div>
+      </header>
 
       {/* Action Success Toast */}
       {actionSuccessMsg && (
@@ -450,7 +536,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           </div>
         </header>
 
-        {/* Greeting Header */}
+        {/* Greeting */}
         <section className={styles.greetingHeader}>
           <div className={styles.greetingText}>
             <span className={styles.todayDateText}>
@@ -468,28 +554,37 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         </section>
 
         {/* ========================================================================= */}
-        {/* HERO: COOL SLEEK FUNDA WALLET CARD (Inspired by PayPal iOS Card)           */}
+        {/* HERO: COOL SLEEK FUNDA WALLET CARD                                        */}
         {/* ========================================================================= */}
         <section className={styles.walletCardSection} aria-label="Wallet Overview">
           <div className={styles.proWalletHeroCard}>
             <div className={styles.cardInnerGlow} />
 
-            {/* Card Header Row: Funda balance + Refresh & Eye Controls */}
+            {/* Card Header Row: Funda balance + Dedicated Account Chip + Controls */}
             <div className={styles.cardTopRow}>
-              <div className={styles.cardHeaderLeft}>
-                <span className={styles.cardHeaderTitle}>Funda balance</span>
-              </div>
+              <button
+                type="button"
+                className={styles.virtualAccountChip}
+                onClick={() => copyToClipboard("9920184719", "wema-top")}
+                aria-label="Copy virtual bank account number"
+              >
+                <span className={styles.nigeriaFlagPill}>🇳🇬</span>
+                <span>Wema • <strong>9920184719</strong></span>
+                <SvgIcon name={copiedField === "wema-top" ? "check" : "copy"} size={12} />
+              </button>
 
               <div className={styles.cardRightControls}>
                 <button
                   type="button"
-                  className={styles.virtualAccountChip}
-                  onClick={() => copyToClipboard("9920184719", "wema-top")}
-                  aria-label="Copy virtual bank account number"
+                  className={styles.cardHistorySubtleBtn}
+                  onClick={() => {
+                    const el = document.getElementById("transactions-section-anchor");
+                    if (el) el.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  aria-label="View transaction history"
                 >
-                  <span className={styles.nigeriaFlagPill}>🇳🇬</span>
-                  <span>Wema • <strong>9920184719</strong></span>
-                  <SvgIcon name={copiedField === "wema-top" ? "check" : "copy"} size={12} />
+                  <SvgIcon name="clock" size={13} />
+                  <span>History</span>
                 </button>
                 <button
                   type="button"
@@ -510,70 +605,53 @@ export default function DashboardClient({ user }: DashboardClientProps) {
               </div>
             </div>
 
-            {/* Left-Aligned Balance Readout */}
-            <div className={styles.balanceBlockLeft}>
+            {/* Balance Left-Aligned Readout */}
+            <div className={styles.balanceLeftBlock}>
               <span className={styles.balanceSubLabel}>Available Balance</span>
               <div className={styles.balanceAmountRow}>
-                <strong className={styles.balanceValue}>{showBalance ? "14,850.00" : "••••••••"}</strong>
-                <span className={styles.currencyTag}>NGN</span>
+                <span className={styles.currencyPrefix}>₦</span>
+                <strong className={styles.balanceValue}>
+                  {showBalance
+                    ? walletBalance.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    : "••••••••"}
+                </strong>
               </div>
               <div className={styles.cashbackBadgeRow}>
                 <span className={styles.cashbackBadgePill}>
                   <SvgIcon name="sparkles" size={11} />
-                  <span>Cashback balance: <strong>₦{cashbackBalance.toFixed(2)}</strong></span>
+                  <span>Cashback: <strong>₦{cashbackBalance.toFixed(2)}</strong></span>
                 </span>
               </div>
             </div>
 
-            {/* 3 Signature Curved Action Tabs: Buy Data (Primary), Add Funds, Pay Bills */}
-            <div className={styles.heroThreeActionDock}>
-              {/* Action 1: Buy Data (Primary) */}
-              <div className={styles.dockColumnItem}>
-                <div className={styles.dockIconIndicator}>
-                  <SvgIcon name="data" size={16} />
-                </div>
-                <button
-                  type="button"
-                  className={styles.whiteCurveActionBtn}
-                  onClick={() => {
-                    const dataService = SERVICES.find(s => s.id === "data") || SERVICES[0];
-                    setShowQuickServiceModal(dataService);
-                  }}
-                >
-                  <span>Buy Data</span>
-                </button>
-              </div>
+            {/* Wallet actions: primary funding action, then purchase shortcuts */}
+            <div className={styles.heroPrimaryActionRow}>
+              <button
+                type="button"
+                className={styles.fundWalletPrimaryBtn}
+                onClick={() => setShowFundModal(true)}
+              >
+                <span className={styles.actionBtnIcon}><SvgIcon name="wallet" size={18} /></span>
+                <span>Fund Wallet</span>
+              </button>
 
-              {/* Action 2: Add Funds */}
-              <div className={styles.dockColumnItem}>
-                <div className={styles.dockIconIndicator}>
-                  <SvgIcon name="plus" size={16} />
-                </div>
-                <button
-                  type="button"
-                  className={styles.whiteCurveActionBtn}
-                  onClick={() => setShowFundModal(true)}
-                >
-                  <span>Add</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                className={styles.walletSecondaryActionBtn}
+                onClick={() => setShowQuickServiceModal(SERVICES.find((service) => service.id === "data") || SERVICES[0])}
+              >
+                <span className={styles.actionBtnIcon}><SvgIcon name="data" size={17} /></span>
+                <span>Buy Data</span>
+              </button>
 
-              {/* Action 3: Pay Bills */}
-              <div className={styles.dockColumnItem}>
-                <div className={styles.dockIconIndicator}>
-                  <SvgIcon name="bolt" size={16} />
-                </div>
-                <button
-                  type="button"
-                  className={styles.whiteCurveActionBtn}
-                  onClick={() => {
-                    const el = document.getElementById("services-grid-anchor");
-                    if (el) el.scrollIntoView({ behavior: "smooth" });
-                  }}
-                >
-                  <span>Pay Bills</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                className={styles.walletSecondaryActionBtn}
+                onClick={() => setShowQuickServiceModal(SERVICES.find((service) => service.id === "airtime") || SERVICES[1])}
+              >
+                <span className={styles.actionBtnIcon}><SvgIcon name="airtime" size={17} /></span>
+                <span>Buy Airtime</span>
+              </button>
             </div>
           </div>
         </section>
@@ -811,6 +889,14 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       {/* ========================================================================= */}
       {/* FLOATING iOS CAPSULE DOCK                                                 */}
       {/* ========================================================================= */}
+      {showQuickActionDockMenu && (
+        <div
+          className={styles.dockMenuOverlay}
+          onClick={() => setShowQuickActionDockMenu(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <nav className={styles.floatingIosDock} aria-label="Main Navigation">
         <button
           type="button"
@@ -820,8 +906,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         >
-          <SvgIcon name="home" size={22} />
-          <span>Home</span>
+          <span className={styles.dockIconWrapper}>
+            <SvgIcon name="home" size={20} />
+          </span>
+          <span className={styles.dockLabel}>Home</span>
         </button>
 
         <button
@@ -833,8 +921,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             if (el) el.scrollIntoView({ behavior: "smooth" });
           }}
         >
-          <SvgIcon name="grid" size={22} />
-          <span>Services</span>
+          <span className={styles.dockIconWrapper}>
+            <SvgIcon name="grid" size={20} />
+          </span>
+          <span className={styles.dockLabel}>Services</span>
         </button>
 
         {/* Elevated Floating + Action Button (Opens Quick Bill Purchase Menu) */}
@@ -845,12 +935,16 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             onClick={() => setShowQuickActionDockMenu(!showQuickActionDockMenu)}
             aria-label="Quick Pay"
           >
-            <SvgIcon name="plus" size={26} />
+            <SvgIcon name="plus" size={24} />
           </button>
 
           {/* Floating Popup Menu from Central + Button */}
           {showQuickActionDockMenu && (
             <div className={styles.quickActionFloatingMenu}>
+              <div className={styles.quickMenuHeader}>
+                <span className={styles.quickMenuTitle}>Quick Actions</span>
+                <span className={styles.quickMenuBadge}>Instant</span>
+              </div>
               <button
                 type="button"
                 className={styles.quickMenuItem}
@@ -860,7 +954,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 }}
               >
                 <span className={styles.menuItemIcon} data-tone="violet"><SvgIcon name="data" size={17} /></span>
-                <span>Buy Data Bundle</span>
+                <div className={styles.quickMenuItemText}>
+                  <span className={styles.quickMenuItemTitle}>Buy Data Bundle</span>
+                  <span className={styles.quickMenuItemSub}>SME & Direct data</span>
+                </div>
+                <span className={styles.quickMenuChevron}><SvgIcon name="chevron-right" size={14} /></span>
               </button>
               <button
                 type="button"
@@ -871,7 +969,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 }}
               >
                 <span className={styles.menuItemIcon} data-tone="coral"><SvgIcon name="airtime" size={17} /></span>
-                <span>Buy Airtime Top-up</span>
+                <div className={styles.quickMenuItemText}>
+                  <span className={styles.quickMenuItemTitle}>Buy Airtime Top-up</span>
+                  <span className={styles.quickMenuItemSub}>Instant VTU with cashback</span>
+                </div>
+                <span className={styles.quickMenuChevron}><SvgIcon name="chevron-right" size={14} /></span>
               </button>
               <button
                 type="button"
@@ -882,7 +984,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 }}
               >
                 <span className={styles.menuItemIcon} data-tone="amber"><SvgIcon name="bolt" size={17} /></span>
-                <span>Pay Electricity Token</span>
+                <div className={styles.quickMenuItemText}>
+                  <span className={styles.quickMenuItemTitle}>Pay Electricity</span>
+                  <span className={styles.quickMenuItemSub}>Prepaid & Postpaid</span>
+                </div>
+                <span className={styles.quickMenuChevron}><SvgIcon name="chevron-right" size={14} /></span>
               </button>
               <button
                 type="button"
@@ -893,7 +999,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 }}
               >
                 <span className={styles.menuItemIcon} data-tone="blue"><SvgIcon name="plus" size={17} /></span>
-                <span>Fund Funda Wallet</span>
+                <div className={styles.quickMenuItemText}>
+                  <span className={styles.quickMenuItemTitle}>Fund Funda Wallet</span>
+                  <span className={styles.quickMenuItemSub}>Bank transfer or card</span>
+                </div>
+                <span className={styles.quickMenuChevron}><SvgIcon name="chevron-right" size={14} /></span>
               </button>
             </div>
           )}
@@ -908,8 +1018,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             if (el) el.scrollIntoView({ behavior: "smooth" });
           }}
         >
-          <SvgIcon name="clock" size={22} />
-          <span>History</span>
+          <span className={styles.dockIconWrapper}>
+            <SvgIcon name="clock" size={20} />
+          </span>
+          <span className={styles.dockLabel}>History</span>
         </button>
 
         <button
@@ -920,8 +1032,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             setShowAccountDrawer(true);
           }}
         >
-          <SvgIcon name="user" size={22} />
-          <span>Profile</span>
+          <span className={styles.dockIconWrapper}>
+            <SvgIcon name="user" size={20} />
+          </span>
+          <span className={styles.dockLabel}>Profile</span>
         </button>
       </nav>
 
@@ -946,38 +1060,23 @@ export default function DashboardClient({ user }: DashboardClientProps) {
               </button>
             </div>
 
-            {/* Virtual Dedicated Account Block */}
+            {/* Bachs hosted payment assurance */}
             <div className={styles.virtualBankCard}>
-              <span className={styles.bankTag}>DEDICATED AUTOMATED VIRTUAL ACCOUNT</span>
+              <span className={styles.bankTag}>SECURE CHECKOUT POWERED BY BACHS</span>
               <div className={styles.bankDetailRow}>
                 <div>
-                  <span className={styles.bankLabel}>Bank</span>
-                  <strong className={styles.bankValue}>Wema Bank / Moniepoint</strong>
+                  <span className={styles.bankLabel}>Payment methods</span>
+                  <strong className={styles.bankValue}>Card, bank transfer and supported local methods</strong>
                 </div>
                 <div>
-                  <span className={styles.bankLabel}>Beneficiary Name</span>
-                  <strong className={styles.bankValue}>Funda / {user.fullName}</strong>
+                  <span className={styles.bankLabel}>Wallet owner</span>
+                  <strong className={styles.bankValue}>{user.fullName}</strong>
                 </div>
-              </div>
-
-              <div className={styles.accountNumberCopyRow}>
-                <div>
-                  <span className={styles.bankLabel}>Account Number</span>
-                  <strong className={styles.accountNumberText}>9920 184 719</strong>
-                </div>
-                <button
-                  type="button"
-                  className={styles.copyBtn}
-                  onClick={() => copyToClipboard("9920184719", "fund-account")}
-                >
-                  <SvgIcon name={copiedField === "fund-account" ? "check" : "copy"} size={16} />
-                  <span>{copiedField === "fund-account" ? "Copied!" : "Copy"}</span>
-                </button>
               </div>
             </div>
 
             {/* Instant Card / Online Top Up */}
-            <form onSubmit={handleSimulatePayment} className={styles.modalForm}>
+            <form onSubmit={handleFundWallet} className={styles.modalForm}>
               <label className={styles.inputLabel}>
                 <span>Or Enter Amount to Top-up via Card</span>
                 <div className={styles.currencyInputBox}>
@@ -1008,8 +1107,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 ))}
               </div>
 
-              <button type="submit" className={styles.submitPrimaryBtn}>
-                Fund ₦{Number(fundAmount || 0).toLocaleString()} Now ⚡
+              {fundingError && <div className={styles.paymentError} role="alert">{fundingError}</div>}
+
+              <button type="submit" className={styles.submitPrimaryBtn} disabled={fundingBusy}>
+                {fundingBusy ? "Opening secure checkout…" : `Fund ₦${Number(fundAmount || 0).toLocaleString()} with Bachs`}
               </button>
             </form>
           </div>
@@ -1227,53 +1328,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       {/* ========================================================================= */}
       {showAccountDrawer && (
         <div className={styles.modalOverlay} onClick={() => setShowAccountDrawer(false)}>
-          <div className={styles.sideDrawerSheet} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.drawerHeaderRow}>
-              <h3 className={styles.sheetTitle}>Funda Profile</h3>
-              <button
-                type="button"
-                className={styles.sheetCloseBtn}
-                onClick={() => setShowAccountDrawer(false)}
-              >
-                <SvgIcon name="close" size={16} />
-              </button>
-            </div>
-
-            <div className={styles.drawerProfileHero}>
-              <div className={styles.drawerAvatarLarge}>{user.initials}</div>
-              <strong className={styles.drawerUserName}>{user.fullName}</strong>
-              <span className={styles.drawerUserContact}>{user.email || user.phone || "Funda User"}</span>
-              <div className={styles.drawerTierBadge}>
-                <SvgIcon name="shield" size={13} />
-                <span>Tier 2 Verified Member</span>
-              </div>
-            </div>
-
-            {/* Account Action Links */}
-            <div className={styles.drawerLinksList}>
-              <Link href="/policies" className={styles.drawerLinkItem}>
-                <SvgIcon name="shield" size={18} />
-                <span>Privacy & Security</span>
-                <SvgIcon name="chevron-right" size={14} className={styles.drawerLinkChevron} />
-              </Link>
-              <Link href="/faq" className={styles.drawerLinkItem}>
-                <SvgIcon name="sparkles" size={18} />
-                <span>Help & FAQ</span>
-                <SvgIcon name="chevron-right" size={14} className={styles.drawerLinkChevron} />
-              </Link>
-              <Link href="/test" className={styles.drawerLinkItem}>
-                <SvgIcon name="grid" size={18} />
-                <span>Developer Console</span>
-                <SvgIcon name="chevron-right" size={14} className={styles.drawerLinkChevron} />
-              </Link>
-            </div>
-
-            <form action={signOut} className={styles.logoutForm}>
-              <button type="submit" className={styles.logoutBtn}>
-                Sign Out of Funda
-              </button>
-            </form>
-          </div>
+          <ProfileCenter user={user} settings={settings} onClose={() => setShowAccountDrawer(false)} />
         </div>
       )}
     </div>

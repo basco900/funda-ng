@@ -1,5 +1,5 @@
 /* ==========================================================================
-   FUNDA PRO iOS DASHBOARD - COOL MINIMALIST AESTHETIC
+   FUNDA PRO iOS DASHBOARD - CLEAN SLATE DARK
    ========================================================================== */
 
 .iosViewport {
@@ -7,23 +7,34 @@
   --funda-graphite: #0c111e;
   --funda-surface: rgba(16, 22, 36, 0.85);
   --funda-surface-hover: rgba(24, 32, 52, 0.95);
-  --funda-border: rgba(255, 255, 255, 0.09);
+  --funda-border: rgba(255, 255, 255, 0.08);
   --funda-text-primary: #ffffff;
   --funda-text-secondary: #8e9cb2;
   --funda-text-muted: #57657d;
 
+  --accent-violet: #a855f7;
+  --accent-violet-bright: #c084fc;
+  --accent-cyan: #06b6d4;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+  --accent-blue: #3b82f6;
+
   position: relative;
   min-height: 100dvh;
-  background-color: #050811;
+  background-color: var(--funda-canvas);
   background-image:
-    radial-gradient(ellipse at 50% -10%, rgba(28, 72, 150, 0.38) 0%, rgba(12, 28, 62, 0.2) 45%, #050811 80%),
+    radial-gradient(ellipse at 50% -10%, rgba(28, 72, 150, 0.35) 0%, rgba(12, 28, 62, 0.18) 45%, #050811 80%),
     linear-gradient(180deg, #060b17 0%, #04060c 100%);
-  color: #ffffff;
+  color: var(--funda-text-primary);
   font-family: var(--font-satoshi), -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
   overflow-x: clip;
   color-scheme: dark;
 }
 
+/* --------------------------------------------------------------------------
+   COOL ATMOSPHERIC BACKGROUND
+   -------------------------------------------------------------------------- */
 .ambientMeshContainer {
   position: fixed;
   inset: 0;
@@ -36,7 +47,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.05;
+  opacity: 0.04;
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
@@ -50,8 +61,8 @@
   left: 50%;
   transform: translateX(-50%);
   width: min(92vw, 600px);
-  height: 360px;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.22) 0%, rgba(168, 85, 247, 0.1) 45%, transparent 70%);
+  height: 340px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, rgba(168, 85, 247, 0.08) 45%, transparent 70%);
   filter: blur(85px);
   border-radius: 50%;
 }
@@ -60,9 +71,9 @@
   position: absolute;
   top: 40%;
   right: -90px;
-  width: 360px;
-  height: 360px;
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 65%);
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.06) 0%, transparent 65%);
   filter: blur(95px);
   border-radius: 50%;
 }
@@ -71,13 +82,16 @@
   position: absolute;
   bottom: 8%;
   left: -80px;
-  width: 340px;
-  height: 340px;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.07) 0%, transparent 65%);
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.06) 0%, transparent 65%);
   filter: blur(100px);
   border-radius: 50%;
 }
 
+/* --------------------------------------------------------------------------
+   APP CONTAINER
+   -------------------------------------------------------------------------- */
 .appContainer {
   position: relative;
   z-index: 1;
@@ -87,9 +101,16 @@
   padding: max(16px, env(safe-area-inset-top)) 20px 140px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
+.desktopHomepageNav {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   FLOATING ACTION TOAST
+   -------------------------------------------------------------------------- */
 .floatingToast {
   position: fixed;
   top: max(20px, env(safe-area-inset-top));
@@ -124,6 +145,9 @@
   to { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
 
+/* --------------------------------------------------------------------------
+   TOP HEADER
+   -------------------------------------------------------------------------- */
 .iosTopBar {
   display: flex;
   align-items: center;
@@ -154,7 +178,7 @@
   font-weight: 800;
   letter-spacing: -0.05em;
   box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .brandText {
@@ -211,8 +235,8 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   color: #cbd5e1;
   cursor: pointer;
   backdrop-filter: blur(20px);
@@ -220,7 +244,7 @@
 }
 
 .frostedIconButton:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
 }
 
@@ -232,7 +256,7 @@
   height: 7px;
   border-radius: 50%;
   background: #c084fc;
-  border: 1.5px solid #050811;
+  border: 1.5px solid var(--funda-canvas);
 }
 
 .profileAvatarBtn {
@@ -246,7 +270,7 @@
   color: #ffffff;
   font-size: 13px;
   font-weight: 750;
-  border: 2px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35);
   transition: transform 180ms ease;
@@ -256,11 +280,12 @@
   transform: scale(1.06);
 }
 
+/* --------------------------------------------------------------------------
+   GREETING HEADER (Hi, Abbas. - No tier pill)
+   -------------------------------------------------------------------------- */
 .greetingHeader {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
+  align-items: flex-start;
   padding-top: 2px;
 }
 
@@ -280,7 +305,7 @@
 
 .greetingTitle {
   margin: 0;
-  font-size: clamp(24px, 6vw, 30px);
+  font-size: clamp(24px, 6vw, 28px);
   font-weight: 750;
   letter-spacing: -0.04em;
   color: #ffffff;
@@ -292,7 +317,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   HERO: COOL SLEEK FUNDA WALLET CARD
+   HERO: SOFT, CALM WALLET CARD (Left Aligned, Gentle Borders & Shadows)
    -------------------------------------------------------------------------- */
 .walletCardSection {
   position: relative;
@@ -301,20 +326,18 @@
 
 .proWalletHeroCard {
   position: relative;
-  z-index: 1;
   width: 100%;
-  border-radius: 28px;
-  padding: 22px 20px 18px;
+  border-radius: 26px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.3) 0%, transparent 60%),
-    linear-gradient(175deg, #111728 0%, #0b0f1a 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+    radial-gradient(circle at 10% 10%, rgba(30, 58, 138, 0.22) 0%, transparent 50%),
+    linear-gradient(170deg, #101422 0%, #0a0d16 100%);
+  border: 1px solid rgba(255, 255, 255, 0.045);
   box-shadow:
-    0 24px 50px rgba(0, 0, 0, 0.7),
-    0 4px 16px rgba(0, 0, 0, 0.4),
-    inset 0 1px 1px rgba(255, 255, 255, 0.15);
+    0 18px 42px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
   backdrop-filter: blur(24px);
   overflow: hidden;
 }
@@ -325,9 +348,10 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  background: linear-gradient(90deg, transparent 8%, rgba(255, 255, 255, 0.075), transparent 92%);
 }
 
+/* Card Top Row */
 .cardTopRow {
   display: flex;
   align-items: center;
@@ -336,33 +360,15 @@
   z-index: 2;
 }
 
-.cardHeaderLeft {
-  display: flex;
-  align-items: center;
-}
-
-.cardHeaderTitle {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #cbd5e1;
-  letter-spacing: -0.01em;
-}
-
-.cardRightControls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .virtualAccountChip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 11px;
+  gap: 7px;
+  padding: 5px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.045);
+  color: #cbd5e1;
   font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
@@ -372,29 +378,56 @@
 }
 
 .virtualAccountChip:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .nigeriaFlagPill {
   font-size: 12px;
 }
 
+.cardRightControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cardHistorySubtleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.045);
+  color: #8e9cb2;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.cardHistorySubtleBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
 .cardIconBtn {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.045);
+  color: #8e9cb2;
   cursor: pointer;
   transition: all 160ms ease;
 }
 
 .cardIconBtn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
 }
 
@@ -406,7 +439,8 @@
   to { transform: rotate(360deg); }
 }
 
-.balanceBlockLeft {
+/* Balance Left-Aligned Block */
+.balanceLeftBlock {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -421,33 +455,32 @@
   font-weight: 500;
   color: #7d8ea6;
   letter-spacing: 0.02em;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .balanceAmountRow {
   display: flex;
   align-items: baseline;
-  justify-content: flex-start;
-  gap: 8px;
+  gap: 4px;
+}
+
+.currencyPrefix {
+  font-size: 26px;
+  font-weight: 700;
+  color: #8e9cb2;
+  letter-spacing: -0.03em;
 }
 
 .balanceValue {
-  font-size: clamp(38px, 9.5vw, 48px);
+  font-size: clamp(34px, 8.5vw, 44px);
   font-weight: 800;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.04em;
   color: #ffffff;
   line-height: 1;
 }
 
-.currencyTag {
-  font-size: 14px;
-  font-weight: 700;
-  color: #94a3b8;
-  letter-spacing: -0.02em;
-}
-
 .cashbackBadgeRow {
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .cashbackBadgePill {
@@ -456,8 +489,8 @@
   gap: 5px;
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(52, 211, 153, 0.25);
+  background: rgba(16, 185, 129, 0.09);
+  border: 1px solid rgba(52, 211, 153, 0.2);
   color: #6ee7b7;
   font-size: 11px;
   font-weight: 600;
@@ -467,64 +500,123 @@
   color: #ffffff;
 }
 
-.heroThreeActionDock {
+/* Primary Action Buttons: [ Buy Data ] and [ + Add Funds ] */
+.heroPrimaryActionRow {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1.7fr 1fr 1fr;
   gap: 10px;
   position: relative;
   z-index: 2;
   width: 100%;
 }
 
-.dockColumnItem {
+.fundWalletPrimaryBtn {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  width: 100%;
+  justify-content: center;
+  gap: 9px;
+  height: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #07090e;
+  font-size: 14px;
+  font-weight: 780;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+  transition: background 160ms ease, transform 160ms ease;
 }
 
-.dockIconIndicator {
-  display: grid;
-  place-items: center;
-  color: #cbd5e1;
-  margin-bottom: 6px;
-  height: 20px;
+.fundWalletPrimaryBtn:hover {
+  background: #eef4fb;
+  transform: translateY(-1px);
 }
 
-.whiteCurveActionBtn {
-  width: 100%;
-  height: 44px;
+.walletSecondaryActionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  border: 1px solid rgba(147, 197, 253, 0.16);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #f8fafc;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.walletSecondaryActionBtn:hover {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(96, 165, 250, 0.3);
+  transform: translateY(-1px);
+}
+
+.primaryBuyDataBtn {
+  height: 46px;
   border-radius: 14px;
   border: none;
   background: #ffffff;
   color: #07090e;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 750;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  transition: all 180ms ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  transition: all 160ms ease;
 }
 
-.whiteCurveActionBtn:hover {
+.primaryBuyDataBtn:hover {
   background: #f1f5f9;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
-.whiteCurveActionBtn:active {
-  transform: scale(0.97);
+.primaryBuyDataBtn:active {
+  transform: scale(0.98);
+}
+
+.primaryAddFundsBtn {
+  height: 46px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 650;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 160ms ease;
+}
+
+.primaryAddFundsBtn:hover {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.actionBtnIcon {
+  display: grid;
+  place-items: center;
 }
 
 /* --------------------------------------------------------------------------
-   BENTO UTILITY SERVICES
+   PRO BENTO SERVICES GRID
    -------------------------------------------------------------------------- */
 .servicesGridSection {
   position: relative;
+  margin-top: 14px;
   scroll-margin-top: 20px;
-  width: 100%;
 }
 
 .sectionHeaderRow {
@@ -554,7 +646,7 @@
 
 .sectionMainTitle {
   margin: 0;
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 750;
   letter-spacing: -0.03em;
   color: #ffffff;
@@ -566,7 +658,7 @@
   gap: 4px;
   font-size: 12px;
   font-weight: 650;
-  color: #94a3b8;
+  color: #8e9cb2;
   text-decoration: none;
   transition: color 160ms ease;
 }
@@ -579,7 +671,6 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
-  width: 100%;
 }
 
 .bentoServiceTile {
@@ -587,19 +678,18 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 14px 6px 12px;
-  border-radius: 20px;
-  background: rgba(16, 22, 36, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 13px 6px 11px;
+  border-radius: 18px;
+  background: rgba(16, 22, 36, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   cursor: pointer;
   backdrop-filter: blur(16px);
-  transition: all 180ms ease;
-  width: 100%;
+  transition: all 160ms ease;
 }
 
 .bentoServiceTile:hover {
-  background: rgba(22, 30, 48, 0.85);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(22, 30, 48, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
   transform: translateY(-2px);
 }
 
@@ -611,12 +701,12 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 15px;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
   margin-bottom: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: #e2e8f0;
   transition: transform 160ms ease;
 }
@@ -637,7 +727,7 @@
   color: #ffffff;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  border: 1px solid #050811;
+  border: 1px solid var(--funda-canvas);
 }
 
 .tileName {
@@ -648,9 +738,9 @@
 }
 
 .tileSub {
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 500;
-  color: #8e9cb2;
+  color: var(--funda-text-secondary);
   margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -658,94 +748,95 @@
   max-width: 80px;
 }
 
+/* Class-Bound Subtle Icon Tones */
 .tileIconBackdrop[data-tone="violet"],
 .smartIconSquircle[data-tone="violet"],
 .sheetServiceIcon[data-tone="violet"],
 .menuItemIcon[data-tone="violet"] {
-  background: rgba(168, 85, 247, 0.12);
+  background: rgba(168, 85, 247, 0.1);
   color: #d8b4fe;
-  border-color: rgba(192, 132, 252, 0.2);
+  border-color: rgba(192, 132, 252, 0.18);
 }
 
 .tileIconBackdrop[data-tone="coral"],
 .smartIconSquircle[data-tone="coral"],
 .sheetServiceIcon[data-tone="coral"],
 .menuItemIcon[data-tone="coral"] {
-  background: rgba(244, 63, 94, 0.12);
+  background: rgba(244, 63, 94, 0.1);
   color: #fda4af;
-  border-color: rgba(251, 113, 133, 0.2);
+  border-color: rgba(251, 113, 133, 0.18);
 }
 
 .tileIconBackdrop[data-tone="amber"],
 .smartIconSquircle[data-tone="amber"],
 .sheetServiceIcon[data-tone="amber"],
 .menuItemIcon[data-tone="amber"] {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(245, 158, 11, 0.1);
   color: #fde68a;
-  border-color: rgba(251, 191, 36, 0.2);
+  border-color: rgba(251, 191, 36, 0.18);
 }
 
 .tileIconBackdrop[data-tone="cyan"],
 .smartIconSquircle[data-tone="cyan"],
 .sheetServiceIcon[data-tone="cyan"],
 .menuItemIcon[data-tone="cyan"] {
-  background: rgba(6, 182, 212, 0.12);
+  background: rgba(6, 182, 212, 0.1);
   color: #a5f3fc;
-  border-color: rgba(34, 211, 238, 0.2);
+  border-color: rgba(34, 211, 238, 0.18);
 }
 
 .tileIconBackdrop[data-tone="blue"],
 .smartIconSquircle[data-tone="blue"],
 .sheetServiceIcon[data-tone="blue"],
 .menuItemIcon[data-tone="blue"] {
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(59, 130, 246, 0.1);
   color: #bfdbfe;
-  border-color: rgba(96, 165, 250, 0.2);
+  border-color: rgba(96, 165, 250, 0.18);
 }
 
 .tileIconBackdrop[data-tone="lime"],
 .smartIconSquircle[data-tone="lime"],
 .sheetServiceIcon[data-tone="lime"],
 .menuItemIcon[data-tone="lime"] {
-  background: rgba(16, 185, 129, 0.12);
+  background: rgba(16, 185, 129, 0.1);
   color: #a7f3d0;
-  border-color: rgba(52, 211, 153, 0.2);
+  border-color: rgba(52, 211, 153, 0.18);
 }
 
 .tileIconBackdrop[data-tone="pink"],
 .smartIconSquircle[data-tone="pink"],
 .sheetServiceIcon[data-tone="pink"],
 .menuItemIcon[data-tone="pink"] {
-  background: rgba(236, 72, 153, 0.12);
+  background: rgba(236, 72, 153, 0.1);
   color: #fbcfe8;
-  border-color: rgba(244, 114, 182, 0.2);
+  border-color: rgba(244, 114, 182, 0.18);
 }
 
 .tileIconBackdrop[data-tone="silver"],
 .smartIconSquircle[data-tone="silver"],
 .sheetServiceIcon[data-tone="silver"],
 .menuItemIcon[data-tone="silver"] {
-  background: rgba(148, 163, 184, 0.12);
+  background: rgba(148, 163, 184, 0.1);
   color: #e2e8f0;
-  border-color: rgba(203, 213, 225, 0.2);
+  border-color: rgba(203, 213, 225, 0.18);
 }
 
 /* --------------------------------------------------------------------------
-   SMART REPEAT CARDS
+   SMART REPEAT / RECENT BENEFICIARIES
    -------------------------------------------------------------------------- */
 .smartAssistantSection {
   position: relative;
-  width: 100%;
+  margin-top: 14px;
 }
 
 .oneTapPill {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
-  color: #94a3b8;
-  padding: 4px 10px;
+  color: #8e9cb2;
+  padding: 3px 9px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .smartRepeatScrollDeck {
@@ -760,18 +851,18 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 136px;
-  padding: 13px;
-  border-radius: 20px;
-  background: rgba(16, 22, 36, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  min-height: 130px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(16, 22, 36, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(16px);
-  transition: all 180ms ease;
+  transition: all 160ms ease;
 }
 
 .smartRepeatCard:hover {
-  background: rgba(22, 30, 48, 0.85);
-  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(22, 30, 48, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .smartRepeatHeader {
@@ -783,10 +874,10 @@
 .smartIconSquircle {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .smartPriceTag {
@@ -795,7 +886,7 @@
   color: #ffffff;
   padding: 2px 6px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .smartRepeatBody {
@@ -816,18 +907,18 @@
 
 .smartRecipient {
   font-size: 10px;
-  color: #8e9cb2;
+  color: var(--funda-text-secondary);
   font-family: var(--font-geist-mono), monospace;
 }
 
 .smartRepeatBtn {
   width: 100%;
-  height: 30px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #ffffff;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   cursor: pointer;
   transition: all 160ms ease;
@@ -840,12 +931,12 @@
 }
 
 /* --------------------------------------------------------------------------
-   TRANSACTIONS LIST
+   TRANSACTIONS SECTION
    -------------------------------------------------------------------------- */
 .activitySection {
   position: relative;
+  margin-top: 14px;
   scroll-margin-top: 20px;
-  width: 100%;
 }
 
 .txTogglePillGroup {
@@ -855,13 +946,13 @@
 }
 
 .txTogglePill {
-  height: 30px;
-  padding: 0 12px;
+  height: 28px;
+  padding: 0 11px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.04);
   color: #8e9cb2;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 650;
   cursor: pointer;
   transition: all 160ms ease;
@@ -873,8 +964,8 @@
 }
 
 .txTogglePillActive {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
   color: #ffffff;
 }
 
@@ -889,25 +980,25 @@
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   padding: 3px;
-  border-radius: 12px;
+  border-radius: 11px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .segmentedBtn {
-  height: 30px;
-  border-radius: 9px;
+  height: 28px;
+  border-radius: 8px;
   border: none;
   background: transparent;
-  color: #8e9cb2;
-  font-size: 11px;
+  color: var(--funda-text-secondary);
+  font-size: 10.5px;
   font-weight: 600;
   cursor: pointer;
   transition: all 160ms ease;
 }
 
 .segmentedActive {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
   font-weight: 700;
 }
@@ -920,18 +1011,18 @@
 
 .searchIcon {
   position: absolute;
-  left: 14px;
-  color: #57657d;
+  left: 13px;
+  color: var(--funda-text-muted);
   pointer-events: none;
 }
 
 .txSearchInput {
   width: 100%;
   height: 38px;
-  padding: 0 38px 0 38px;
-  border-radius: 12px;
+  padding: 0 36px 0 36px;
+  border-radius: 11px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   color: #ffffff;
   font-size: 12.5px;
   outline: none;
@@ -939,8 +1030,8 @@
 }
 
 .txSearchInput:focus {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .clearSearchBtn {
@@ -952,54 +1043,53 @@
   height: 18px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
   cursor: pointer;
 }
 
+/* Transaction List Cards */
 .txListContainer {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 100%;
 }
 
 .txItemCard {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 13px 15px;
-  border-radius: 18px;
-  background: rgba(16, 22, 36, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(16, 22, 36, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(16px);
   cursor: pointer;
   transition: all 160ms ease;
-  width: 100%;
 }
 
 .txItemCard:hover {
-  background: rgba(22, 30, 48, 0.85);
-  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(22, 30, 48, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .txIconWrapper {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 13px;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   color: #e2e8f0;
 }
 
-.txIconWrapper[data-category="data"] { color: #d8b4fe; background: rgba(168, 85, 247, 0.12); }
-.txIconWrapper[data-category="electricity"] { color: #fde68a; background: rgba(245, 158, 11, 0.12); }
-.txIconWrapper[data-category="funding"] { color: #a7f3d0; background: rgba(16, 185, 129, 0.12); }
-.txIconWrapper[data-category="airtime"] { color: #fda4af; background: rgba(244, 63, 94, 0.12); }
-.txIconWrapper[data-category="tv"] { color: #a5f3fc; background: rgba(6, 182, 212, 0.12); }
+.txIconWrapper[data-category="data"] { color: #d8b4fe; background: rgba(168, 85, 247, 0.1); }
+.txIconWrapper[data-category="electricity"] { color: #fde68a; background: rgba(245, 158, 11, 0.1); }
+.txIconWrapper[data-category="funding"] { color: #a7f3d0; background: rgba(16, 185, 129, 0.1); }
+.txIconWrapper[data-category="airtime"] { color: #fda4af; background: rgba(244, 63, 94, 0.1); }
+.txIconWrapper[data-category="tv"] { color: #a5f3fc; background: rgba(6, 182, 212, 0.1); }
 
 .txInfoCol {
   flex: 1;
@@ -1030,7 +1120,7 @@
   color: #34d399;
   padding: 1px 5px;
   border-radius: 5px;
-  background: rgba(16, 185, 129, 0.12);
+  background: rgba(16, 185, 129, 0.1);
 }
 
 .txSubRow {
@@ -1038,11 +1128,11 @@
   align-items: center;
   gap: 5px;
   font-size: 11px;
-  color: #8e9cb2;
+  color: var(--funda-text-secondary);
 }
 
 .txDotSep {
-  color: #57657d;
+  color: var(--funda-text-muted);
 }
 
 .txAmountCol {
@@ -1068,7 +1158,7 @@
 .txStatusPill {
   font-size: 10px;
   font-weight: 600;
-  color: #57657d;
+  color: var(--funda-text-muted);
   text-transform: capitalize;
 }
 
@@ -1078,80 +1168,134 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 32px 20px;
-  border-radius: 18px;
+  padding: 30px 20px;
+  border-radius: 16px;
   background: rgba(16, 22, 36, 0.4);
-  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border: 1px dashed rgba(255, 255, 255, 0.07);
 }
 
 .emptyIcon {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  color: #57657d;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--funda-text-muted);
   margin-bottom: 8px;
 }
 
 .emptyStateBox strong {
-  font-size: 13.5px;
+  font-size: 13px;
   color: #ffffff;
 }
 
 .emptyStateBox p {
   margin: 3px 0 0;
-  font-size: 11.5px;
-  color: #57657d;
+  font-size: 11px;
+  color: var(--funda-text-muted);
 }
 
 /* --------------------------------------------------------------------------
-   FLOATING BOTTOM DOCK
+   FLOATING LIGHT FROSTED CAPSULE DOCK & QUICK ACTION MENU
    -------------------------------------------------------------------------- */
+.dockMenuOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  animation: overlayFadeIn 180ms ease both;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .floatingIosDock {
   position: fixed;
-  bottom: max(14px, env(safe-area-inset-bottom));
+  bottom: max(16px, env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   z-index: 80;
-  width: min(calc(100% - 32px), 480px);
-  height: 64px;
-  border-radius: 32px;
-  background: rgba(8, 12, 20, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(36px) saturate(180%);
+  width: min(calc(100% - 28px), 400px);
+  height: 60px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 16px 40px -4px rgba(0, 0, 0, 0.45),
+    0 4px 12px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 #ffffff;
+  backdrop-filter: blur(28px) saturate(200%);
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   align-items: center;
-  padding: 0 8px;
+  padding: 0 4px;
 }
 
 .dockTabBtn {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   height: 100%;
   border: none;
   background: transparent;
-  color: #57657d;
-  font-size: 10px;
-  font-weight: 600;
+  color: #64748b;
   cursor: pointer;
-  transition: all 160ms ease;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dockIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 180ms ease, color 180ms ease;
+  color: inherit;
+}
+
+.dockLabel {
+  font-size: 10px;
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  transition: color 180ms ease, font-weight 180ms ease;
+  line-height: 1;
+  color: inherit;
 }
 
 .dockTabBtn:hover {
-  color: #f1f5f9;
+  color: #0f172a;
+}
+
+.dockTabBtn:hover .dockIconWrapper {
+  transform: translateY(-1px);
+}
+
+.dockTabBtn:active {
+  transform: scale(0.93);
 }
 
 .dockTabActive {
-  color: #ffffff !important;
+  color: #0284c7 !important;
 }
 
+.dockTabActive .dockIconWrapper {
+  color: #0284c7;
+  transform: translateY(-1px);
+}
+
+.dockTabActive .dockLabel {
+  color: #0284c7;
+  font-weight: 700;
+}
+
+/* Elevated Center Floating + Button */
 .dockCenterElevatedContainer {
   position: relative;
   display: grid;
@@ -1159,75 +1303,191 @@
 }
 
 .dockCenterFloatingBtn {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: #ffffff;
-  color: #07090e;
-  border: 3px solid rgba(8, 12, 20, 0.98);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #4f46e5 100%);
+  color: #ffffff;
+  border: 3.5px solid rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 8px 20px -2px rgba(2, 132, 199, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.15);
   display: grid;
   place-items: center;
   cursor: pointer;
-  transform: translateY(-14px);
-  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(-12px);
+  transition: all 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .dockCenterFloatingBtn:hover {
-  transform: translateY(-16px) scale(1.05);
+  transform: translateY(-15px) scale(1.06);
+  box-shadow:
+    0 10px 24px -2px rgba(2, 132, 199, 0.65),
+    0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dockCenterFloatingBtn:active {
+  transform: translateY(-10px) scale(0.96);
 }
 
 .dockCenterActive {
-  transform: translateY(-14px) rotate(45deg);
-  background: #f43f5e;
-  color: #ffffff;
+  transform: translateY(-12px) rotate(135deg) !important;
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+  box-shadow:
+    0 8px 20px -2px rgba(244, 63, 94, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.15) !important;
 }
 
+/* Floating Light Popup Menu */
 .quickActionFloatingMenu {
   position: absolute;
   bottom: calc(100% + 20px);
   left: 50%;
   transform: translateX(-50%);
-  width: 220px;
-  padding: 8px;
+  width: 256px;
+  padding: 10px;
   border-radius: 20px;
-  background: rgba(12, 16, 26, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(30px);
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 24px 50px -6px rgba(0, 0, 0, 0.35),
+    0 4px 14px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(28px) saturate(200%);
   display: flex;
   flex-direction: column;
   gap: 4px;
-  animation: menuIn 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: menuIn 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  z-index: 85;
+}
+
+.quickActionFloatingMenu::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.97);
+  border-right: 1px solid rgba(226, 232, 240, 0.9);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.quickMenuHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 2px;
+}
+
+.quickMenuTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+}
+
+.quickMenuBadge {
+  font-size: 9.5px;
+  font-weight: 650;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .quickMenuItem {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 13px;
-  border: none;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid transparent;
   background: transparent;
-  color: #ffffff;
+  color: #0f172a;
   font-size: 13px;
-  font-weight: 650;
   cursor: pointer;
-  transition: background 160ms ease;
+  transition: all 160ms ease;
   width: 100%;
   text-align: left;
 }
 
 .quickMenuItem:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.04);
+  transform: translateX(2px);
+}
+
+.quickMenuItemText {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.quickMenuItemTitle {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.quickMenuItemSub {
+  font-size: 10.5px;
+  color: #64748b;
+  line-height: 1.2;
+}
+
+.quickMenuChevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  opacity: 0.7;
+  transition: transform 160ms ease, opacity 160ms ease, color 160ms ease;
+}
+
+.quickMenuItem:hover .quickMenuChevron {
+  opacity: 1;
+  transform: translateX(2px);
+  color: #0284c7;
 }
 
 .menuItemIcon {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.menuItemIcon[data-tone="violet"] {
+  background: #f3e8ff;
+  color: #9333ea;
+  border: 1px solid #e9d5ff;
+}
+
+.menuItemIcon[data-tone="coral"] {
+  background: #ffe4e6;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
+
+.menuItemIcon[data-tone="amber"] {
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.menuItemIcon[data-tone="blue"] {
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
 }
 
 @keyframes menuIn {
@@ -1236,7 +1496,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   MODALS & BOTTOM SHEETS
+   iOS BOTTOM SHEETS & MODALS
    -------------------------------------------------------------------------- */
 .modalOverlay {
   position: fixed;
@@ -1261,16 +1521,16 @@
   width: min(100%, 540px);
   max-height: 90dvh;
   overflow-y: auto;
-  border-radius: 30px 30px 0 0;
+  border-radius: 28px 28px 0 0;
   background: rgba(12, 16, 26, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-bottom: none;
   box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(40px);
   padding: 12px 24px max(32px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   animation: sheetSlideUp 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -1280,8 +1540,8 @@
 }
 
 .sheetHandle {
-  width: 40px;
-  height: 5px;
+  width: 38px;
+  height: 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.2);
   margin: 0 auto 6px;
@@ -1304,7 +1564,7 @@
 .sheetSub {
   margin: 3px 0 0;
   font-size: 12px;
-  color: #8e9cb2;
+  color: var(--funda-text-secondary);
 }
 
 .sheetCloseBtn {
@@ -1321,7 +1581,7 @@
 }
 
 .sheetCloseBtn:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .sheetServiceTitleGroup {
@@ -1333,26 +1593,27 @@
 .sheetServiceIcon {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
 }
 
+/* Virtual Dedicated Account Block */
 .virtualBankCard {
-  padding: 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .bankTag {
   font-size: 9.5px;
   font-weight: 750;
-  color: #94a3b8;
+  color: #8e9cb2;
   letter-spacing: 0.06em;
 }
 
@@ -1365,7 +1626,7 @@
 .bankLabel {
   display: block;
   font-size: 11px;
-  color: #8e9cb2;
+  color: var(--funda-text-secondary);
 }
 
 .bankValue {
@@ -1386,7 +1647,7 @@
 
 .accountNumberText {
   font-family: var(--font-geist-mono), monospace;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 750;
   color: #ffffff;
   letter-spacing: 0.04em;
@@ -1396,12 +1657,12 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.08);
+  padding: 5px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
   transition: all 160ms ease;
@@ -1412,19 +1673,20 @@
   color: #07090e;
 }
 
+/* Modal Form Styles */
 .modalForm {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 13px;
 }
 
 .inputLabel {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   font-size: 12px;
   font-weight: 600;
-  color: #8e9cb2;
+  color: var(--funda-text-secondary);
 }
 
 .currencyInputBox {
@@ -1438,33 +1700,33 @@
   left: 14px;
   font-size: 16px;
   font-weight: 700;
-  color: #57657d;
+  color: var(--funda-text-muted);
 }
 
 .textInput,
 .selectInput {
   width: 100%;
-  height: 48px;
-  padding: 0 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  height: 46px;
+  padding: 0 13px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   color: #ffffff;
-  font-size: 14px;
+  font-size: 13.5px;
   outline: none;
   transition: all 160ms ease;
 }
 
 .currencyInputBox .textInput {
-  padding-left: 32px;
-  font-size: 18px;
+  padding-left: 30px;
+  font-size: 17px;
   font-weight: 700;
 }
 
 .textInput:focus,
 .selectInput:focus {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .amountChipsRow {
@@ -1475,12 +1737,12 @@
 }
 
 .amountChip {
-  padding: 7px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.04);
   color: #ffffff;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 650;
   cursor: pointer;
   white-space: nowrap;
@@ -1488,7 +1750,7 @@
 }
 
 .amountChip:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .amountChipActive {
@@ -1504,12 +1766,12 @@
 }
 
 .networkSelectBtn {
-  height: 38px;
-  border-radius: 11px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.05);
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
   color: #ffffff;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
   transition: all 160ms ease;
@@ -1525,26 +1787,26 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(52, 211, 153, 0.2);
+  padding: 9px 13px;
+  border-radius: 11px;
+  background: rgba(16, 185, 129, 0.07);
+  border: 1px solid rgba(52, 211, 153, 0.18);
   color: #34d399;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
 }
 
 .submitPrimaryBtn {
   width: 100%;
-  height: 50px;
-  border-radius: 15px;
+  height: 48px;
+  border-radius: 14px;
   border: none;
   background: #ffffff;
   color: #07090e;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 750;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: all 160ms ease;
 }
 
@@ -1553,64 +1815,83 @@
   transform: translateY(-1px);
 }
 
+.submitPrimaryBtn:disabled {
+  cursor: wait;
+  opacity: 0.65;
+  transform: none;
+}
+
+.paymentError {
+  padding: 10px 12px;
+  border: 1px solid rgba(251, 113, 133, 0.24);
+  border-radius: 11px;
+  background: rgba(244, 63, 94, 0.09);
+  color: #fda4af;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
 .submitPrimaryBtn:active {
   transform: scale(0.98);
 }
 
+/* Receipt Sheet Details */
 .receiptTopHeader {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 10px 0;
+  padding: 8px 0;
 }
 
 .receiptCheckIcon {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.12);
   color: #34d399;
-  border: 1px solid rgba(52, 211, 153, 0.3);
-  margin-bottom: 12px;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  margin-bottom: 10px;
 }
 
 .receiptAmount {
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.04em;
 }
 
 .receiptStatusTag {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   color: #34d399;
   text-transform: uppercase;
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .receiptTitle {
-  margin: 6px 0 0;
-  font-size: 14px;
-  color: #8e9cb2;
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  color: var(--funda-text-secondary);
 }
 
+/* Electricity Token Callout */
 .tokenHighlightBox {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 14px;
-  border-radius: 15px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px dashed rgba(251, 191, 36, 0.3);
+  gap: 7px;
+  padding: 13px;
+  border-radius: 14px;
+  background: rgba(245, 158, 11, 0.07);
+  border: 1px dashed rgba(251, 191, 36, 0.25);
 }
 
 .tokenLabel {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 750;
   color: #fbbf24;
   letter-spacing: 0.08em;
@@ -1618,7 +1899,7 @@
 
 .tokenCode {
   font-family: var(--font-geist-mono), monospace;
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 750;
   color: #ffffff;
   letter-spacing: 0.06em;
@@ -1628,12 +1909,12 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: 5px 11px;
   border-radius: 8px;
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: rgba(245, 158, 11, 0.12);
   color: #fde68a;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   transition: all 160ms ease;
@@ -1647,19 +1928,19 @@
 .receiptDetailsList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  gap: 11px;
+  padding: 15px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .receiptRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12.5px;
-  color: #8e9cb2;
+  font-size: 12px;
+  color: var(--funda-text-secondary);
 }
 
 .receiptRow strong {
@@ -1684,25 +1965,26 @@
 .receiptActionsRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 .receiptSecondaryBtn {
-  height: 50px;
-  border-radius: 15px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
+  height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   color: #ffffff;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: all 160ms ease;
 }
 
 .receiptSecondaryBtn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
 }
 
+/* Notifications Drawer */
 .drawerHeaderRow {
   display: flex;
   align-items: center;
@@ -1712,124 +1994,125 @@
 .notificationList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
 }
 
 .notifCard {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 15px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  gap: 11px;
+  padding: 13px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .notifIcon {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.06);
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
   color: #cbd5e1;
   flex-shrink: 0;
 }
 
 .notifCard strong {
   display: block;
-  font-size: 13px;
+  font-size: 12.5px;
   color: #ffffff;
 }
 
 .notifCard p {
   margin: 2px 0 4px;
-  font-size: 12px;
-  color: #8e9cb2;
+  font-size: 11.5px;
+  color: var(--funda-text-secondary);
   line-height: 1.4;
 }
 
 .notifCard small {
-  font-size: 10px;
-  color: #57657d;
+  font-size: 9.5px;
+  color: var(--funda-text-muted);
 }
 
+/* Profile / Account Drawer */
 .drawerProfileHero {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 12px 0;
+  padding: 10px 0;
 }
 
 .drawerAvatarLarge {
   display: grid;
   place-items: center;
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
   color: #ffffff;
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 750;
   border: 2px solid rgba(255, 255, 255, 0.35);
-  margin-bottom: 10px;
-  box-shadow: 0 8px 24px rgba(244, 63, 94, 0.35);
+  margin-bottom: 9px;
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.3);
 }
 
 .drawerUserName {
-  font-size: 18px;
+  font-size: 17px;
   color: #ffffff;
 }
 
 .drawerUserContact {
-  font-size: 12px;
-  color: #8e9cb2;
+  font-size: 11.5px;
+  color: var(--funda-text-secondary);
   margin-top: 2px;
 }
 
 .drawerTierBadge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-  padding: 4px 12px;
+  gap: 5px;
+  margin-top: 7px;
+  padding: 3px 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #e2e8f0;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 650;
 }
 
 .drawerLinksList {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .drawerLinkItem {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 11px;
+  padding: 11px 13px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   color: #ffffff;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   text-decoration: none;
   transition: all 160ms ease;
 }
 
 .drawerLinkItem:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .drawerLinkChevron {
   margin-left: auto;
-  color: #57657d;
+  color: var(--funda-text-muted);
 }
 
 .logoutForm {
@@ -1838,12 +2121,12 @@
 
 .logoutBtn {
   width: 100%;
-  height: 46px;
-  border-radius: 13px;
-  border: 1px solid rgba(244, 63, 94, 0.3);
-  background: rgba(244, 63, 94, 0.1);
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  background: rgba(244, 63, 94, 0.09);
   color: #fda4af;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
   transition: all 160ms ease;
@@ -1854,17 +2137,618 @@
   color: #ffffff;
 }
 
+/* --------------------------------------------------------------------------
+   MINIMAL & SLEEK ACCOUNT PROFILE CENTER
+   -------------------------------------------------------------------------- */
+.profileCenter {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(calc(100% - 32px), 540px);
+  max-height: min(86dvh, 700px);
+  margin-bottom: max(16px, env(safe-area-inset-bottom));
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  background: rgba(12, 17, 29, 0.98);
+  backdrop-filter: blur(36px) saturate(180%);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  animation: sheetIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.profileCenterHandle {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 4px;
+  margin: 11px auto 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.profileCenterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 24px 8px;
+}
+
+.profileCenterHeader h2 {
+  margin: 2px 0 0;
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.accountEyebrow {
+  color: #38bdf8;
+  font-size: 9.5px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.profileCenterIdentity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 2px 24px 10px;
+  padding: 11px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.profileCenterIdentity .drawerAvatarLarge {
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 750;
+  flex-shrink: 0;
+}
+
+.identityDetails {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.identityDetails strong {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.identityDetails span {
+  overflow: hidden;
+  color: #8e9cb2;
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.verifiedAccountPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399 !important;
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.profileTabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: 0 24px;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.profileTabs button {
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #8e9cb2;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.profileTabs button:hover {
+  color: #ffffff;
+}
+
+.profileTabs .profileTabActive {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.profileCenterScroll {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 24px 24px;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-width: thin;
+}
+
+.accountForm,
+.accountPanelSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.accountSectionHeading h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.accountSectionHeading p,
+.passwordHint {
+  margin: 2px 0 0;
+  color: #8e9cb2;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.accountFieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.accountFieldWide {
+  grid-column: 1 / -1;
+}
+
+.accountFieldGrid label,
+.phoneEnrollment label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #8e9cb2;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.accountFieldGrid input,
+.accountFieldGrid select,
+.phoneEnrollment input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  outline: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-family: inherit;
+  color-scheme: dark;
+  transition: all 160ms ease;
+}
+
+.accountFieldGrid input:focus,
+.accountFieldGrid select:focus,
+.phoneEnrollment input:focus {
+  border-color: #38bdf8;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+}
+
+.accountPrimaryButton {
+  width: 100%;
+  height: 40px;
+  border-radius: 11px;
+  border: 0;
+  background: #ffffff;
+  color: #080d1a;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.accountPrimaryButton:hover {
+  background: #f1f5f9;
+  transform: translateY(-1px);
+}
+
+.accountSecondaryButton {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.accountSecondaryButton:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.accountPrimaryButton:disabled,
+.accountSecondaryButton:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.accountSuccess,
+.accountError {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.accountSuccess {
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+}
+
+.accountError {
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  background: rgba(244, 63, 94, 0.1);
+  color: #fca5a5;
+}
+
+.accountInfoList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.infoCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.infoCard span {
+  color: #8e9cb2;
+  font-size: 11px;
+}
+
+.infoCard strong {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.infoCard small {
+  color: #34d399;
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.phoneEnrollment {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 14px;
+  background: rgba(56, 189, 248, 0.04);
+}
+
+.phoneEnrollment h4 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.accountButtonRow {
+  display: flex;
+  gap: 8px;
+}
+
+.securitySummary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.securitySummary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.securitySummary strong {
+  color: #8e9cb2;
+  font-size: 10.5px;
+}
+
+.securitySummary span {
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.securityActiveText {
+  color: #34d399 !important;
+}
+
+.accountResourceLinks {
+  display: flex;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.accountResourceLinks a {
+  color: #38bdf8;
+  font-size: 11px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.accountResourceLinks a:hover {
+  text-decoration: underline;
+}
+
+.settingToggleList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settingToggleRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.settingToggleRow:hover {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.settingToggleText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.settingToggleRow strong {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.settingToggleRow small {
+  color: #8e9cb2;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.settingToggleRow input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.settingToggleRow i {
+  position: relative;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: #1e293b;
+  transition: background 160ms ease;
+}
+
+.settingToggleRow i::after {
+  content: "";
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 160ms ease;
+}
+
+.settingToggleRow input:checked + i {
+  background: #0284c7;
+}
+
+.settingToggleRow input:checked + i::after {
+  transform: translateX(14px);
+}
+
+.settingToggleRow input:disabled + i {
+  opacity: 0.55;
+}
+
+.profileCenterSignOut {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.profileCenterSignOut button {
+  width: 100%;
+  height: 38px;
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.06);
+  color: #f87171;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.profileCenterSignOut button:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   DESKTOP AND RESPONSIVE BREAKPOINTS
+   -------------------------------------------------------------------------- */
 @media (min-width: 600px) {
   .appContainer {
+    width: min(100%, 560px);
     padding: 32px 24px 150px;
   }
 
   .iosBottomSheet,
   .iosReceiptSheet,
   .sideDrawerSheet {
-    border-radius: 30px;
+    border-radius: 28px;
     margin-bottom: 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+}
+
+@media (min-width: 960px) {
+  .desktopHomepageNav {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: min(1120px, calc(100% - 96px));
+    height: 62px;
+    margin: 0 auto;
+    padding: 0 14px 0 30px;
+    border: 1px solid rgba(96, 165, 250, 0.18);
+    border-radius: 999px;
+    background: linear-gradient(100deg, rgba(10, 24, 51, 0.94), rgba(7, 15, 32, 0.9));
+    box-shadow: 0 24px 64px rgba(0, 5, 18, 0.38), inset 0 1px 0 rgba(147, 197, 253, 0.07);
+    backdrop-filter: blur(28px) saturate(190%);
+    transform: translateY(clamp(42px, 6vh, 66px));
+  }
+
+  .desktopWordmark {
+    color: #f8fafc;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.065em;
+    text-decoration: none;
+  }
+
+  .desktopWordmark span {
+    color: #c084fc;
+    text-shadow: 0 0 8px rgba(192, 132, 252, 0.6);
+  }
+
+  .desktopNavActions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .appContainer {
+    width: min(100%, 720px);
+    padding-top: clamp(120px, 15vh, 150px);
+  }
+
+  .servicesGridSection,
+  .smartAssistantSection,
+  .activitySection {
+    margin-top: 20px;
+  }
+
+  .floatingIosDock {
+    width: min(calc(100% - 28px), 400px);
+    height: 60px;
+    border-radius: 30px;
+  }
+
+  .iosTopBar {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .profileCenter {
+    width: 100%;
+    max-height: 90dvh;
+    margin-bottom: 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 26px 26px 0 0;
+  }
+
+  .profileCenterHeader,
+  .profileCenterScroll {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .profileCenterIdentity,
+  .profileTabs {
+    margin-right: 16px;
+    margin-left: 16px;
+  }
+
+  .accountFieldGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .accountFieldWide {
+    grid-column: auto;
+  }
+
+  .accountButtonRow {
+    flex-direction: column-reverse;
+  }
+
+  .accountPrimaryButton,
+  .accountSecondaryButton {
+    width: 100%;
   }
 }
 
@@ -1874,7 +2758,7 @@
   }
 
   .balanceValue {
-    font-size: 32px;
+    font-size: 30px;
   }
 
   .bentoServicesGrid {
@@ -1882,8 +2766,8 @@
   }
 
   .tileIconBackdrop {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
   }
 }
 
@@ -1897,7 +2781,10 @@
   }
 
   .bentoServiceTile,
-  .whiteCurveActionBtn,
+  .fundWalletPrimaryBtn,
+  .walletSecondaryActionBtn,
+  .primaryBuyDataBtn,
+  .primaryAddFundsBtn,
   .dockCenterFloatingBtn {
     transition: none !important;
   }

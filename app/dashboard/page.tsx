@@ -15,11 +15,19 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
+  const [{ data: profile }, { data: settings }, { data: wallet }] = await Promise.all([
+    supabase
     .from("profiles")
-    .select("full_name")
+    .select("full_name, display_name, date_of_birth, country_code, state, city, created_at")
     .eq("id", user.id)
-    .maybeSingle();
+    .maybeSingle(),
+    supabase
+      .from("user_settings")
+      .select("email_notifications, sms_notifications, push_notifications, marketing_notifications, transaction_alerts, security_alerts, preferred_language, timezone")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase.from("wallets").select("available_balance").eq("user_id", user.id).maybeSingle(),
+  ]);
 
   if (onboardingStepFor(user, profile?.full_name) !== "complete") {
     redirect("/register?resume=1");
@@ -41,9 +49,29 @@ export default async function DashboardPage() {
         email: user.email,
         phone: user.phone,
         fullName,
+        displayName: profile?.display_name,
         firstName,
         initials,
+        dateOfBirth: profile?.date_of_birth,
+        countryCode: profile?.country_code || "NG",
+        state: profile?.state,
+        city: profile?.city,
+        createdAt: profile?.created_at || user.created_at,
+        lastSignInAt: user.last_sign_in_at,
+        emailConfirmed: Boolean(user.email_confirmed_at),
+        phoneConfirmed: Boolean(user.phone_confirmed_at),
       }}
+      settings={{
+        emailNotifications: settings?.email_notifications ?? true,
+        smsNotifications: settings?.sms_notifications ?? true,
+        pushNotifications: settings?.push_notifications ?? true,
+        marketingNotifications: settings?.marketing_notifications ?? false,
+        transactionAlerts: settings?.transaction_alerts ?? true,
+        securityAlerts: settings?.security_alerts ?? true,
+        preferredLanguage: "en",
+        timezone: settings?.timezone || "Africa/Lagos",
+      }}
+      initialWalletBalance={Number(wallet?.available_balance ?? 0)}
     />
   );
 }

@@ -2826,6 +2826,169 @@
   letter-spacing: 0.02em;
 }
 
+/* Desktop account access follows the dashboard's bottom-sheet interaction. */
+@media (min-width: 960px) {
+  .desktopRail {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 28px 24px;
+    overflow: hidden;
+    background: rgba(0, 2, 7, 0.78);
+    backdrop-filter: blur(10px) saturate(80%);
+  }
+
+  .desktopAuth {
+    position: relative;
+    width: min(676px, calc(100vw - 48px));
+    height: auto;
+    max-height: calc(100dvh - 56px);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 32px;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(76, 103, 173, 0.12), transparent 40%),
+      #0b101b;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    animation: desktop-auth-sheet-in 440ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .desktopRail .authWrap {
+    width: 100%;
+    height: auto;
+    max-height: calc(100dvh - 56px);
+    overflow: hidden auto;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    color: #f8fafc;
+    box-shadow: none;
+    animation: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  }
+
+  .desktopRail .mobileHandle {
+    display: block;
+    width: 46px;
+    height: 5px;
+    margin: 16px auto 2px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.42);
+  }
+
+  .desktopRail .authTopbar {
+    padding: 8px 24px 4px;
+  }
+
+  .desktopRail .authWordmark {
+    color: #f8fafc;
+  }
+
+  .desktopRail .authWordmark::first-letter {
+    color: #f8fafc;
+  }
+
+  .desktopRail .iconButton {
+    background: rgba(255, 255, 255, 0.07);
+    color: #dbe4f0;
+  }
+
+  .desktopRail .iconButton:hover {
+    background: rgba(255, 255, 255, 0.13);
+    color: #ffffff;
+  }
+
+  .desktopRail .authBody {
+    justify-content: flex-start;
+    padding: 16px 32px 34px;
+  }
+
+  .desktopRail .authBody > form,
+  .desktopRail .authBody > div,
+  .desktopRail .completeState {
+    width: min(100%, 548px);
+    margin-inline: auto;
+  }
+
+  .desktopRail .authEyebrow {
+    color: #8e9cb2;
+  }
+
+  .desktopRail .authBody h2 {
+    max-width: 14ch;
+    color: #ffffff !important;
+    font-size: clamp(34px, 3vw, 44px);
+  }
+
+  .desktopRail .authBody form > p,
+  .desktopRail .completeState > p,
+  .desktopRail .authBody > div > p {
+    color: #8e9cb2;
+  }
+
+  .desktopRail .fieldLabel {
+    margin-top: 20px;
+    color: #aab6c8;
+  }
+
+  .desktopRail .textField,
+  .desktopRail .otpField,
+  .desktopRail .phoneField,
+  .desktopRail input {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.055) !important;
+    color: #ffffff !important;
+    box-shadow: none;
+  }
+
+  .desktopRail .textField::placeholder,
+  .desktopRail input::placeholder {
+    color: #65738a;
+  }
+
+  .desktopRail .textField:focus,
+  .desktopRail .otpField:focus,
+  .desktopRail input:focus {
+    border-color: rgba(192, 132, 252, 0.72) !important;
+    box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.12) !important;
+  }
+
+  .desktopRail .authPrimary {
+    min-height: 56px;
+    border-radius: 16px;
+    background: #ffffff;
+    color: #090c13;
+  }
+
+  .desktopRail .authPrimary:hover {
+    background: #eef2f7;
+  }
+
+  .desktopRail .authQuiet,
+  .desktopRail .loginAltActions {
+    color: #9aa8bc;
+  }
+
+  .desktopRail .fieldError {
+    color: #fda4af !important;
+  }
+}
+
+@keyframes desktop-auth-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(72px) scale(0.975);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .livePulseDot {
   width: 7px;
   height: 7px;
@@ -2885,6 +3048,134 @@
 @media (max-width: 959px) {
   .floatingDock {
     display: none !important;
+  }
+}
+
+/* Unified Funda navy theme shared with the dashboard. */
+.experience {
+  --canvas: #050811;
+  --graphite: #0c111e;
+  --raised: #111a2c;
+  --silver: #8e9cb2;
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(28, 72, 150, 0.34) 0%, rgba(12, 28, 62, 0.2) 44%, #050811 80%),
+    linear-gradient(180deg, #060b17 0%, #04060c 100%);
+}
+
+.storyPanel {
+  background:
+    radial-gradient(circle at 76% 18%, rgba(37, 99, 235, 0.15), transparent 30%),
+    radial-gradient(circle at 22% 72%, rgba(168, 85, 247, 0.07), transparent 34%),
+    linear-gradient(150deg, #0b1730, #050811 76%);
+}
+
+.ambient {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(59, 130, 246, 0.14), transparent 30%),
+    radial-gradient(circle at 20% 65%, rgba(96, 165, 250, 0.08), transparent 35%);
+}
+
+.drawerBackdrop,
+.sheetBackdrop,
+.mobileBackdrop {
+  background: rgba(1, 5, 15, 0.76);
+}
+
+.sidebarDrawer,
+.sheetModalWrap {
+  border-color: rgba(96, 165, 250, 0.16);
+  background:
+    radial-gradient(circle at 88% 0%, rgba(59, 130, 246, 0.13), transparent 32%),
+    linear-gradient(155deg, rgba(12, 25, 50, 0.99), rgba(6, 12, 26, 0.99));
+  box-shadow: 0 32px 100px rgba(0, 5, 18, 0.62), inset 0 1px 0 rgba(147, 197, 253, 0.06);
+}
+
+.authWrap {
+  border-color: rgba(96, 165, 250, 0.16);
+  background:
+    radial-gradient(circle at 88% 0%, rgba(59, 130, 246, 0.14), transparent 34%),
+    radial-gradient(circle at 5% 96%, rgba(37, 99, 235, 0.08), transparent 32%),
+    #081122;
+  color: #f8fafc;
+  box-shadow: 0 -24px 72px rgba(0, 5, 18, 0.56);
+}
+
+.mobileHandle {
+  background: rgba(147, 197, 253, 0.32);
+}
+
+.authWordmark,
+.authBody h2 {
+  color: #f8fafc !important;
+}
+
+.authEyebrow,
+.authBody form > p,
+.completeState > p,
+.fieldLabel,
+.authQuiet,
+.loginAltActions {
+  color: #93a4bd;
+}
+
+.iconButton {
+  background: rgba(147, 197, 253, 0.07);
+  color: #dbeafe;
+}
+
+.iconButton:hover {
+  background: rgba(96, 165, 250, 0.16);
+  color: #ffffff;
+}
+
+.authWrap .textField,
+.authWrap .otpField,
+.authWrap .phoneField,
+.authWrap input {
+  border-color: rgba(147, 197, 253, 0.13) !important;
+  background: rgba(15, 30, 57, 0.82) !important;
+  color: #ffffff !important;
+}
+
+.authWrap .textField::placeholder,
+.authWrap input::placeholder {
+  color: #63738d;
+}
+
+.authWrap .textField:focus,
+.authWrap .otpField:focus,
+.authWrap input:focus {
+  border-color: rgba(96, 165, 250, 0.75) !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14) !important;
+}
+
+.floatingDock {
+  border-color: rgba(96, 165, 250, 0.25);
+  background: rgba(7, 17, 36, 0.82);
+  box-shadow: 0 16px 40px rgba(0, 5, 18, 0.62), inset 0 1px 0 rgba(147, 197, 253, 0.08);
+}
+
+.dockStatus {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+@media (min-width: 960px) {
+  .header {
+    border-color: rgba(96, 165, 250, 0.18);
+    background: linear-gradient(100deg, rgba(10, 24, 51, 0.94), rgba(7, 15, 32, 0.9));
+    box-shadow: 0 24px 64px rgba(0, 5, 18, 0.4), inset 0 1px 0 rgba(147, 197, 253, 0.07);
+  }
+
+  .desktopRail {
+    background: rgba(1, 5, 15, 0.8);
+  }
+
+  .desktopAuth {
+    border-color: rgba(96, 165, 250, 0.17);
+    background:
+      radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15), transparent 42%),
+      #081122;
+    box-shadow: 0 30px 90px rgba(0, 5, 18, 0.72), inset 0 1px 0 rgba(147, 197, 253, 0.06);
   }
 }
 
