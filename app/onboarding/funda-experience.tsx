@@ -96,6 +96,7 @@ function StoryArtwork({
       data-visual={story.visual}
       data-active={active}
       aria-hidden={!active}
+      hidden={!active}
     >
       <div className={styles.artworkImage}>
         <Image
@@ -337,6 +338,7 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
                   className={styles.copyBlock}
                   data-active={index === currentIndex}
                   aria-hidden={index !== currentIndex}
+                  hidden={index !== currentIndex}
                 >
                   <h1>
                     {item.headline.split("\n")[0]}

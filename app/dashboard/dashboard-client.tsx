@@ -50,6 +50,8 @@ type TransactionItem = {
   token?: string;
 };
 
+type LiveProduct = { id: string; name: string; service_type: "data" | "airtime"; network: string | null; price: number; cashback: number; provider_product_code: string | null };
+
 const RECENT_TRANSACTIONS: TransactionItem[] = [
   {
     id: "tx-1",
@@ -362,7 +364,11 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
   const [fundingBusy, setFundingBusy] = useState(false);
   const [fundingError, setFundingError] = useState<string | null>(null);
   const [serviceRecipient, setServiceRecipient] = useState("");
-  const [servicePackage, setServicePackage] = useState("1000");
+  const [servicePackage, setServicePackage] = useState("");
+  const [serviceNetwork, setServiceNetwork] = useState("mtn");
+  const [liveProducts, setLiveProducts] = useState<LiveProduct[]>([]);
+  const [serviceBusy, setServiceBusy] = useState(false);
+  const [serviceError, setServiceError] = useState<string | null>(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -405,6 +411,22 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    if (!showQuickServiceModal || !["data", "airtime"].includes(showQuickServiceModal.id)) return;
+    let active = true;
+    void fetch(`/api/services/catalog?service=${showQuickServiceModal.id}&network=${serviceNetwork}`, { cache: "no-store" })
+      .then(async (response) => ({ ok: response.ok, body: await response.json().catch(() => ({})) }))
+      .then(({ ok, body }) => {
+        if (!active) return;
+        if (!ok) throw new Error(body.error || "Products are unavailable.");
+        const products = (body.products ?? []) as LiveProduct[];
+        setLiveProducts(products);
+        setServicePackage((current) => products.some((product) => product.id === current) ? current : (products[0]?.id ?? ""));
+      })
+      .catch((error: unknown) => { if (active) setServiceError(error instanceof Error ? error.message : "Products are unavailable."); });
+    return () => { active = false; };
+  }, [showQuickServiceModal, serviceNetwork]);
+
   // Filter transactions
   const filteredTransactions = RECENT_TRANSACTIONS.filter((tx) => {
     if (transactionFilter !== "all" && tx.category !== transactionFilter) return false;
@@ -435,14 +457,27 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleSimulatePayment = (e: React.FormEvent) => {
+  const handleSimulatePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (showFundModal) {
       const added = Number(fundAmount) || 0;
       setWalletBalance((prev) => prev + added);
       setActionSuccessMsg(`₦${added.toLocaleString()} added to your wallet!`);
     } else {
-      setActionSuccessMsg("Payment successful! Token/bundle delivered.");
+      if (!showQuickServiceModal || !["data", "airtime"].includes(showQuickServiceModal.id)) { setServiceError("This service is coming soon. Data and airtime are ready first."); return; }
+      if (!servicePackage) { setServiceError("Pick a bundle first."); return; }
+      setServiceBusy(true); setServiceError(null);
+      try {
+        const idempotencyKey = crypto.randomUUID().replaceAll("-", "");
+        const response = await fetch("/api/services/purchase", { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: JSON.stringify({ productId: servicePackage, destination: serviceRecipient, idempotencyKey }) });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || "Purchase could not be completed.");
+        setWalletBalance(Number(body.balance));
+        setActionSuccessMsg(body.status === "successful" ? "Done. Your purchase is complete." : body.status === "failed" ? "We could not complete it, so your wallet was refunded." : "We are confirming your purchase. No need to try again.");
+        setShowQuickServiceModal(null);
+      } catch (error) { setServiceError(error instanceof Error ? error.message : "Purchase could not be completed."); }
+      finally { setServiceBusy(false); }
+      return;
     }
     setTimeout(() => {
       setShowFundModal(false);
@@ -1234,13 +1269,14 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
             <form onSubmit={handleSimulatePayment} className={styles.modalForm}>
               {/* Provider / Network Select */}
               <div className={styles.networkSelectGrid}>
-                {["MTN", "Airtel", "Glo", "9mobile"].map((net) => (
+                {["mtn", "airtel", "glo", "9mobile"].map((net) => (
                   <button
                     key={net}
                     type="button"
-                    className={`${styles.networkSelectBtn} ${net === "MTN" ? styles.networkActive : ""}`}
+                    className={`${styles.networkSelectBtn} ${net === serviceNetwork ? styles.networkActive : ""}`}
+                    onClick={() => setServiceNetwork(net)}
                   >
-                    {net}
+                    {net === "mtn" ? "MTN" : net === "glo" ? "Glo" : net === "airtel" ? "Airtel" : "9mobile"}
                   </button>
                 ))}
               </div>
@@ -1263,7 +1299,9 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
                   value={servicePackage}
                   onChange={(e) => setServicePackage(e.target.value)}
                   className={styles.selectInput}
+                  disabled={serviceBusy || !["data", "airtime"].includes(showQuickServiceModal.id)}
                 >
+                  {liveProducts.map((product) => <option value={product.id} key={product.id}>{product.name} — ₦{product.price.toLocaleString("en-NG")}</option>)}
                   <option value="350">1GB 30-Day SME — ₦350</option>
                   <option value="950">3GB 30-Day SME — ₦950</option>
                   <option value="1500">5GB 30-Day SME — ₦1,500</option>
@@ -1272,12 +1310,14 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
                 </select>
               </label>
 
+              {serviceError && <div className={styles.paymentError} role="alert">{serviceError}</div>}
+
               <div className={styles.cashbackBenefitNotice}>
                 <SvgIcon name="sparkles" size={14} />
                 <span>Earn <strong>₦90 instant cashback</strong> into your Funda wallet</span>
               </div>
 
-              <button type="submit" className={styles.submitPrimaryBtn}>
+              <button type="submit" className={styles.submitPrimaryBtn} disabled={serviceBusy || !servicePackage}>
                 Pay from Wallet • Instant 3s Fulfilment
               </button>
             </form>

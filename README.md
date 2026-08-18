@@ -1,5 +1,9 @@
 # Funda
 
+## Admin control plane
+
+The protected administrative product lives at `/admin`. Deployment, security, migration, worker, and incident instructions are in [docs/admin-backend.md](docs/admin-backend.md).
+
 Funda is a mobile-first Nigerian utility web app. The current public release is a full-viewport onboarding and authentication design prototype; it does not send OTPs or create accounts yet.
 
 ## Public experience
