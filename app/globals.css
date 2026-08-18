@@ -1,9 +1,81 @@
 @import "tailwindcss";
 
-:root {
-  --background: #111313;
-  --foreground: #f6f7f3;
+:root,
+[data-theme="light"] {
+  --background: #f4f7f5;
+  --foreground: #0a0c0e;
+  --surface: #ffffff;
+  --surface-subtle: #e9efeb;
+  --surface-elevated: #ffffff;
+  --border: rgba(0, 0, 0, 0.07);
+  --border-subtle: rgba(0, 0, 0, 0.04);
+  --border-strong: rgba(0, 0, 0, 0.12);
+  --border-focus: rgba(24, 116, 90, 0.4);
+  --text-primary: #0a0c0e;
+  --text-secondary: #526064;
+  --text-muted: #7e8c90;
+  --accent: #18745a;
+  --accent-hover: #125c49;
+  --accent-bright: #2f8f6c;
+  --accent-light: #dcebe5;
+  --accent-subtle: rgba(24, 116, 90, 0.1);
+  --accent-glow: rgba(24, 116, 90, 0.25);
+  --brand-primary: #18745a;
+  --brand-primary-hover: #125c49;
+  --brand-primary-bright: #2f8f6c;
+  --brand-primary-soft: #dcebe5;
+  --success: #18745a;
+  --warning: #d97706;
+  --danger: #e5484d;
+  --info: #0891b2;
+  --button-black-bg: #0a0c0e;
+  --button-black-text: #ffffff;
+  --card-dark-bg: #0a0c0e;
+  --card-dark-text: #ffffff;
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -2px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 16px 36px -8px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  --selection-bg: #18745a;
+  --selection-color: #ffffff;
   --font-geist-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+[data-theme="dark"] {
+  --background: #07090e;
+  --foreground: #f6f7f9;
+  --surface: rgba(16, 22, 34, 0.85);
+  --surface-subtle: #131824;
+  --surface-elevated: #1a2233;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-focus: rgba(24, 116, 90, 0.45);
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-muted: #5a6880;
+  --accent: #18745a;
+  --accent-hover: #125c49;
+  --accent-bright: #5ab18e;
+  --accent-light: rgba(24, 116, 90, 0.15);
+  --accent-subtle: rgba(24, 116, 90, 0.12);
+  --accent-glow: rgba(24, 116, 90, 0.35);
+  --brand-primary: #18745a;
+  --brand-primary-hover: #125c49;
+  --brand-primary-bright: #5ab18e;
+  --brand-primary-soft: rgba(24, 116, 90, 0.15);
+  --success: #5ab18e;
+  --warning: #f59e0b;
+  --danger: #fb7185;
+  --info: #22d3ee;
+  --button-black-bg: #ffffff;
+  --button-black-text: #07090e;
+  --card-dark-bg: #0f1422;
+  --card-dark-text: #ffffff;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.6);
+  --selection-bg: #18745a;
+  --selection-color: #ffffff;
 }
 
 @theme inline {
@@ -30,11 +102,13 @@ body {
   color: var(--foreground);
   font-family: var(--font-satoshi), Arial, Helvetica, sans-serif;
   text-rendering: optimizeLegibility;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -47,6 +121,6 @@ button:disabled {
 }
 
 ::selection {
-  background: #d7d9d6;
-  color: #090a0a;
+  background: var(--selection-bg);
+  color: var(--selection-color);
 }

@@ -19,8 +19,10 @@ import {
   CloseIcon,
   ContactChatIcon,
   FaqHelpIcon,
+  MoonIcon,
   PoliciesShieldIcon,
   ServicesGridIcon,
+  SunIcon,
 } from "./icons";
 import type {
   AuthPreviewMode,
@@ -28,6 +30,7 @@ import type {
 } from "./stories";
 import { ContentSheetView, type SheetType } from "./content-sheets";
 import AuthPanel from "../auth/auth-panel";
+import { useTheme } from "../../lib/theme";
 import styles from "./funda-experience.module.css";
 
 type FundaExperienceProps = {
@@ -78,24 +81,30 @@ function useParallaxTilt(enabled = true) {
   }, [enabled]);
 }
 
-function StoryArtwork({ story, index }: { story: StoryDefinition; index: number }) {
+function StoryArtwork({
+  story,
+  index,
+  active,
+}: {
+  story: StoryDefinition;
+  index: number;
+  active: boolean;
+}) {
   return (
     <div
       className={styles.artworkScene}
       data-visual={story.visual}
-      key={story.id}
+      data-active={active}
+      aria-hidden={!active}
     >
-      <span className={styles.artGlow} aria-hidden="true" />
-      <span className={styles.orbitOne} aria-hidden="true" />
-      <span className={styles.orbitTwo} aria-hidden="true" />
       <div className={styles.artworkImage}>
         <Image
           src={story.artwork}
           alt={story.artworkAlt}
           fill
           sizes="(max-width: 767px) 86vw, (max-width: 1180px) 36vw, 32vw"
-          priority={index === 0}
-          loading={index === 0 ? "eager" : "lazy"}
+          loading="eager"
+          fetchPriority={index === 0 ? "high" : "auto"}
         />
       </div>
     </div>
@@ -142,6 +151,7 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
   const pathname = usePathname();
   const reducedMotion = useReducedMotion();
   useParallaxTilt(!reducedMotion);
+  const { resolved: resolvedTheme, setTheme, toggleTheme } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -198,76 +208,68 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (authMode || activeSheet || menuOpen) return;
-      if (["ArrowRight", "PageDown"].includes(event.key)) {
-        event.preventDefault();
-        moveBy(1);
-      }
-      if (["ArrowLeft", "PageUp"].includes(event.key)) {
-        event.preventDefault();
-        moveBy(-1);
-      }
-      if (["1", "2", "3", "4"].includes(event.key)) {
-        const num = parseInt(event.key, 10) - 1;
-        if (num < stories.length) moveTo(num);
-      }
+      if (event.key === "ArrowRight" || event.key === "PageDown") moveBy(1);
+      if (event.key === "ArrowLeft" || event.key === "PageUp") moveBy(-1);
+      if (event.key === "Home") moveTo(0);
+      if (event.key === "End") moveTo(stories.length - 1);
     };
+
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [authMode, activeSheet, menuOpen, moveBy, moveTo, stories.length]);
 
   const onWheel = (event: React.WheelEvent) => {
-    if (authMode || activeSheet || menuOpen || Math.abs(event.deltaY) < 28 || wheelLocked.current) return;
+    if (authMode || activeSheet || menuOpen || wheelLocked.current) return;
+    if (Math.abs(event.deltaY) < 18) return;
+
     wheelLocked.current = true;
     moveBy(event.deltaY > 0 ? 1 : -1);
-    window.setTimeout(() => { wheelLocked.current = false; }, WHEEL_COOLDOWN);
+
+    window.setTimeout(() => {
+      wheelLocked.current = false;
+    }, WHEEL_COOLDOWN);
   };
 
   const onTouchStart = (event: TouchEvent) => {
-    if (!authMode && !activeSheet && !menuOpen) touchStart.current = event.touches[0]?.clientY ?? null;
+    if (authMode || activeSheet || menuOpen) return;
+    touchStart.current = event.touches[0].clientX;
   };
 
   const onTouchEnd = (event: TouchEvent) => {
     if (authMode || activeSheet || menuOpen || touchStart.current === null) return;
-    const end = event.changedTouches[0]?.clientY ?? touchStart.current;
-    const distance = touchStart.current - end;
+    const delta = event.changedTouches[0].clientX - touchStart.current;
     touchStart.current = null;
-    if (Math.abs(distance) > 42) moveBy(distance > 0 ? 1 : -1);
+    if (Math.abs(delta) < 40) return;
+    moveBy(delta < 0 ? 1 : -1);
   };
 
   const openAuth = (mode: AuthPreviewMode) => {
-    setIsPaused(true);
-    setMenuOpen(false);
     openedAuthHere.current = true;
-    window.history.pushState(null, "", mode === "login" ? "/login" : "/register");
+    setMenuOpen(false);
+    window.history.pushState(null, "", `/${mode}`);
   };
 
   const closeAuth = () => {
-    setIsPaused(false);
     if (openedAuthHere.current) {
-      openedAuthHere.current = false;
       window.history.back();
+      openedAuthHere.current = false;
       return;
     }
     window.history.pushState(null, "", "/");
   };
 
-  const navigateToSheet = (target: SheetType) => {
-    setIsPaused(true);
+  const navigateToSheet = (type: SheetType) => {
     setMenuOpen(false);
-    window.history.pushState(null, "", `/${target}`);
+    window.history.pushState(null, "", `/${type}`);
   };
 
   const closeSheet = () => {
-    setIsPaused(false);
     window.history.pushState(null, "", "/");
   };
 
   const toggleMenu = () => {
-    setIsPaused((prev) => !prev);
     setMenuOpen((prev) => !prev);
   };
-
-  const story = stories[currentIndex];
 
   const getSheetTitle = (type: SheetType) => {
     switch (type) {
@@ -304,33 +306,52 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
             funda<span>.</span>
           </Link>
           
-          {/* iOS-Style Sleek Menu Toggle Button Top Right */}
-          <button
-            type="button"
-            className={styles.menuToggleButton}
-            onClick={toggleMenu}
-            aria-label={menuOpen ? "Close menu" : "Open sidebar menu"}
-            aria-expanded={menuOpen}
-          >
-            {menuOpen ? <CloseIcon size={20} /> : <AppMenuToggleIcon size={20} />}
-          </button>
+          <div className={styles.headerActions}>
+            <button
+              type="button"
+              className={styles.themeToggleButton}
+              onClick={toggleTheme}
+              aria-label={resolvedTheme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+              title={resolvedTheme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+            >
+              {resolvedTheme === "light" ? <MoonIcon size={18} /> : <SunIcon size={18} />}
+            </button>
+            <button
+              type="button"
+              className={styles.menuToggleButton}
+              onClick={toggleMenu}
+              aria-label={menuOpen ? "Close menu" : "Open sidebar menu"}
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <CloseIcon size={20} /> : <AppMenuToggleIcon size={20} />}
+            </button>
+          </div>
         </header>
 
-        <div className={styles.storyContent} key={story.id}>
+        <div className={styles.storyContent}>
           <div className={styles.mobileStoryCard}>
-            <div className={styles.copyBlock}>
-              <h1>
-                {story.headline.split("\n")[0]}
-                {story.headline.includes("\n") && (
-                  <>
-                    <br />
-                    <span className={styles.gradientHighlight}>
-                      {story.headline.split("\n")[1]}
-                    </span>
-                  </>
-                )}
-              </h1>
-              <p>{story.body}</p>
+            <div className={styles.copyStage}>
+              {stories.map((item, index) => (
+                <div
+                  key={item.id}
+                  className={styles.copyBlock}
+                  data-active={index === currentIndex}
+                  aria-hidden={index !== currentIndex}
+                >
+                  <h1>
+                    {item.headline.split("\n")[0]}
+                    {item.headline.includes("\n") && (
+                      <>
+                        <br />
+                        <span className={styles.gradientHighlight}>
+                          {item.headline.split("\n")[1]}
+                        </span>
+                      </>
+                    )}
+                  </h1>
+                  <p>{item.body}</p>
+                </div>
+              ))}
             </div>
 
             <div className={styles.progress} aria-label={`Story ${currentIndex + 1} of ${stories.length}`}>
@@ -384,7 +405,14 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
           </div>
 
           <div className={styles.artworkColumn}>
-            <StoryArtwork story={story} index={currentIndex} />
+            {stories.map((item, index) => (
+              <StoryArtwork
+                key={item.id}
+                story={item}
+                index={index}
+                active={index === currentIndex}
+              />
+            ))}
           </div>
         </div>
 
@@ -471,6 +499,26 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
               <ChevronRightIcon size={16} className={styles.menuChevron} />
             </button>
           </nav>
+
+          <div className={styles.drawerThemeSection}>
+            <span className={styles.drawerSectionTag}>Appearance</span>
+            <div className={styles.themeSegmentControl}>
+              <button
+                type="button"
+                className={`${styles.themeSegmentBtn} ${resolvedTheme === "light" ? styles.themeSegmentActive : ""}`}
+                onClick={() => setTheme("light")}
+              >
+                <SunIcon size={15} /> Light
+              </button>
+              <button
+                type="button"
+                className={`${styles.themeSegmentBtn} ${resolvedTheme === "dark" ? styles.themeSegmentActive : ""}`}
+                onClick={() => setTheme("dark")}
+              >
+                <MoonIcon size={15} /> Dark
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className={styles.drawerFooter}>

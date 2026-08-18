@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import { parseIdentifier } from "../../lib/auth/identifiers";
 import { createClient } from "../../lib/supabase/client";
-import { CheckIcon, CloseIcon } from "../onboarding/icons";
+import { CheckIcon, CloseIcon, SunIcon, MoonIcon, SystemThemeIcon } from "../onboarding/icons";
+import { useTheme } from "../../lib/theme";
 import {
   changeAccountPassword,
   signOut,
@@ -149,6 +150,7 @@ function ToggleRow({
 
 export default function ProfileCenter({ user, settings: initialSettings, onClose }: ProfileCenterProps) {
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
   const [tab, setTab] = useState<AccountTab>("profile");
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<AccountActionResult | null>(null);
@@ -476,7 +478,71 @@ export default function ProfileCenter({ user, settings: initialSettings, onClose
 
         {tab === "settings" && (
           <form className={styles.accountForm} onSubmit={saveSettings}>
+            {/* Appearance / Theme Selector */}
             <div className={styles.accountSectionHeading}>
+              <h3>Appearance & Theme</h3>
+              <p>Choose your preferred interface theme. Light mode is default.</p>
+            </div>
+            <div className={styles.appearanceOptionGrid}>
+              <button
+                type="button"
+                className={`${styles.appearanceCard} ${theme === "light" ? styles.appearanceCardActive : ""}`}
+                onClick={() => setTheme("light")}
+              >
+                <div className={styles.appearanceIconWrapper}>
+                  <SunIcon size={20} />
+                </div>
+                <div className={styles.appearanceCardText}>
+                  <strong>Light</strong>
+                  <span>Soft ash & crisp white</span>
+                </div>
+                {theme === "light" && (
+                  <span className={styles.appearanceActiveCheck}>
+                    <CheckIcon size={12} />
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                className={`${styles.appearanceCard} ${theme === "dark" ? styles.appearanceCardActive : ""}`}
+                onClick={() => setTheme("dark")}
+              >
+                <div className={styles.appearanceIconWrapper}>
+                  <MoonIcon size={20} />
+                </div>
+                <div className={styles.appearanceCardText}>
+                  <strong>Dark</strong>
+                  <span>Black ash & light green</span>
+                </div>
+                {theme === "dark" && (
+                  <span className={styles.appearanceActiveCheck}>
+                    <CheckIcon size={12} />
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                className={`${styles.appearanceCard} ${theme === "system" ? styles.appearanceCardActive : ""}`}
+                onClick={() => setTheme("system")}
+              >
+                <div className={styles.appearanceIconWrapper}>
+                  <SystemThemeIcon size={20} />
+                </div>
+                <div className={styles.appearanceCardText}>
+                  <strong>System</strong>
+                  <span>Sync with device</span>
+                </div>
+                {theme === "system" && (
+                  <span className={styles.appearanceActiveCheck}>
+                    <CheckIcon size={12} />
+                  </span>
+                )}
+              </button>
+            </div>
+
+            <div className={styles.accountSectionHeading} style={{ marginTop: 8 }}>
               <h3>Notifications & Preferences</h3>
               <p>Customize what notifications Funda sends you.</p>
             </div>

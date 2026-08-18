@@ -115,11 +115,11 @@ function OtpDigitBoxes({
             border: error
               ? "1.5px solid #ef4444"
               : digits[idx]
-                ? "1.5px solid #c084fc"
-                : "1px solid rgba(0, 0, 0, 0.14)",
-            background: digits[idx] ? "rgba(168, 85, 247, 0.05)" : "#ffffff",
-            color: "#111313",
-            boxShadow: digits[idx] ? "0 0 0 3px rgba(168, 85, 247, 0.18)" : "none",
+                ? "1.5px solid #18745a"
+                : "1px solid rgba(0, 0, 0, 0.12)",
+            background: digits[idx] ? "rgba(24, 116, 90, 0.06)" : "#ffffff",
+            color: "#0a0b0e",
+            boxShadow: digits[idx] ? "0 0 0 3px rgba(24, 116, 90, 0.18)" : "none",
             outline: "none",
             transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}

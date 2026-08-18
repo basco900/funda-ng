@@ -5,6 +5,7 @@ import { loadBachs, type BachsCheckoutEvent } from "@bachs/js";
 import { useEffect, useState } from "react";
 import styles from "./dashboard.module.css";
 import ProfileCenter, { type ProfileCenterSettings, type ProfileCenterUser } from "./profile-center";
+import { useTheme } from "../../lib/theme";
 
 export interface DashboardClientProps {
   user: ProfileCenterUser & {
@@ -319,12 +320,26 @@ function SvgIcon({ name, size = 20, className }: { name: string; size?: number; 
           <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
       );
+    case "sun":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+        </svg>
+      );
+    case "moon":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+      );
     default:
       return null;
   }
 }
 
 export default function DashboardClient({ user, settings, initialWalletBalance }: DashboardClientProps) {
+  const { resolved: resolvedTheme, toggleTheme } = useTheme();
   const [walletBalance, setWalletBalance] = useState(initialWalletBalance);
   const [cashbackBalance] = useState(420.0);
   const [showBalance, setShowBalance] = useState(true);
@@ -523,6 +538,15 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
           <button
             type="button"
             className={styles.frostedIconButton}
+            onClick={toggleTheme}
+            aria-label={resolvedTheme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+            title={resolvedTheme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+          >
+            <SvgIcon name={resolvedTheme === "light" ? "moon" : "sun"} size={19} />
+          </button>
+          <button
+            type="button"
+            className={styles.frostedIconButton}
             onClick={() => setShowNotificationDrawer(true)}
             aria-label="Notifications"
           >
@@ -564,6 +588,17 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
           </div>
 
           <div className={styles.topBarRight}>
+            {/* Theme Switcher Button */}
+            <button
+              type="button"
+              className={styles.frostedIconButton}
+              onClick={toggleTheme}
+              aria-label={resolvedTheme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+              title={resolvedTheme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+            >
+              <SvgIcon name={resolvedTheme === "light" ? "moon" : "sun"} size={19} />
+            </button>
+
             {/* Notification Bell */}
             <button
               type="button"
