@@ -2661,7 +2661,16 @@
 }
 
 /* Desktop account access follows the dashboard's bottom-sheet interaction. */
+.desktopRail {
+  display: none;
+}
+
 @media (min-width: 960px) {
+  .mobileBackdrop,
+  .mobileAuth {
+    display: none;
+  }
+
   .desktopRail {
     position: fixed;
     inset: 0;
@@ -2671,8 +2680,8 @@
     justify-content: center;
     padding: 28px 24px;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(10px);
+    background: rgba(239, 246, 242, 0.68);
+    backdrop-filter: blur(14px) saturate(115%);
   }
 
   :global([data-theme="dark"]) .desktopRail {
@@ -2859,6 +2868,59 @@
 
   .desktopRail .fieldError {
     color: var(--accent) !important;
+  }
+}
+
+@media (max-width: 959px) {
+  .desktopRail {
+    display: none !important;
+  }
+
+  .mobileBackdrop {
+    display: block;
+    background: rgba(12, 20, 17, 0.34);
+    backdrop-filter: blur(8px);
+  }
+
+  .mobileAuth {
+    display: block;
+  }
+
+  .mobileAuth .authWrap {
+    background: #ffffff;
+    color: #101212;
+    box-shadow: 0 -20px 64px rgba(21, 23, 23, 0.18);
+  }
+
+  :global([data-theme="dark"]) .mobileBackdrop {
+    background: rgba(0, 2, 7, 0.7);
+  }
+
+  :global([data-theme="dark"]) .mobileAuth .authWrap {
+    background:
+      radial-gradient(circle at 88% 4%, rgba(24, 116, 90, 0.16), transparent 30%),
+      #0b101b;
+    color: #f8fafc;
+  }
+
+  :global([data-theme="dark"]) .mobileAuth .authWordmark,
+  :global([data-theme="dark"]) .mobileAuth .authBody h2 {
+    color: #f8fafc;
+  }
+
+  :global([data-theme="dark"]) .mobileAuth .fieldLabel,
+  :global([data-theme="dark"]) .mobileAuth .authBody form > p,
+  :global([data-theme="dark"]) .mobileAuth .authQuiet {
+    color: #aeb9b5;
+  }
+
+  :global([data-theme="dark"]) .mobileAuth .textField,
+  :global([data-theme="dark"]) .mobileAuth .otpField,
+  :global([data-theme="dark"]) .mobileAuth .phoneField,
+  :global([data-theme="dark"]) .mobileAuth input {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #ffffff !important;
   }
 }
 
