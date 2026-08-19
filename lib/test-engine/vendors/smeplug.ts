@@ -33,7 +33,9 @@ async function call(path: string, init?: RequestInit) {
 
 const networkIds: Record<NetworkId, number> = { mtn: 1, airtel: 2, "9mobile": 3, glo: 4 };
 
-// SMEPlug's exact response contract will be narrowed when its private docs arrive.
+// Verified against SMEPlug's published Postman collection on 19 August 2026.
+// A successful delivery may be immediate or report a provider-side current_status,
+// so non-terminal responses remain pending and are reconciled by webhook/requery.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function statusOf(payload: Record<string, any>): PurchaseResult["status"] {
   if (payload.status === true && !payload.data?.current_status) return "successful";

@@ -633,7 +633,7 @@
 
 .authWordmark {
   color: #765096;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.065em;
   text-align: center;
@@ -680,7 +680,7 @@
   flex: 1;
   flex-direction: column;
   justify-content: center;
-  padding: 24px 22px max(26px, env(safe-area-inset-bottom));
+  padding: 48px 64px max(48px, env(safe-area-inset-bottom));
 }
 
 .authEyebrow {
@@ -696,7 +696,7 @@
   max-width: 12ch;
   margin: 12px 0 0;
   color: #101212;
-  font-size: clamp(31px, 9vw, 42px);
+  font-size: clamp(18px, 5vw, 24px);
   font-weight: 570;
   letter-spacing: -0.06em;
   line-height: 0.98;
@@ -727,7 +727,7 @@
 .phoneField {
   display: flex;
   align-items: center;
-  height: 56px;
+  height: 42px;
   overflow: hidden;
   border: 1px solid rgba(9, 10, 10, 0.13);
   border-radius: 16px;
@@ -782,7 +782,7 @@
 .textField,
 .otpField {
   width: 100%;
-  height: 56px;
+  height: 42px;
   border: 1px solid rgba(9, 10, 10, 0.13);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.88);
@@ -816,13 +816,13 @@
   justify-content: center;
   gap: 9px;
   width: 100%;
-  min-height: 54px;
+  min-height: 40px;
   margin-top: 18px;
   border: 0;
   border-radius: 999px;
   background: linear-gradient(105deg, #151318 0%, #2d2038 58%, #453058 100%);
   color: var(--warm-white);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 640;
   transition: background 180ms ease, transform 180ms ease;
 }
@@ -834,7 +834,7 @@
 
 .authQuiet {
   display: block;
-  min-height: 40px;
+  min-height: 34px;
   margin: 4px auto 0;
   border: 0;
   background: transparent;
@@ -2361,7 +2361,7 @@
 
 .textField,
 .phoneField input {
-  font-size: 17px;
+  font-size: 13px;
   line-height: 1.2;
 }
 
@@ -2369,7 +2369,7 @@
 .phoneField input::placeholder,
 .otpField::placeholder {
   color: #858a87;
-  font-size: 17px;
+  font-size: 13px;
   font-weight: 400;
   opacity: 1;
 }
@@ -2380,7 +2380,7 @@
 }
 
 .authPrimary {
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .authQuiet {
@@ -2435,6 +2435,22 @@
 }
 
 @media (min-width: 960px) {
+  .authBody {
+    padding: 80px 24px max(80px, env(safe-area-inset-bottom));
+    align-items: center;
+  }
+
+  .authBody form,
+  .completeState {
+    width: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+  }
+
+  .authBody h2 {
+    font-size: 16px;
+  }
+
   .previewNotice {
     font-size: 12px;
   }
@@ -2445,18 +2461,18 @@
 
   .authBody form > p,
   .completeState > p {
-    font-size: 15px;
+    font-size: 13px;
   }
 
   .fieldLabel {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .textField,
   .textField::placeholder,
   .phoneField input,
   .phoneField input::placeholder {
-    font-size: 17px;
+    font-size: 14px;
   }
 }
 

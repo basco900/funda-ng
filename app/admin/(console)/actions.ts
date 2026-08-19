@@ -11,6 +11,8 @@ import {
 import { recordAdminAudit } from "../../../lib/admin/security";
 import { createAdminClient } from "../../../lib/supabase/admin";
 import { enqueueAdminJob } from "../../../lib/admin/jobs";
+import { getVendor } from "../../../lib/test-engine/vendors";
+import type { NetworkId, VendorId } from "../../../lib/test-engine/types";
 
 export type AdminActionResult<T = undefined> = {
   ok: boolean;
@@ -213,17 +215,146 @@ export async function executeRefund(input: unknown): Promise<AdminActionResult<{
 }
 
 export async function saveProvider(input: unknown): Promise<AdminActionResult<{ id: string }>> {
-  const schema = z.object({ id: uuid.optional(), name: z.string().trim().min(2).max(100), slug: z.string().regex(/^[a-z][a-z0-9-]{1,49}$/), status: z.enum(["operational", "degraded", "down", "maintenance", "standby"]), priority: z.coerce.number().int().min(1).max(1000), capabilities: z.array(z.string().trim().min(2).max(50)).max(20) });
+  const schema = z.object({
+    id: uuid.optional(), name: z.string().trim().min(2).max(100), slug: z.string().regex(/^[a-z][a-z0-9-]{1,49}$/),
+    status: z.enum(["operational", "degraded", "down", "maintenance", "standby"]), priority: z.coerce.number().int().min(1).max(1000), capabilities: z.array(z.string().trim().min(2).max(50)).max(20),
+    environment: z.enum(["sandbox", "live"]).default("sandbox"), apiBaseUrl: z.string().url().nullable().optional(), catalogueEndpoint: z.string().max(300).nullable().optional(), purchaseEndpoint: z.string().max(300).nullable().optional(), requeryEndpoint: z.string().max(300).nullable().optional(), balanceEndpoint: z.string().max(300).nullable().optional(), apiSecretReference: z.string().trim().max(120).nullable().optional(), webhookSecretReference: z.string().trim().max(120).nullable().optional(), documentationUrl: z.string().url().nullable().optional(), websiteUrl: z.string().url().nullable().optional(), supportEmail: z.string().email().nullable().optional(), supportPhone: z.string().trim().max(40).nullable().optional(), notes: z.string().trim().max(2000).nullable().optional(),
+  });
   try {
     const values = schema.parse(input);
     const session = await requireAdminPermission("providers.manage");
     const client = createAdminClient();
     const { data: oldValue } = values.id ? await client.from("provider_registry").select("*").eq("id", values.id).maybeSingle() : { data: null };
-    const { data, error } = await client.from("provider_registry").upsert({ ...values }, values.id ? { onConflict: "id" } : undefined).select("id").single();
+    const record = { id: values.id, name: values.name, slug: values.slug, status: values.status, priority: values.priority, capabilities: values.capabilities, environment: values.environment, api_base_url: values.apiBaseUrl ?? null, catalogue_endpoint: values.catalogueEndpoint ?? null, purchase_endpoint: values.purchaseEndpoint ?? null, requery_endpoint: values.requeryEndpoint ?? null, balance_endpoint: values.balanceEndpoint ?? null, api_secret_reference: values.apiSecretReference ?? null, webhook_secret_reference: values.webhookSecretReference ?? null, documentation_url: values.documentationUrl ?? null, website_url: values.websiteUrl ?? null, support_email: values.supportEmail ?? null, support_phone: values.supportPhone ?? null, notes: values.notes ?? null };
+    const { data, error } = await client.from("provider_registry").upsert(record, values.id ? { onConflict: "id" } : undefined).select("id").single();
     if (error || !data) throw new Error("The provider could not be saved.");
     await recordAdminAudit(session, { action: values.id ? "provider.updated" : "provider.created", entityType: "provider", entityId: String(data.id), oldValue, newValue: values });
     refresh("/admin/products/providers", "/admin/platform/integrations");
     return { ok: true, message: "Provider saved.", data: { id: String(data.id) } };
+  } catch (error) { return failure(error); }
+}
+
+const providerNetworks: NetworkId[] = ["mtn", "airtel", "glo", "9mobile"];
+const supportedCatalogueVendors = new Set<VendorId>(["smeplug", "gladtidings", "vtpass", "pairgate"]);
+
+function dataAmountMbFromName(name: string) {
+  const match = name.match(/(\d+(?:\.\d+)?)\s*(TB|GB|MB)\b/i);
+  if (!match) return null;
+  const amount = Number(match[1]);
+  if (!Number.isFinite(amount)) return null;
+  const unit = match[2].toUpperCase();
+  return unit === "TB" ? amount * 1_000_000 : unit === "GB" ? amount * 1_000 : amount;
+}
+
+function validityFromName(name: string) {
+  const match = name.match(/\b(\d+(?:\.\d+)?)\s*(day|days|week|weeks|month|months|year|years|hour|hours)\b/i);
+  if (!match) return { label: null, hours: null };
+  const value = Number(match[1]);
+  const unit = match[2].toLowerCase();
+  const multiplier = unit.startsWith("hour") ? 1 : unit.startsWith("day") ? 24 : unit.startsWith("week") ? 24 * 7 : unit.startsWith("month") ? 24 * 30 : 24 * 365;
+  return { label: match[0], hours: Number.isFinite(value) ? Math.round(value * multiplier) : null };
+}
+
+export async function syncProviderCatalogue(input: unknown): Promise<AdminActionResult<{ imported: number; status: string }>> {
+  const schema = z.object({ providerId: uuid });
+  try {
+    const { providerId } = schema.parse(input);
+    const session = await requireAdminPermission("providers.manage");
+    const client = createAdminClient();
+    const { data: provider, error: providerError } = await client
+      .from("provider_registry")
+      .select("id,name,slug,status")
+      .eq("id", providerId)
+      .single();
+    if (providerError || !provider) throw new Error("Provider was not found.");
+    if (!supportedCatalogueVendors.has(provider.slug as VendorId)) {
+      throw new Error(`${provider.name} needs an API adapter before Funda can synchronise its catalogue.`);
+    }
+
+    const vendor = getVendor(provider.slug as VendorId);
+    if (!vendor.isConfigured()) throw new Error(`${provider.name} is missing its server-side API credentials.`);
+
+    const startedAt = Date.now();
+    const settled = await Promise.allSettled(providerNetworks.map((network) => vendor.getDataPlans(network)));
+    const plans = settled.flatMap((result, index) => result.status === "fulfilled"
+      ? result.value.map((plan) => ({ plan, network: providerNetworks[index] }))
+      : []);
+    if (!plans.length) {
+      const failure = settled.find((result) => result.status === "rejected");
+      throw failure?.status === "rejected" ? failure.reason : new Error("No data plans were returned.");
+    }
+
+    const catalogueRows = plans
+      .filter(({ plan }) => Number.isFinite(plan.amount) && plan.amount > 0 && Boolean(plan.id))
+      .map(({ plan, network }) => {
+        const validity = validityFromName(plan.name);
+        return {
+          provider_id: provider.id,
+          service_type: "data",
+          network_slug: network,
+          provider_product_code: plan.id,
+          provider_name: plan.name,
+          data_amount_mb: dataAmountMbFromName(plan.name),
+          validity_hours: validity.hours,
+          validity_label: validity.label,
+          provider_cost: plan.amount,
+          currency: "NGN",
+          is_available: true,
+          raw_payload: { source: "provider_catalogue_sync", vendor: provider.slug, network, plan },
+          imported_at: new Date().toISOString(),
+        };
+      });
+    for (let offset = 0; offset < catalogueRows.length; offset += 250) {
+      const { error } = await client
+        .from("provider_catalogue_items")
+        .upsert(catalogueRows.slice(offset, offset + 250), { onConflict: "provider_id,provider_product_code" });
+      if (error) throw new Error(`Catalogue import failed: ${error.message}`);
+    }
+
+    const failedNetworks = settled.filter((result) => result.status === "rejected").length;
+    const status = failedNetworks ? "degraded" : "operational";
+    const latencyMs = Date.now() - startedAt;
+    const message = failedNetworks
+      ? `${catalogueRows.length} plans imported; ${failedNetworks} network catalogue${failedNetworks === 1 ? "" : "s"} failed.`
+      : `${catalogueRows.length} live data plans imported successfully.`;
+    const now = new Date().toISOString();
+    const [{ error: healthError }, { error: updateError }] = await Promise.all([
+      client.from("provider_health_checks").insert({ provider_id: provider.id, component: "catalogue", status, latency_ms: latencyMs, success_rate: Number((((4 - failedNetworks) / 4) * 100).toFixed(2)), message }),
+      client.from("provider_registry").update({ status, last_catalogue_sync_at: now, last_health_check_at: now }).eq("id", provider.id),
+    ]);
+    if (healthError || updateError) throw new Error(healthError?.message || updateError?.message || "Provider health could not be recorded.");
+    await recordAdminAudit(session, { action: "provider.catalogue_synced", entityType: "provider", entityId: provider.id, oldValue: { status: provider.status }, newValue: { status, imported: catalogueRows.length, failedNetworks, latencyMs } });
+    refresh("/admin/products/providers", "/admin/products/data-bundles", `/admin/products/providers/${provider.id}`);
+    return { ok: true, message, data: { imported: catalogueRows.length, status } };
+  } catch (error) { return failure(error); }
+}
+
+export async function saveDataBundle(input: unknown): Promise<AdminActionResult<{ id: string }>> {
+  const schema = z.object({
+    id: uuid.optional(), name: z.string().trim().min(2).max(160), network: z.enum(["mtn", "airtel", "glo", "9mobile"]), category: z.string().trim().min(2).max(40), dataAmountMb: z.coerce.number().positive().max(1_000_000), validity: z.string().trim().min(2).max(100), providerCatalogueItemId: uuid.nullable().optional(), providerId: uuid.nullable().optional(), providerProductCode: z.string().trim().max(100).nullable().optional(), providerCost: z.coerce.number().nonnegative().default(0), sellingPrice: z.coerce.number().nonnegative(), placement: z.enum(["none", "home_quick", "data_top", "data_recommended"]).default("none"), badge: z.string().trim().max(24).nullable().optional(), status: z.enum(["draft", "active", "disabled", "archived"]).default("draft"),
+  }).refine((value) => !value.providerId || Boolean(value.providerCatalogueItemId && value.providerProductCode), { message: "Choose a complete provider offer or leave the provider mapping empty.", path: ["providerCatalogueItemId"] }).refine((value) => value.providerId || value.status !== "active", { message: "Link a provider offer before publishing this bundle.", path: ["status"] }).refine((value) => value.sellingPrice >= value.providerCost, { message: "Selling price cannot be below provider cost.", path: ["sellingPrice"] });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("products.edit");
+    const adminUserId = await materializeAdminSession(session);
+    const client = createAdminClient();
+    const { data: oldValue } = values.id ? await client.from("service_products").select("*").eq("id", values.id).maybeSingle() : { data: null };
+    const product = { id: values.id, provider_id: values.providerId ?? null, service_type: "data", network: values.network, provider_product_code: values.providerProductCode ?? null, name: values.name, description: `${values.dataAmountMb}MB · ${values.category} · ${values.validity}`, validity: values.validity, provider_cost: values.providerCost, selling_price: values.sellingPrice, status: values.status, featured: values.placement !== "none", metadata: { data_amount_mb: values.dataAmountMb, category: values.category }, created_by: values.id ? oldValue?.created_by : adminUserId, updated_by: adminUserId };
+    const { data, error } = await client.from("service_products").upsert(product).select("id").single();
+    if (error || !data) throw new Error("The data bundle could not be saved.");
+    const productId = String(data.id);
+    if (values.providerId && values.providerCatalogueItemId && values.providerProductCode) {
+      const { error: offerError } = await client.from("product_provider_offers").upsert({ product_id: productId, provider_id: values.providerId, provider_catalogue_item_id: values.providerCatalogueItemId, provider_product_code: values.providerProductCode, provider_cost: values.providerCost, priority: 100, status: "active" }, { onConflict: "product_id,provider_id,provider_product_code" });
+      if (offerError) throw new Error("The bundle was saved, but its provider mapping could not be linked.");
+    }
+    if (values.placement === "none") await client.from("product_placements").delete().eq("product_id", productId);
+    else {
+      const { error: placementError } = await client.from("product_placements").upsert({ product_id: productId, surface: values.placement, badge: values.badge ?? null, is_active: values.status === "active" }, { onConflict: "product_id,surface" });
+      if (placementError) throw new Error("The bundle was saved, but its placement could not be saved.");
+    }
+    await recordAdminAudit(session, { action: values.id ? "data_bundle.updated" : "data_bundle.created", entityType: "service_product", entityId: productId, oldValue, newValue: product });
+    refresh("/admin/products/data-bundles", "/admin/dashboard");
+    return { ok: true, message: "Data bundle saved.", data: { id: productId } };
   } catch (error) { return failure(error); }
 }
 

@@ -106,9 +106,9 @@ function OtpDigitBoxes({
           onKeyDown={(e) => handleKeyDown(idx, e)}
           style={{
             width: "100%",
-            height: "54px",
+            height: "42px",
             textAlign: "center",
-            fontSize: "22px",
+            fontSize: "18px",
             fontWeight: "700",
             fontFamily: "var(--font-geist-mono), monospace",
             borderRadius: "14px",

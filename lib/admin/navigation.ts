@@ -20,6 +20,13 @@ export const adminNavigation: AdminNavGroup[] = [
     ],
   },
   {
+    label: "Products",
+    items: [
+      { label: "Providers", href: "/admin/products/providers", icon: "provider", description: "Supplier APIs, catalogues and health" },
+      { label: "Data bundles", href: "/admin/products/data-bundles", icon: "wifi", description: "Curated plans, pricing and placement" },
+    ],
+  },
+  {
     label: "Customers",
     items: [
       { label: "Users", href: "/admin/users", icon: "users", description: "Customer directory" },
@@ -38,27 +45,6 @@ export const adminNavigation: AdminNavGroup[] = [
       { label: "Reconciliation", href: "/admin/money/reconciliation", icon: "reconcile", description: "Match internal and provider records" },
       { label: "Ledger", href: "/admin/money/ledger", icon: "ledger", description: "Immutable financial trail" },
       { label: "Revenue", href: "/admin/money/revenue", icon: "chart", description: "Margins and earnings" },
-    ],
-  },
-  {
-    label: "Services",
-    items: [
-      { label: "Networks", href: "/admin/services/networks", icon: "segments", description: "Availability and maintenance controls" },
-      { label: "Data bundles", href: "/admin/services/data", icon: "wifi", description: "Plans, pricing and availability" },
-      { label: "Airtime", href: "/admin/services/airtime", icon: "phone", description: "Networks and denominations" },
-      { label: "Electricity", href: "/admin/services/electricity", icon: "bolt", description: "DisCos and meter products" },
-      { label: "Cable TV", href: "/admin/services/cable", icon: "tv", description: "Bouquets and providers" },
-      { label: "Other services", href: "/admin/services/other", icon: "more", description: "Betting, education and more" },
-    ],
-  },
-  {
-    label: "Products",
-    items: [
-      { label: "Catalogue", href: "/admin/products", icon: "catalogue", description: "All sellable products" },
-      { label: "Providers", href: "/admin/products/providers", icon: "provider", description: "Routing and balances" },
-      { label: "Pricing", href: "/admin/products/pricing", icon: "pricing", description: "Costs, margins and retail prices" },
-      { label: "Cashback", href: "/admin/products/cashback", icon: "spark", description: "Reward rules and budgets" },
-      { label: "Commissions", href: "/admin/products/commissions", icon: "percent", description: "Provider commissions" },
     ],
   },
   {
@@ -138,10 +124,8 @@ export function permissionForAdminPath(pathname: string) {
   if (pathname.startsWith("/admin/transactions") || pathname.startsWith("/admin/money/funding") || pathname.startsWith("/admin/operations/failed") || pathname.startsWith("/admin/operations/pending") || pathname.startsWith("/admin/operations/live")) return "transactions.view";
   if (pathname.startsWith("/admin/money/refunds")) return "transactions.refund";
   if (pathname.startsWith("/admin/money/reconciliation") || pathname.startsWith("/admin/money/revenue")) return "reconciliation.manage";
-  if (pathname.startsWith("/admin/services/networks")) return "providers.manage";
-  if (pathname.startsWith("/admin/services") || pathname === "/admin/products" || pathname.startsWith("/admin/products/providers")) return "products.view";
-  if (pathname.startsWith("/admin/products/pricing") || pathname.startsWith("/admin/products/commissions")) return "pricing.edit";
-  if (pathname.startsWith("/admin/products/cashback") || pathname.startsWith("/admin/growth")) return "growth.manage";
+  if (pathname.startsWith("/admin/products/providers")) return "providers.manage";
+  if (pathname.startsWith("/admin/products/data-bundles")) return "products.view";
   if (pathname.startsWith("/admin/operations/disputes") || pathname.startsWith("/admin/operations/support")) return "support.manage";
   if (pathname.startsWith("/admin/operations/incidents")) return "providers.manage";
   if (pathname.startsWith("/admin/operations/manual")) return "approvals.view";
