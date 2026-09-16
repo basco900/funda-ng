@@ -1,6 +1,6 @@
-import { requireAdminPermission } from "../../../../../lib/admin/auth";
-import { createAdminClient } from "../../../../../lib/supabase/admin";
-import ProviderWorkspace from "./provider-workspace";
+import { requireAdminPermission } from "../../../../lib/admin/auth";
+import { createAdminClient } from "../../../../lib/supabase/admin";
+import ProviderWorkspace from "../../(console)/products/providers/provider-workspace";
 
 export default async function ProvidersPage() {
   await requireAdminPermission("providers.manage");

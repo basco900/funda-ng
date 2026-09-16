@@ -15,22 +15,22 @@ export const adminNavigation: AdminNavGroup[] = [
   {
     label: "Overview",
     items: [
-      { label: "Control centre", href: "/admin/dashboard", icon: "grid", description: "Live platform overview" },
-      { label: "Live operations", href: "/admin/operations/live", icon: "pulse", description: "Real-time transaction flow", badge: "Live" },
+      { label: "Control Centre", href: "/admin/dashboard", icon: "grid", description: "Live platform overview" },
+      { label: "Live Operations", href: "/admin/operations/live", icon: "pulse", description: "Real-time transaction flow", badge: "Live" },
     ],
   },
   {
     label: "Products",
     items: [
       { label: "Providers", href: "/admin/products/providers", icon: "provider", description: "Supplier APIs, catalogues and health" },
-      { label: "Data bundles", href: "/admin/products/data-bundles", icon: "wifi", description: "Curated plans, pricing and placement" },
+      { label: "Data Bundles", href: "/admin/products/data-bundles", icon: "wifi", description: "Curated plans, pricing and placement" },
     ],
   },
   {
     label: "Customers",
     items: [
       { label: "Users", href: "/admin/users", icon: "users", description: "Customer directory" },
-      { label: "KYC & verification", href: "/admin/customers/kyc", icon: "shield", description: "Identity review queue" },
+      { label: "KYC & Verification", href: "/admin/customers/kyc", icon: "shield", description: "Identity review queue" },
       { label: "Wallets", href: "/admin/customers/wallets", icon: "wallet", description: "Balances and controls" },
       { label: "Segments", href: "/admin/customers/segments", icon: "segments", description: "Dynamic audiences" },
       { label: "Referrals", href: "/admin/customers/referrals", icon: "referral", description: "Referral performance" },
@@ -40,7 +40,7 @@ export const adminNavigation: AdminNavGroup[] = [
     label: "Money",
     items: [
       { label: "Transactions", href: "/admin/transactions", icon: "transactions", description: "Every money movement" },
-      { label: "Wallet funding", href: "/admin/money/funding", icon: "funding", description: "Deposit activity" },
+      { label: "Wallet Funding", href: "/admin/money/funding", icon: "funding", description: "Deposit activity" },
       { label: "Refunds", href: "/admin/money/refunds", icon: "refund", description: "Refund requests" },
       { label: "Reconciliation", href: "/admin/money/reconciliation", icon: "reconcile", description: "Match internal and provider records" },
       { label: "Ledger", href: "/admin/money/ledger", icon: "ledger", description: "Immutable financial trail" },
@@ -55,7 +55,7 @@ export const adminNavigation: AdminNavGroup[] = [
       { label: "Disputes", href: "/admin/operations/disputes", icon: "dispute", description: "Customer claims" },
       { label: "Support", href: "/admin/operations/support", icon: "support", description: "Tickets and assignments" },
       { label: "Incidents", href: "/admin/operations/incidents", icon: "incident", description: "Provider disruptions" },
-      { label: "Manual operations", href: "/admin/operations/manual", icon: "tools", description: "Controlled interventions" },
+      { label: "Manual Operations", href: "/admin/operations/manual", icon: "tools", description: "Controlled interventions" },
     ],
   },
   {
@@ -69,12 +69,12 @@ export const adminNavigation: AdminNavGroup[] = [
     ],
   },
   {
-    label: "Risk & compliance",
+    label: "Risk & Compliance",
     items: [
-      { label: "Risk monitor", href: "/admin/risk", icon: "risk", description: "Signals and risk cases" },
+      { label: "Risk Monitor", href: "/admin/risk", icon: "risk", description: "Signals and risk cases" },
       { label: "Limits", href: "/admin/risk/limits", icon: "limits", description: "Tier and transaction limits" },
-      { label: "Suspicious activity", href: "/admin/risk/activity", icon: "eye", description: "Behavioural signals" },
-      { label: "Blocked accounts", href: "/admin/risk/blocked", icon: "blocked", description: "Restricted customers" },
+      { label: "Suspicious Activity", href: "/admin/risk/activity", icon: "eye", description: "Behavioural signals" },
+      { label: "Blocked Accounts", href: "/admin/risk/blocked", icon: "blocked", description: "Restricted customers" },
       { label: "Device & IP", href: "/admin/risk/devices", icon: "device", description: "Device intelligence" },
     ],
   },
@@ -90,20 +90,20 @@ export const adminNavigation: AdminNavGroup[] = [
   {
     label: "Platform",
     items: [
-      { label: "Feature flags", href: "/admin/platform/features", icon: "flag", description: "Controlled rollouts" },
-      { label: "App configuration", href: "/admin/platform/config", icon: "sliders", description: "Runtime controls" },
+      { label: "Feature Flags", href: "/admin/platform/features", icon: "flag", description: "Controlled rollouts" },
+      { label: "App Configuration", href: "/admin/platform/config", icon: "sliders", description: "Runtime controls" },
       { label: "Integrations", href: "/admin/platform/integrations", icon: "plug", description: "Connected services" },
       { label: "Webhooks", href: "/admin/platform/webhooks", icon: "webhook", description: "Delivery and retries" },
-      { label: "API logs", href: "/admin/platform/logs", icon: "terminal", description: "Redacted request logs" },
-      { label: "System health", href: "/admin/platform/health", icon: "health", description: "Infrastructure status" },
+      { label: "API Logs", href: "/admin/platform/logs", icon: "terminal", description: "Redacted request logs" },
+      { label: "System Health", href: "/admin/platform/health", icon: "health", description: "Infrastructure status" },
     ],
   },
   {
     label: "Administration",
     items: [
-      { label: "Admin users", href: "/admin/settings/admins", icon: "admin", description: "Team access" },
-      { label: "Roles & permissions", href: "/admin/settings/roles", icon: "key", description: "Access policies" },
-      { label: "Audit log", href: "/admin/settings/audit", icon: "audit", description: "Immutable activity record" },
+      { label: "Admin Users", href: "/admin/settings/admins", icon: "admin", description: "Team access" },
+      { label: "Roles & Permissions", href: "/admin/settings/roles", icon: "key", description: "Access policies" },
+      { label: "Audit Log", href: "/admin/settings/audit", icon: "audit", description: "Immutable activity record" },
       { label: "Security", href: "/admin/settings/security", icon: "lock", description: "Sessions and 2FA" },
       { label: "Settings", href: "/admin/settings", icon: "settings", description: "Admin preferences" },
     ],

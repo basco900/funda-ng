@@ -3,7 +3,7 @@ import { getVendor } from "@/lib/test-engine/vendors";
 import { safeError } from "@/lib/test-engine/utils";
 
 const networks = new Set(["mtn", "airtel", "glo", "9mobile"]);
-const vendorIds = new Set(["vtpass", "smeplug", "gladtidings", "pairgate"]);
+const vendorIds = new Set(["vtpass", "smeplug", "gladtidings", "pairgate", "maskawasub", "absvendor"]);
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

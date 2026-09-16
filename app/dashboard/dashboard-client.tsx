@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { loadBachs, type BachsCheckoutEvent } from "@bachs/js";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./dashboard.module.css";
 import ProfileCenter, { type ProfileCenterSettings, type ProfileCenterUser } from "./profile-center";
 import { useTheme } from "../../lib/theme";
@@ -13,6 +13,15 @@ export interface DashboardClientProps {
   };
   settings: ProfileCenterSettings;
   initialWalletBalance: number;
+  initialTransactions?: TransactionItem[];
+  initialNotifications?: Array<{
+    id: string;
+    title: string;
+    body: string;
+    kind: string;
+    read_at: string | null;
+    created_at: string;
+  }>;
 }
 
 type ServiceItem = {
@@ -50,7 +59,92 @@ type TransactionItem = {
   token?: string;
 };
 
-type LiveProduct = { id: string; name: string; service_type: "data" | "airtime"; network: string | null; price: number; cashback: number; provider_product_code: string | null };
+type LiveProduct = {
+  id: string;
+  name: string;
+  service_type: "data" | "airtime";
+  network: string | null;
+  price: number;
+  cashback: number;
+  provider_product_code: string | null;
+  category?: string;
+  validity?: string | null;
+  featured?: boolean;
+};
+
+const NETWORK_PROVIDERS = [
+  { id: "mtn", name: "MTN", initial: "M", color: "#f59e0b" },
+  { id: "airtel", name: "Airtel", initial: "A", color: "#ef4444" },
+  { id: "glo", name: "Glo", initial: "G", color: "#16a34a" },
+  { id: "9mobile", name: "9mobile", initial: "9", color: "#65a30d" },
+] as const;
+
+const NIGERIAN_NETWORK_PREFIXES: Record<string, string[]> = {
+  mtn: ["803", "806", "703", "706", "813", "816", "810", "814", "903", "906", "913", "916", "704", "7025", "7026", "707"],
+  airtel: ["802", "808", "708", "812", "701", "902", "901", "904", "907", "912", "911"],
+  glo: ["805", "807", "705", "815", "811", "905", "915"],
+  "9mobile": ["809", "817", "818", "909", "908"],
+};
+
+function cleanNigerianPhone(val: string): string {
+  let digits = val.replace(/\D/g, "");
+  if (digits.startsWith("234")) digits = digits.slice(3);
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  return digits.slice(0, 10);
+}
+
+function formatNigerianPhone(digits: string): string {
+  if (!digits) return "";
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+  return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 10)}`;
+}
+
+function detectNetwork(val: string): "mtn" | "airtel" | "glo" | "9mobile" | null {
+  const digits = cleanNigerianPhone(val);
+  if (digits.length < 3) return null;
+
+  for (const [net, prefixes] of Object.entries(NIGERIAN_NETWORK_PREFIXES)) {
+    for (const prefix of prefixes) {
+      if (digits.startsWith(prefix)) {
+        return net as "mtn" | "airtel" | "glo" | "9mobile";
+      }
+    }
+  }
+  return null;
+}
+
+function validateNigerianPhone(val: string): { isValid: boolean; network: "mtn" | "airtel" | "glo" | "9mobile" | null; error: string | null } {
+  const digits = cleanNigerianPhone(val);
+  const net = detectNetwork(val);
+  if (digits.length === 0) return { isValid: false, network: null, error: null };
+  if (digits.length < 10) return { isValid: false, network: net, error: null };
+  if (!net) return { isValid: false, network: null, error: "Unrecognized Nigerian mobile network prefix." };
+  return { isValid: true, network: net, error: null };
+}
+
+function parseBundleDisplay(product: LiveProduct) {
+  const name = product.name;
+  const sizeMatch = name.match(/(\d+(?:\.\d+)?)\s*(GB|MB|TB)/i);
+  const qtyNum = sizeMatch ? sizeMatch[1] : (name.match(/\d+/)?.[0] || "");
+  const qtyUnit = sizeMatch ? sizeMatch[2].toUpperCase() : "MB";
+  const valMatch = (product.validity || name).match(/(\d+\s*(?:day|days|hour|hours|month|months|week|weeks))/i);
+  const validity = product.validity || (valMatch ? valMatch[1] : "Standard");
+  
+  const isHot = Boolean(product.featured || /1gb|2\.5gb|5gb|awoof|hot/i.test(name));
+  const isCheap = product.price <= 350 && !isHot;
+  const isValue = /monthly|30\s*days|10gb|15gb|20gb/i.test(name) && !isHot;
+
+  return {
+    qtyNum,
+    qtyUnit,
+    validity,
+    fullName: name,
+    isHot,
+    isCheap,
+    isValue,
+  };
+}
 
 const RECENT_TRANSACTIONS: TransactionItem[] = [
   {
@@ -309,6 +403,14 @@ function SvgIcon({ name, size = 20, className }: { name: string; size?: number; 
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
         </svg>
       );
+    case "pencil":
+    case "edit":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
+      );
     case "check":
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -320,6 +422,30 @@ function SvgIcon({ name, size = 20, className }: { name: string; size?: number; 
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
           <line x1="18" y1="6" x2="6" y2="18" />
           <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      );
+    case "info":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="16" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12.01" y2="8" />
+        </svg>
+      );
+    case "alert":
+    case "warning":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+      );
+    case "refund":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <polyline points="1 4 1 10 7 10" />
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
         </svg>
       );
     case "sun":
@@ -340,9 +466,13 @@ function SvgIcon({ name, size = 20, className }: { name: string; size?: number; 
   }
 }
 
-export default function DashboardClient({ user, settings, initialWalletBalance }: DashboardClientProps) {
+export default function DashboardClient({ user, settings, initialWalletBalance, initialTransactions, initialNotifications }: DashboardClientProps) {
   const { resolved: resolvedTheme, toggleTheme } = useTheme();
   const [walletBalance, setWalletBalance] = useState(initialWalletBalance);
+  const [transactions, setTransactions] = useState<TransactionItem[]>(
+    initialTransactions && initialTransactions.length > 0 ? initialTransactions : RECENT_TRANSACTIONS
+  );
+  const [notifications, setNotifications] = useState(initialNotifications ?? []);
   const [cashbackBalance] = useState(420.0);
   const [showBalance, setShowBalance] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -366,10 +496,21 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
   const [serviceRecipient, setServiceRecipient] = useState("");
   const [servicePackage, setServicePackage] = useState("");
   const [serviceNetwork, setServiceNetwork] = useState("mtn");
+  const [serviceCategory, setServiceCategory] = useState<string>("top");
   const [liveProducts, setLiveProducts] = useState<LiveProduct[]>([]);
   const [serviceBusy, setServiceBusy] = useState(false);
   const [serviceError, setServiceError] = useState<string | null>(null);
-  const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "refund" | "error" | "info" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "refund" | "error" | "info" = "success") => {
+    setToast({ message, type });
+  };
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 9000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -394,9 +535,8 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
       if (cancelled) return;
       if (body.status === "succeeded") {
         setWalletBalance(Number(body.balance));
-        setActionSuccessMsg(`₦${Number(body.amount).toLocaleString()} added to your wallet.`);
+        showToast(`₦${Number(body.amount).toLocaleString()} added to your wallet.`, "success");
         window.history.replaceState(null, "", "/dashboard");
-        window.setTimeout(() => setActionSuccessMsg(null), 5000);
         return;
       }
       if (["failed", "underpaid", "expired"].includes(body.status)) {
@@ -427,8 +567,65 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
     return () => { active = false; };
   }, [showQuickServiceModal, serviceNetwork]);
 
-  // Filter transactions
-  const filteredTransactions = RECENT_TRANSACTIONS.filter((tx) => {
+  const filteredLiveProducts = useMemo(() => {
+    if (!liveProducts.length) return [];
+    if (showQuickServiceModal?.id !== "data") return liveProducts;
+
+    let list: LiveProduct[] = [];
+    if (serviceCategory === "top") {
+      const top = liveProducts.filter((p) => p.featured || /1gb|2\.5gb|5gb|weekly/i.test(p.name));
+      list = top.length ? top : liveProducts;
+    } else if (serviceCategory === "all") {
+      list = liveProducts;
+    } else {
+      list = liveProducts.filter((p) => {
+        const cat = (p.category || "daily").toLowerCase();
+        const name = p.name.toLowerCase();
+        const val = (p.validity || "").toLowerCase();
+        return cat === serviceCategory || name.includes(serviceCategory) || val.includes(serviceCategory);
+      });
+    }
+
+    return [...list].sort((a, b) => {
+      const aHot = (a.featured || /1gb|2\.5gb|5gb|awoof|hot/i.test(a.name)) ? 1 : 0;
+      const bHot = (b.featured || /1gb|2\.5gb|5gb|awoof|hot/i.test(b.name)) ? 1 : 0;
+      if (aHot !== bHot) return bHot - aHot;
+      return a.price - b.price;
+    });
+  }, [liveProducts, serviceCategory, showQuickServiceModal]);
+
+  useEffect(() => {
+    if (filteredLiveProducts.length > 0) {
+      if (!filteredLiveProducts.some((p) => p.id === servicePackage)) {
+        setServicePackage(filteredLiveProducts[0].id);
+      }
+    }
+  }, [filteredLiveProducts, servicePackage]);
+
+  const phoneValidation = useMemo(() => validateNigerianPhone(serviceRecipient), [serviceRecipient]);
+  const detectedNetworkItem = NETWORK_PROVIDERS.find((n) => n.id === (phoneValidation.network || detectNetwork(serviceRecipient)));
+
+  const handlePhoneInputChange = (rawVal: string) => {
+    const digits = cleanNigerianPhone(rawVal);
+    setServiceRecipient(digits);
+    const detected = detectNetwork(digits);
+    if (detected && detected !== serviceNetwork) {
+      setServiceNetwork(detected);
+    }
+  };
+
+  const handleUseMyNumber = () => {
+    if (!user.phone) return;
+    const digits = cleanNigerianPhone(user.phone);
+    setServiceRecipient(digits);
+    const detected = detectNetwork(digits);
+    if (detected && detected !== serviceNetwork) {
+      setServiceNetwork(detected);
+    }
+  };
+
+  const selectedLiveProduct = liveProducts.find((p) => p.id === servicePackage);
+  const filteredTransactions = transactions.filter((tx) => {
     if (transactionFilter !== "all" && tx.category !== transactionFilter) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -446,8 +643,7 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
     setIsRefreshing(true);
     setTimeout(() => {
       setIsRefreshing(false);
-      setActionSuccessMsg("Wallet balance updated");
-      setTimeout(() => setActionSuccessMsg(null), 3000);
+      showToast("Wallet balance updated", "info");
     }, 600);
   };
 
@@ -462,29 +658,84 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
     if (showFundModal) {
       const added = Number(fundAmount) || 0;
       setWalletBalance((prev) => prev + added);
-      setActionSuccessMsg(`₦${added.toLocaleString()} added to your wallet!`);
+      showToast(`₦${added.toLocaleString()} added to your wallet!`, "success");
+      setShowFundModal(false);
+      setShowQuickActionDockMenu(false);
     } else {
       if (!showQuickServiceModal || !["data", "airtime"].includes(showQuickServiceModal.id)) { setServiceError("This service is coming soon. Data and airtime are ready first."); return; }
       if (!servicePackage) { setServiceError("Pick a bundle first."); return; }
       setServiceBusy(true); setServiceError(null);
       try {
         const idempotencyKey = crypto.randomUUID().replaceAll("-", "");
-        const response = await fetch("/api/services/purchase", { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: JSON.stringify({ productId: servicePackage, destination: serviceRecipient, idempotencyKey }) });
+        const destination = serviceRecipient ? `0${cleanNigerianPhone(serviceRecipient)}` : "";
+        const response = await fetch("/api/services/purchase", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
+          body: JSON.stringify({ productId: servicePackage, destination, idempotencyKey }),
+        });
         const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || "Purchase could not be completed.");
-        setWalletBalance(Number(body.balance));
-        setActionSuccessMsg(body.status === "successful" ? "Done. Your purchase is complete." : body.status === "failed" ? "We could not complete it, so your wallet was refunded." : "We are confirming your purchase. No need to try again.");
-        setShowQuickServiceModal(null);
-      } catch (error) { setServiceError(error instanceof Error ? error.message : "Purchase could not be completed."); }
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("Your session expired. Please refresh the page or sign in again.");
+          }
+          throw new Error(body.error || "Purchase could not be completed.");
+        }
+        if (typeof body.balance === "number") {
+          setWalletBalance(Number(body.balance));
+        }
+        
+        const isSuccess = body.status === "successful";
+        const isFailed = body.status === "failed";
+
+        if (isSuccess || body.status === "pending") {
+          const newTx: TransactionItem = {
+            id: body.transactionId || `tx-${Date.now()}`,
+            title: body.productName || selectedLiveProduct?.name || "Data Bundle",
+            category: (body.serviceType || "data") as "data" | "electricity" | "airtime" | "tv" | "funding" | "internet",
+            type: "debit",
+            amount: body.amount || selectedLiveProduct?.price || 0,
+            date: "Today",
+            time: new Date().toLocaleTimeString("en-NG", { hour: "numeric", minute: "2-digit", hour12: true }),
+            status: isSuccess ? "completed" : "processing",
+            meta: destination ? (formatNigerianPhone(destination.slice(1)) || destination) : (user.phone || ""),
+            reference: body.reference || `FND-${Date.now()}`,
+            cashback: (body.cashback && body.cashback > 0) ? `+₦${body.cashback} cashback` : undefined,
+          };
+
+          setTransactions((prev) => [newTx, ...prev]);
+
+          const newNotif = {
+            id: `notif-${Date.now()}`,
+            title: isSuccess ? "Purchase Successful" : "Purchase Processing",
+            body: `${newTx.title} for ${newTx.meta} · ₦${newTx.amount.toLocaleString("en-NG")} — ${body.message || "Data delivered successfully via Maskawasub."}`,
+            kind: "transaction",
+            read_at: null,
+            created_at: new Date().toISOString(),
+          };
+          setNotifications((prev) => [newNotif, ...prev]);
+
+          // Immediately display the rich iOS Transaction Receipt Sheet
+          setSelectedTx(newTx);
+          setShowQuickServiceModal(null);
+          setShowQuickActionDockMenu(false);
+          showToast(isSuccess ? "Receipt ready • Data delivered!" : "Purchase is processing with provider.", "success");
+        } else if (isFailed) {
+          const detail = body.message || "Provider could not complete purchase. Your wallet has been refunded.";
+          showToast(detail, "refund");
+          setServiceError(detail);
+        } else {
+          showToast(body.message || "We are confirming your purchase with the provider.", "info");
+          setShowQuickServiceModal(null);
+          setShowQuickActionDockMenu(false);
+        }
+      } catch (error) {
+        const errMessage = error instanceof Error ? error.message : "Purchase could not be completed.";
+        setServiceError(errMessage);
+        showToast(errMessage, "error");
+      }
       finally { setServiceBusy(false); }
       return;
     }
-    setTimeout(() => {
-      setShowFundModal(false);
-      setShowQuickServiceModal(null);
-      setShowQuickActionDockMenu(false);
-      setActionSuccessMsg(null);
-    }, 1200);
   };
 
   const handleFundWallet = async (event: React.FormEvent) => {
@@ -509,8 +760,7 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
           const statusBody = await statusResponse.json().catch(() => ({}));
           if (statusBody.status === "succeeded") {
             setWalletBalance(Number(statusBody.balance));
-            setActionSuccessMsg(`₦${Number(statusBody.amount).toLocaleString()} added to your wallet.`);
-            window.setTimeout(() => setActionSuccessMsg(null), 5000);
+            showToast(`₦${Number(statusBody.amount).toLocaleString()} added to your wallet.`, "success");
             return;
           }
           if (["failed", "underpaid", "expired"].includes(statusBody.status)) {
@@ -525,7 +775,7 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
 
       const handleCheckoutEvent = (checkoutEvent: BachsCheckoutEvent) => {
         if (checkoutEvent.type === "checkout.completed") {
-          setActionSuccessMsg("Payment received. Confirming your wallet credit…");
+          showToast("Payment received. Confirming your wallet credit…", "info");
           void reconcilePayment();
         } else if (checkoutEvent.type === "checkout.failed" || checkoutEvent.type === "checkout.expired") {
           setFundingError(checkoutEvent.type === "checkout.expired"
@@ -582,11 +832,14 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
           <button
             type="button"
             className={styles.frostedIconButton}
-            onClick={() => setShowNotificationDrawer(true)}
+            onClick={() => {
+              setShowNotificationDrawer(true);
+              setNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() })));
+            }}
             aria-label="Notifications"
           >
             <SvgIcon name="bell" size={19} />
-            <span className={styles.unreadBadgeDot} />
+            {notifications.some((n) => !n.read_at) && <span className={styles.unreadBadgeDot} />}
           </button>
           <button
             type="button"
@@ -599,11 +852,33 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
         </div>
       </header>
 
-      {/* Action Success Toast */}
-      {actionSuccessMsg && (
-        <div className={styles.floatingToast}>
-          <span className={styles.toastIcon}><SvgIcon name="check" size={16} /></span>
-          <span>{actionSuccessMsg}</span>
+      {/* Minimal Contextual Action Toast with Dismiss */}
+      {toast && (
+        <div className={`${styles.floatingToast} ${styles[`toast_${toast.type}`] || ""}`} role="status">
+          <span className={styles.toastIcon}>
+            <SvgIcon
+              name={
+                toast.type === "refund"
+                  ? "refund"
+                  : toast.type === "error"
+                  ? "alert"
+                  : toast.type === "info"
+                  ? "info"
+                  : "check"
+              }
+              size={13.5}
+            />
+          </span>
+          <span className={styles.toastMessage}>{toast.message}</span>
+          <button
+            type="button"
+            className={styles.toastDismissBtn}
+            onClick={() => setToast(null)}
+            aria-label="Dismiss notification"
+            title="Dismiss notification"
+          >
+            <SvgIcon name="close" size={11.5} />
+          </button>
         </div>
       )}
 
@@ -681,17 +956,54 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
           <div className={styles.proWalletHeroCard}>
             <div className={styles.cardInnerGlow} />
 
-            {/* Card Header Row: Funda balance + Dedicated Account Chip + Controls */}
+            {/* Card Header Row: Phone Number Chip + Controls */}
             <div className={styles.cardTopRow}>
               <button
                 type="button"
                 className={styles.virtualAccountChip}
-                onClick={() => copyToClipboard("9920184719", "wema-top")}
-                aria-label="Copy virtual bank account number"
+                onClick={() => {
+                  if (user?.phone) {
+                    copyToClipboard(user.phone, "phone-top");
+                  } else {
+                    setShowAccountDrawer(true);
+                  }
+                }}
+                aria-label={user?.phone ? "Copy phone number" : "Add phone number to account"}
+                title={user?.phone ? "Click to copy phone number" : "Click to add phone number in profile"}
               >
                 <span className={styles.nigeriaFlagPill}>🇳🇬</span>
-                <span>Wema • <strong>9920184719</strong></span>
-                <SvgIcon name={copiedField === "wema-top" ? "check" : "copy"} size={12} />
+                {user?.phone ? (
+                  <>
+                    <span className={styles.phoneChipValue}>{user.phone}</span>
+                    <span
+                      className={styles.phoneChipEditIcon}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAccountDrawer(true);
+                      }}
+                      title="Edit phone number"
+                    >
+                      <SvgIcon name="pencil" size={10} />
+                    </span>
+                    <span className={styles.phoneChipCopyIcon}>
+                      <SvgIcon name={copiedField === "phone-top" ? "check" : "copy"} size={10.5} />
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className={styles.phoneChipPlaceholder}>+234 ••••••••••</span>
+                    <span
+                      className={styles.phoneChipEditCallout}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAccountDrawer(true);
+                      }}
+                      title="Add phone number"
+                    >
+                      <SvgIcon name="pencil" size={10} />
+                    </span>
+                  </>
+                )}
               </button>
 
               <div className={styles.cardRightControls}>
@@ -842,8 +1154,7 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
                   type="button"
                   className={styles.smartRepeatBtn}
                   onClick={() => {
-                    setActionSuccessMsg(`Recharged ${item.title} (${item.amount}) instantly!`);
-                    setTimeout(() => setActionSuccessMsg(null), 3000);
+                    showToast(`Recharged ${item.title} (${item.amount}) instantly!`, "success");
                   }}
                 >
                   Repeat ⚡
@@ -1250,7 +1561,7 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
             <div className={styles.sheetHeaderRow}>
               <div className={styles.sheetServiceTitleGroup}>
                 <span className={styles.sheetServiceIcon} data-tone={showQuickServiceModal.tone}>
-                  <SvgIcon name={showQuickServiceModal.iconName} size={22} />
+                  <SvgIcon name={showQuickServiceModal.iconName} size={18} />
                 </span>
                 <div>
                   <h3 className={styles.sheetTitle}>{showQuickServiceModal.name}</h3>
@@ -1262,63 +1573,222 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
                 className={styles.sheetCloseBtn}
                 onClick={() => setShowQuickServiceModal(null)}
               >
-                <SvgIcon name="close" size={16} />
+                <SvgIcon name="close" size={14} />
               </button>
             </div>
 
             <form onSubmit={handleSimulatePayment} className={styles.modalForm}>
               {/* Provider / Network Select */}
               <div className={styles.networkSelectGrid}>
-                {["mtn", "airtel", "glo", "9mobile"].map((net) => (
+                {NETWORK_PROVIDERS.map((net) => (
                   <button
-                    key={net}
+                    key={net.id}
                     type="button"
-                    className={`${styles.networkSelectBtn} ${net === serviceNetwork ? styles.networkActive : ""}`}
-                    onClick={() => setServiceNetwork(net)}
+                    data-net={net.id}
+                    className={`${styles.networkSelectBtn} ${net.id === serviceNetwork ? styles.networkActive : ""}`}
+                    onClick={() => setServiceNetwork(net.id)}
                   >
-                    {net === "mtn" ? "MTN" : net === "glo" ? "Glo" : net === "airtel" ? "Airtel" : "9mobile"}
+                    <span className={styles.networkInitialLogo}>{net.initial}</span>
+                    <span>{net.name}</span>
                   </button>
                 ))}
               </div>
 
               <label className={styles.inputLabel}>
-                <span>Recipient Phone / Meter / Smartcard Number</span>
-                <input
-                  type="text"
-                  placeholder="0803 491 8210"
-                  value={serviceRecipient}
-                  onChange={(e) => setServiceRecipient(e.target.value)}
-                  className={styles.textInput}
-                  required
-                />
+                <div className={styles.phoneLabelRow}>
+                  <span>Recipient Phone Number</span>
+                  {user.phone && (
+                    <button
+                      type="button"
+                      onClick={handleUseMyNumber}
+                      className={styles.useMyNumberBlueBtn}
+                    >
+                      Use my number
+                    </button>
+                  )}
+                </div>
+                <div className={styles.phoneInputBox}>
+                  <span className={styles.phonePrefixTag}>+234</span>
+                  <input
+                    type="tel"
+                    placeholder="803 123 4567"
+                    value={formatNigerianPhone(serviceRecipient)}
+                    onChange={(e) => handlePhoneInputChange(e.target.value)}
+                    className={styles.phoneInputField}
+                    maxLength={12}
+                    required
+                  />
+                  {detectedNetworkItem && (
+                    <span
+                      className={styles.phoneDetectedMicroPill}
+                      data-net={detectedNetworkItem.id}
+                      title={`Detected: ${detectedNetworkItem.name}`}
+                    >
+                      <span className={styles.phoneMiniDot} />
+                      <span>{detectedNetworkItem.name}</span>
+                      {phoneValidation.isValid && <span className={styles.phoneMicroCheck}>✓</span>}
+                    </span>
+                  )}
+                </div>
+                {phoneValidation.error && (
+                  <span className={styles.phoneValidationNotice}>{phoneValidation.error}</span>
+                )}
               </label>
 
-              <label className={styles.inputLabel}>
-                <span>Select Plan / Bundle</span>
-                <select
-                  value={servicePackage}
-                  onChange={(e) => setServicePackage(e.target.value)}
-                  className={styles.selectInput}
-                  disabled={serviceBusy || !["data", "airtime"].includes(showQuickServiceModal.id)}
-                >
-                  {liveProducts.map((product) => <option value={product.id} key={product.id}>{product.name} — ₦{product.price.toLocaleString("en-NG")}</option>)}
-                  <option value="350">1GB 30-Day SME — ₦350</option>
-                  <option value="950">3GB 30-Day SME — ₦950</option>
-                  <option value="1500">5GB 30-Day SME — ₦1,500</option>
-                  <option value="2950">10GB 30-Day SME — ₦2,950</option>
-                  <option value="5800">20GB 30-Day SME — ₦5,800</option>
-                </select>
-              </label>
+              {/* Category Quick Chips without title & without emojis */}
+              {showQuickServiceModal.id === "data" && (
+                <div className={styles.amountChipsRow}>
+                  <button
+                    type="button"
+                    className={`${styles.amountChip} ${styles.topPickChip} ${serviceCategory === "top" ? styles.topPickActive : ""}`}
+                    onClick={() => setServiceCategory("top")}
+                  >
+                    Top Picks
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.amountChip} ${serviceCategory === "daily" ? styles.amountChipActive : ""}`}
+                    onClick={() => setServiceCategory("daily")}
+                  >
+                    Daily
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.amountChip} ${serviceCategory === "weekly" ? styles.amountChipActive : ""}`}
+                    onClick={() => setServiceCategory("weekly")}
+                  >
+                    Weekly
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.amountChip} ${serviceCategory === "monthly" ? styles.amountChipActive : ""}`}
+                    onClick={() => setServiceCategory("monthly")}
+                  >
+                    Monthly
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.amountChip} ${serviceCategory === "all" ? styles.amountChipActive : ""}`}
+                    onClick={() => setServiceCategory("all")}
+                  >
+                    All
+                  </button>
+                </div>
+              )}
+
+              {/* Data Bundle Rows (Transaction-Style Design with Squircle Icon, Badges, Fixed Height) */}
+              {showQuickServiceModal.id === "data" ? (
+                <div className={styles.bundleRowListContainer}>
+                  {filteredLiveProducts.length > 0 ? (
+                    filteredLiveProducts.map((product) => {
+                      const { qtyNum, qtyUnit, validity, isHot, isCheap, isValue } = parseBundleDisplay(product);
+                      const isSelected = product.id === servicePackage;
+                      return (
+                        <button
+                          key={product.id}
+                          type="button"
+                          className={`${styles.bundleRowItem} ${isSelected ? styles.bundleRowSelected : ""} ${isHot ? styles.bundleRowHot : ""}`}
+                          onClick={() => setServicePackage(product.id)}
+                        >
+                          <div className={styles.bundleRowIconWrapper} data-net={serviceNetwork}>
+                            <span className={styles.bundleIconNum}>{qtyNum}</span>
+                            <span className={styles.bundleIconUnit}>{qtyUnit}</span>
+                          </div>
+
+                          <div className={styles.bundleRowInfoCol}>
+                            <div className={styles.bundleRowTitleRow}>
+                              <span className={styles.bundleRowTitle}>{product.name}</span>
+                              {isHot && <span className={styles.bundleBadgeHot}>HOT</span>}
+                              {isCheap && <span className={styles.bundleBadgeCheap}>CHEAP</span>}
+                              {isValue && <span className={styles.bundleBadgeValue}>BEST VALUE</span>}
+                              {product.cashback > 0 && (
+                                <span className={styles.bundleCashbackTag}>+₦{product.cashback} cashback</span>
+                              )}
+                            </div>
+                            <div className={styles.bundleRowSubRow}>
+                              <span>{validity}</span>
+                              <span className={styles.bundleDotSep}>•</span>
+                              <span>Instant 4G/5G delivery</span>
+                            </div>
+                          </div>
+
+                          <div className={styles.bundleRowPriceCol}>
+                            <span className={styles.bundleRowPrice}>₦{product.price.toLocaleString("en-NG")}</span>
+                            <span className={`${styles.bundleRowStatusPill} ${isSelected ? styles.bundleRowStatusActive : ""}`}>
+                              {isSelected ? "Selected" : "Select"}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className={styles.bundleEmptyStateBox}>
+                      <span>No bundles available for this category</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <label className={styles.inputLabel}>
+                  <span>Select Package</span>
+                  <select
+                    value={servicePackage}
+                    onChange={(e) => setServicePackage(e.target.value)}
+                    className={styles.selectInput}
+                    disabled={serviceBusy}
+                  >
+                    {filteredLiveProducts.map((product) => (
+                      <option value={product.id} key={product.id}>
+                        {product.name} — ₦{product.price.toLocaleString("en-NG")}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
 
               {serviceError && <div className={styles.paymentError} role="alert">{serviceError}</div>}
 
-              <div className={styles.cashbackBenefitNotice}>
-                <SvgIcon name="sparkles" size={14} />
-                <span>Earn <strong>₦90 instant cashback</strong> into your Funda wallet</span>
-              </div>
+              {/* Insufficient Funds Warning & Shortcut to Fund Wallet */}
+              {selectedLiveProduct && walletBalance < selectedLiveProduct.price && (
+                <div className={styles.insufficientBalanceNotice}>
+                  <div className={styles.insufficientLeft}>
+                    <span className={styles.insufficientDot} />
+                    <span>
+                      Insufficient balance: <strong>₦{walletBalance.toLocaleString("en-NG")}</strong> (Need <strong>₦{(selectedLiveProduct.price - walletBalance).toLocaleString("en-NG")}</strong> more)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const needed = Math.max(100, Math.ceil((selectedLiveProduct.price - walletBalance) / 100) * 100);
+                      setShowQuickServiceModal(null);
+                      setFundAmount(String(needed));
+                      setShowFundModal(true);
+                    }}
+                    className={styles.fundWalletInlineLink}
+                  >
+                    Fund Wallet →
+                  </button>
+                </div>
+              )}
 
-              <button type="submit" className={styles.submitPrimaryBtn} disabled={serviceBusy || !servicePackage}>
-                Pay from Wallet • Instant 3s Fulfilment
+              <button
+                type={selectedLiveProduct && walletBalance < selectedLiveProduct.price ? "button" : "submit"}
+                onClick={selectedLiveProduct && walletBalance < selectedLiveProduct.price ? () => {
+                  const needed = Math.max(100, Math.ceil((selectedLiveProduct.price - walletBalance) / 100) * 100);
+                  setShowQuickServiceModal(null);
+                  setFundAmount(String(needed));
+                  setShowFundModal(true);
+                } : undefined}
+                className={`${styles.submitPrimaryBtn} ${selectedLiveProduct && walletBalance < selectedLiveProduct.price ? styles.submitFundWalletBtn : ""}`}
+                disabled={serviceBusy || !servicePackage}
+              >
+                {serviceBusy
+                  ? "Processing with Provider…"
+                  : selectedLiveProduct && walletBalance < selectedLiveProduct.price
+                  ? "Fund Your Wallet to get this bundle"
+                  : selectedLiveProduct
+                  ? `Pay ₦${selectedLiveProduct.price.toLocaleString("en-NG")} from Wallet • Instant Fulfilment`
+                  : "Pay from Wallet • Instant 3s Fulfilment"}
               </button>
             </form>
           </div>
@@ -1333,11 +1803,44 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
           <div className={styles.iosReceiptSheet} onClick={(e) => e.stopPropagation()}>
             <div className={styles.sheetHandle} />
             <div className={styles.receiptTopHeader}>
-              <div className={styles.receiptCheckIcon}><SvgIcon name="check" size={24} /></div>
+              <div
+                className={
+                  selectedTx.status === "failed"
+                    ? styles.receiptFailedIcon
+                    : selectedTx.status === "processing"
+                    ? styles.receiptProcessingIcon
+                    : styles.receiptCheckIcon
+                }
+              >
+                <SvgIcon
+                  name={
+                    selectedTx.status === "failed"
+                      ? "close"
+                      : selectedTx.status === "processing"
+                      ? "sparkles"
+                      : "check"
+                  }
+                  size={24}
+                />
+              </div>
               <strong className={styles.receiptAmount}>
                 {selectedTx.type === "credit" ? "+" : "-"}₦{selectedTx.amount.toLocaleString()}
               </strong>
-              <span className={styles.receiptStatusTag}>Payment Completed</span>
+              <span
+                className={`${styles.receiptStatusTag} ${
+                  selectedTx.status === "failed"
+                    ? styles.receiptStatusTagFailed
+                    : selectedTx.status === "processing"
+                    ? styles.receiptStatusTagProcessing
+                    : ""
+                }`}
+              >
+                {selectedTx.status === "failed"
+                  ? "Payment Failed (Refunded)"
+                  : selectedTx.status === "processing"
+                  ? "Processing with Provider"
+                  : "Payment Completed"}
+              </span>
               <p className={styles.receiptTitle}>{selectedTx.title}</p>
             </div>
 
@@ -1393,9 +1896,18 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
               <button
                 type="button"
                 className={styles.receiptSecondaryBtn}
-                onClick={() => {
-                  setActionSuccessMsg("Receipt saved / copied!");
-                  setTimeout(() => setActionSuccessMsg(null), 2500);
+                onClick={async () => {
+                  const summary = `🧾 Funda Transaction Receipt\n\nStatus: ${selectedTx.status === "completed" ? "Payment Completed" : "Processing"}\nProduct: ${selectedTx.title}\nAmount: ₦${selectedTx.amount.toLocaleString("en-NG")}\nRecipient: ${selectedTx.meta}\nReference: ${selectedTx.reference}\nDate: ${selectedTx.date}, ${selectedTx.time}\nPayment Method: Funda Wallet\n\nAutomated delivery by Funda (https://funda.ng)`;
+                  if (typeof navigator !== "undefined" && navigator.share) {
+                    try {
+                      await navigator.share({ title: `Receipt: ${selectedTx.title}`, text: summary });
+                      return;
+                    } catch {}
+                  }
+                  if (typeof navigator !== "undefined" && navigator.clipboard) {
+                    await navigator.clipboard.writeText(summary);
+                    showToast("Receipt summary copied to clipboard!", "success");
+                  }
                 }}
               >
                 Share Receipt
@@ -1430,22 +1942,29 @@ export default function DashboardClient({ user, settings, initialWalletBalance }
             </div>
 
             <div className={styles.notificationList}>
-              <div className={styles.notifCard}>
-                <span className={styles.notifIcon}><SvgIcon name="sparkles" size={17} /></span>
-                <div>
-                  <strong>Cashback Credited</strong>
-                  <p>₦135 bonus credited to your wallet from MTN bundle.</p>
-                  <small>15m ago</small>
+              {notifications.length > 0 ? (
+                notifications.map((notif) => {
+                  const createdDate = new Date(notif.created_at);
+                  const timeStr = createdDate.toLocaleTimeString("en-NG", { hour: "numeric", minute: "2-digit", hour12: true });
+                  const dateStr = createdDate.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
+                  return (
+                    <div key={notif.id} className={styles.notifCard}>
+                      <span className={styles.notifIcon}>
+                        <SvgIcon name={notif.kind === "transaction" ? "data" : "sparkles"} size={17} />
+                      </span>
+                      <div>
+                        <strong>{notif.title}</strong>
+                        <p>{notif.body}</p>
+                        <small>{timeStr} · {dateStr}</small>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ padding: "36px 16px", textAlign: "center", color: "var(--funda-text-muted, #94a3b8)", fontSize: "13px" }}>
+                  No notifications yet
                 </div>
-              </div>
-              <div className={styles.notifCard}>
-                <span className={styles.notifIcon}><SvgIcon name="bolt" size={17} /></span>
-                <div>
-                  <strong>Electricity Token Delivered</strong>
-                  <p>Meter #4502-9912 token generated successfully.</p>
-                  <small>Yesterday</small>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

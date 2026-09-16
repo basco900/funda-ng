@@ -57,8 +57,13 @@ const paths: Record<string, React.ReactNode> = {
   menu: <><path d="M4 7h16M4 12h16M4 17h16"/></>,
   close: <path d="m6 6 12 12M18 6 6 18"/>,
   chevron: <path d="m9 18 6-6-6-6"/>,
+  chevronDown: <path d="m6 9 6 6 6-6"/>,
+  check: <path d="m5 12 4.2 4.2L19 6.5"/>,
+  refresh: <><path d="M20 11a8 8 0 1 0 2 5.3"/><path d="M20 4v7h-7"/></>,
   more: <><circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/></>,
   tools: <><path d="m14 7 3-3 3 3-3 3M4 20l8-8M5 5l14 14"/></>,
+  sun: <><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></>,
+  moon: <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>,
 };
 
 export default function AdminIcon({ name, ...props }: AdminIconProps) {

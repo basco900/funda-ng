@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     const phone = normalizePhone(String(body.phone || ""));
     if (!["data", "airtime"].includes(type)) throw new Error("Choose data or airtime.");
     if (!["mtn", "airtel", "glo", "9mobile"].includes(network)) throw new Error("Choose a valid network.");
-    if (!["vtpass", "smeplug", "gladtidings", "pairgate"].includes(vendor)) throw new Error("Choose a valid vendor.");
+    if (!["vtpass", "smeplug", "gladtidings", "pairgate", "maskawasub", "absvendor"].includes(vendor)) throw new Error("Choose a valid vendor.");
     if (!isNigerianPhone(phone)) throw new Error("Enter a valid Nigerian phone number.");
     const adapter = getVendor(vendor);
     if (!adapter.isConfigured()) throw new Error(`${vendor} is not configured yet.`);

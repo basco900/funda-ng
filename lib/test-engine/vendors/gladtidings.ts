@@ -117,7 +117,7 @@ export const gladtidings: VtuVendor = {
     } catch (error) {
       if (input.type === "data" && error instanceof ProviderRequestError && /not currently available|unavailable/i.test(error.message)) {
         unavailablePlans.add(planKey(input.network, input.planId));
-        throw new ProviderRequestError(`${error.message} The plan has been removed from this test session; choose another bundle.`, true);
+        throw new ProviderRequestError(error.message, true);
       }
       throw error;
     }

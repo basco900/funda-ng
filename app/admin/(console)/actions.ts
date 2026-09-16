@@ -235,25 +235,12 @@ export async function saveProvider(input: unknown): Promise<AdminActionResult<{ 
 }
 
 const providerNetworks: NetworkId[] = ["mtn", "airtel", "glo", "9mobile"];
-const supportedCatalogueVendors = new Set<VendorId>(["smeplug", "gladtidings", "vtpass", "pairgate"]);
+const supportedCatalogueVendors = new Set<VendorId>(["smeplug", "gladtidings", "vtpass", "pairgate", "absvendor", "maskawasub"]);
 
-function dataAmountMbFromName(name: string) {
-  const match = name.match(/(\d+(?:\.\d+)?)\s*(TB|GB|MB)\b/i);
-  if (!match) return null;
-  const amount = Number(match[1]);
-  if (!Number.isFinite(amount)) return null;
-  const unit = match[2].toUpperCase();
-  return unit === "TB" ? amount * 1_000_000 : unit === "GB" ? amount * 1_000 : amount;
-}
-
-function validityFromName(name: string) {
-  const match = name.match(/\b(\d+(?:\.\d+)?)\s*(day|days|week|weeks|month|months|year|years|hour|hours)\b/i);
-  if (!match) return { label: null, hours: null };
-  const value = Number(match[1]);
-  const unit = match[2].toLowerCase();
-  const multiplier = unit.startsWith("hour") ? 1 : unit.startsWith("day") ? 24 : unit.startsWith("week") ? 24 * 7 : unit.startsWith("month") ? 24 * 30 : 24 * 365;
-  return { label: match[0], hours: Number.isFinite(value) ? Math.round(value * multiplier) : null };
-}
+import {
+  dataAmountMbFromName,
+  parsePlanValidity,
+} from "../../../lib/test-engine/plan-parser";
 
 export async function syncProviderCatalogue(input: unknown): Promise<AdminActionResult<{ imported: number; status: string }>> {
   const schema = z.object({ providerId: uuid });
@@ -287,7 +274,7 @@ export async function syncProviderCatalogue(input: unknown): Promise<AdminAction
     const catalogueRows = plans
       .filter(({ plan }) => Number.isFinite(plan.amount) && plan.amount > 0 && Boolean(plan.id))
       .map(({ plan, network }) => {
-        const validity = validityFromName(plan.name);
+        const validity = parsePlanValidity(plan.name, plan.validity);
         return {
           provider_id: provider.id,
           service_type: "data",

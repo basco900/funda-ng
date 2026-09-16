@@ -1,4 +1,4 @@
-export type VendorId = "vtpass" | "smeplug" | "gladtidings" | "pairgate";
+export type VendorId = "vtpass" | "smeplug" | "gladtidings" | "pairgate" | "private_sim" | "absvendor" | "maskawasub";
 export type NetworkId = "mtn" | "airtel" | "glo" | "9mobile";
 export type ServiceType = "data" | "airtime";
 
@@ -8,6 +8,8 @@ export type DataPlan = {
   amount: number;
   network: NetworkId;
   vendor: VendorId;
+  validity?: string | null;
+  raw?: unknown;
 };
 
 export type PurchaseInput = {

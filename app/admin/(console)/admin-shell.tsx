@@ -126,7 +126,7 @@ export default function AdminShell({ admin, children }: { admin: AdminSession; c
         <div className={styles.sidebarFooter}>
           <button type="button" className={styles.collapseButton} onClick={() => setCollapsed((value) => !value)}>
             <AdminIcon name="chevron" />
-            <span>{collapsed ? "Expand" : "Collapse sidebar"}</span>
+            <span>{collapsed ? "Expand" : "Collapse Sidebar"}</span>
           </button>
         </div>
       </aside>
@@ -141,7 +141,7 @@ export default function AdminShell({ admin, children }: { admin: AdminSession; c
             </button>
             <button className={styles.globalSearch} type="button" onClick={() => setPaletteOpen(true)}>
               <AdminIcon name="search" />
-              <span>Search users, transactions, products…</span>
+              <span>Search Users, Transactions, Products…</span>
               <kbd>Ctrl K</kbd>
             </button>
           </div>
@@ -149,10 +149,10 @@ export default function AdminShell({ admin, children }: { admin: AdminSession; c
           <div className={styles.topbarActions}>
             <div className={styles.systemStatus}>
               <span />
-              <strong>Systems healthy</strong>
+              <strong>Systems Healthy</strong>
             </div>
             <button className={styles.topbarIconButton} type="button" onClick={toggleTheme} aria-label="Toggle colour mode">
-              <span aria-hidden="true">{resolved === "light" ? "◐" : "☀"}</span>
+              <AdminIcon name={resolved === "dark" ? "sun" : "moon"} />
             </button>
             <div className={styles.popoverAnchor}>
               <button className={styles.topbarIconButton} type="button" onClick={() => setAlertsOpen((open) => !open)} aria-label="Open operational alerts">
@@ -161,11 +161,11 @@ export default function AdminShell({ admin, children }: { admin: AdminSession; c
               </button>
               {alertsOpen ? (
                 <div className={styles.topbarPopover}>
-                  <div className={styles.popoverHeading}><strong>Operational alerts</strong><span>3 new</span></div>
+                  <div className={styles.popoverHeading}><strong>Operational Alerts</strong><span>3 new</span></div>
                   <Link href="/admin/operations/pending" onClick={() => setAlertsOpen(false)}><i data-tone="amber" />Pending payments need review<small>Just now</small></Link>
                   <Link href="/admin/products/providers" onClick={() => setAlertsOpen(false)}><i data-tone="red" />Provider balance threshold reached<small>8m</small></Link>
                   <Link href="/admin/settings/security" onClick={() => setAlertsOpen(false)}><i data-tone="green" />Security scan completed<small>42m</small></Link>
-                  <Link className={styles.popoverFooterLink} href="/admin/operations/live" onClick={() => setAlertsOpen(false)}>View operations centre</Link>
+                  <Link className={styles.popoverFooterLink} href="/admin/operations/live" onClick={() => setAlertsOpen(false)}>View Operations Centre</Link>
                 </div>
               ) : null}
             </div>
@@ -173,14 +173,14 @@ export default function AdminShell({ admin, children }: { admin: AdminSession; c
               <button className={styles.adminIdentity} type="button" onClick={() => setProfileOpen((open) => !open)}>
                 <span className={styles.adminAvatar}>{admin.initials}</span>
                 <span className={styles.adminIdentityCopy}><strong>{admin.fullName}</strong><small>{admin.role}</small></span>
-                <span aria-hidden="true">⌄</span>
+                <AdminIcon name="chevronDown" />
               </button>
               {profileOpen ? (
                 <div className={`${styles.topbarPopover} ${styles.profilePopover}`}>
                   <div className={styles.profileSummary}><span>{admin.initials}</span><div><strong>{admin.fullName}</strong><small>{admin.email}</small></div></div>
-                  <Link href="/admin/settings" onClick={() => setProfileOpen(false)}><AdminIcon name="settings" />Admin preferences</Link>
-                  <Link href="/admin/settings/security" onClick={() => setProfileOpen(false)}><AdminIcon name="lock" />Security & sessions</Link>
-                  <form action={signOutAdmin}><button type="submit"><span>Sign out</span><span aria-hidden="true">→</span></button></form>
+                  <Link href="/admin/settings" onClick={() => setProfileOpen(false)}><AdminIcon name="settings" />Admin Preferences</Link>
+                  <Link href="/admin/settings/security" onClick={() => setProfileOpen(false)}><AdminIcon name="lock" />Security & Sessions</Link>
+                  <form action={signOutAdmin}><button type="submit"><span>Sign Out</span><span aria-hidden="true">→</span></button></form>
                 </div>
               ) : null}
             </div>
@@ -195,11 +195,11 @@ export default function AdminShell({ admin, children }: { admin: AdminSession; c
           <div className={styles.commandPalette} role="dialog" aria-modal="true" aria-label="Admin command palette" onMouseDown={(event) => event.stopPropagation()}>
             <div className={styles.commandInputWrap}>
               <AdminIcon name="search" />
-              <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search the whole control centre…" />
+              <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search the Whole Control Centre…" />
               <kbd>Esc</kbd>
             </div>
             <div className={styles.commandContent}>
-              <span className={styles.commandLabel}>{query ? "Best matches" : "Quick jump"}</span>
+              <span className={styles.commandLabel}>{query ? "Best Matches" : "Quick Jump"}</span>
               {recordResults.map((item) => (
                 <button type="button" key={`${item.type}:${item.id}`} onClick={() => openResult(item.href)}>
                   <span className={styles.commandIcon}><AdminIcon name={item.type === "customer" ? "users" : item.type === "transaction" ? "transactions" : item.type === "provider" ? "provider" : "catalogue"} /></span>

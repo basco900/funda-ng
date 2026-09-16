@@ -61,6 +61,8 @@ export const smeplug: VtuVendor = {
       amount: Number(plan.price),
       network,
       vendor: "smeplug",
+      validity: plan.validity ? String(plan.validity) : plan.duration ? String(plan.duration) : null,
+      raw: plan,
     }));
   },
   async purchase(input: PurchaseInput) {

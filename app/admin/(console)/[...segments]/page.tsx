@@ -49,7 +49,7 @@ export default async function AdminWorkspacePage({ params }: { params: Promise<{
         </div>
         <div className={styles.pageHeadingActions}>
           <ExportAction source={data.source} />
-          <Link className={styles.primaryButton} href={`${pathname}?create=1`}><span>＋</span>Create new</Link>
+          <Link className={styles.primaryButton} href={`${pathname}?create=1`}><span>＋</span>Create New</Link>
         </div>
       </section>
 
@@ -60,7 +60,7 @@ export default async function AdminWorkspacePage({ params }: { params: Promise<{
       <section className={styles.workspacePanel}>
         <div className={styles.workspaceToolbar}>
           <label><AdminIcon name="search" /><input name="q" placeholder={`Search ${item.label.toLowerCase()}…`} /></label>
-          <div><button type="button">Status <span>⌄</span></button><button type="button">Date <span>⌄</span></button><button type="button"><AdminIcon name="sliders" />Filters</button></div>
+          <div><button type="button">Status <AdminIcon name="chevronDown" /></button><button type="button">Date <AdminIcon name="chevronDown" /></button><button type="button"><AdminIcon name="sliders" />Filters</button></div>
         </div>
 
         {data.columns.length ? (
@@ -80,10 +80,10 @@ export default async function AdminWorkspacePage({ params }: { params: Promise<{
           <div className={styles.moduleFoundation}>
             <div className={styles.moduleFoundationIntro}>
               <span className={styles.moduleLargeIcon}><AdminIcon name={item.icon} /></span>
-              <span className={styles.sectionEyebrow}>Control plane ready</span>
-              <h2>{item.label} is ready for operations.</h2>
+              <span className={styles.sectionEyebrow}>Control Plane Ready</span>
+              <h2>{item.label} Is Ready for Operations.</h2>
               <p>This workspace is secured, navigable and audit-aware. Apply the latest Supabase migration to activate its live records.</p>
-              <Link href="/admin/platform/config">Review configuration <span>→</span></Link>
+              <Link href="/admin/platform/config">Review Configuration <span>→</span></Link>
             </div>
             <div className={styles.capabilityGrid}>
               {capabilities.map((capability, index) => <div key={capability}><span>0{index + 1}</span><strong>{capability}</strong><small>Designed into this module</small></div>)}
