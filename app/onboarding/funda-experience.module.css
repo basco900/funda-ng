@@ -2441,6 +2441,7 @@
   }
 
   .authBody form,
+  .authBody .loginForm,
   .completeState {
     width: 100%;
     max-width: 430px;
@@ -3101,5 +3102,223 @@
   }
 }
 
+/* Auth switch & identification enhancements */
+.authTabs {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin: 20px 0 24px;
+  border-bottom: 1px solid rgba(9, 10, 10, 0.08);
+  width: 100%;
+}
 
+.authTab {
+  position: relative;
+  padding: 0 0 10px 0;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #767e7a;
+  cursor: pointer;
+  transition: color 160ms ease;
+  white-space: nowrap;
+}
+
+.authTab:hover {
+  color: #121414;
+}
+
+.authTab[data-active="true"] {
+  color: #121414;
+  font-weight: 650;
+}
+
+.authTab[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #18745a;
+  border-radius: 2px;
+}
+
+:global([data-theme="dark"]) .authTabs {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+:global([data-theme="dark"]) .authTab {
+  color: #8c9793;
+}
+
+:global([data-theme="dark"]) .authTab:hover {
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .authTab[data-active="true"] {
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .authTab[data-active="true"]::after {
+  background: #2f8f6c;
+}
+
+/* Icon-inside-field layout */
+.fieldStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.iconField {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.iconFieldIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #8a928e;
+  pointer-events: none;
+  z-index: 3;
+  transition: color 180ms ease;
+}
+
+.iconField:focus-within .iconFieldIcon {
+  color: #18745a;
+}
+
+:global([data-theme="dark"]) .iconFieldIcon {
+  color: #727d79;
+}
+
+:global([data-theme="dark"]) .iconField:focus-within .iconFieldIcon {
+  color: #5ab18e;
+}
+
+.iconField .textField,
+.iconField input,
+.desktopRail .iconField input,
+.desktopRail .iconField .textField {
+  padding-left: 44px !important;
+  width: 100%;
+}
+
+.iconField .textField::placeholder,
+.iconField input::placeholder {
+  color: #8c9490;
+  font-weight: 450;
+  font-size: 14.5px;
+}
+
+/* Tab stack & stable height */
+.authTabStack {
+  display: grid;
+  width: 100%;
+}
+
+.authTabPanel {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  transition: opacity 160ms ease;
+}
+
+.authTabPanel[data-active="false"] {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.authTabBottom {
+  display: flex;
+  flex-direction: column;
+  margin-top: auto;
+  padding-top: 16px;
+  width: 100%;
+}
+
+.authTabBottom .authPrimary {
+  width: 100%;
+}
+
+.compactForm {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.sentTo {
+  margin: 6px 0 16px;
+  font-size: 13px;
+  color: #5c6360;
+}
+
+:global([data-theme="dark"]) .sentTo {
+  color: #94a3b8;
+}
+
+.typeBadge {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  background: rgba(24, 116, 90, 0.09);
+  color: #18745a;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  font-family: inherit;
+  z-index: 3;
+}
+
+:global([data-theme="dark"]) .typeBadge {
+  background: rgba(24, 116, 90, 0.22);
+  color: #5ab18e;
+}
+
+.authQuietLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b716e;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 150ms ease;
+  font-family: inherit;
+}
+
+.authQuietLink:hover {
+  color: #18745a;
+}
+
+:global([data-theme="dark"]) .authQuietLink {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .authQuietLink:hover {
+  color: #5ab18e;
+}
 

@@ -194,6 +194,24 @@ export function LockIcon(props: IconProps) {
   );
 }
 
+export function MailIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <rect x="3" y="5" width="18" height="14" rx="3" />
+      <path d="m4 7.5 8 5.5 8-5.5" />
+    </IconBase>
+  );
+}
+
+export function UserIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+    </IconBase>
+  );
+}
+
 export function SparklesIcon(props: IconProps) {
   return (
     <IconBase {...props}>

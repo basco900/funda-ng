@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:3001": "next dev -p 3001",
+    "dev": "node --max-http-header-size=65536 node_modules/next/dist/bin/next dev",
+    "dev:3001": "node --max-http-header-size=65536 node_modules/next/dist/bin/next dev -p 3001",
     "build": "next build",
-    "start": "next start",
-    "start:3001": "next start -p 3001",
+    "start": "node --max-http-header-size=65536 node_modules/next/dist/bin/next start",
+    "start:3001": "node --max-http-header-size=65536 node_modules/next/dist/bin/next start -p 3001",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:e2e": "npm run build && playwright test"

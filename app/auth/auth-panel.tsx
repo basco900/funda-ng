@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import type { AuthError, User } from "@supabase/supabase-js";
-import { ArrowRightIcon, BackIcon, CheckIcon, CloseIcon } from "../onboarding/icons";
+import type { User } from "@supabase/supabase-js";
+import { ArrowRightIcon, BackIcon, CheckIcon, CloseIcon, LockIcon, MailIcon, PhoneIcon, UserIcon } from "../onboarding/icons";
 import { parseIdentifier, validFullName, validPassword, type IdentifierType } from "../../lib/auth/identifiers";
 import {
   completedOnboardingData,
@@ -19,26 +19,34 @@ import styles from "../onboarding/funda-experience.module.css";
 
 type Mode = "login" | "register";
 type Step = "identifier" | "method" | "password" | "code" | "profile" | "password-choice" | "recovery-sent" | "complete";
+type LoginMethod = "password" | "code";
 
-function otpErrorMessage(error: AuthError, createUser: boolean) {
-  const detail = `${error.code ?? ""} ${error.message}`.toLowerCase();
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-  if (error.status === 429 || detail.includes("rate limit") || detail.includes("rate_limit")) {
-    return "That button’s still warm. Give it a minute, then ask again.";
-  }
-  if (detail.includes("invalid") && detail.includes("email")) {
-    return "That email looks a little off. Give it a quick check.";
-  }
-  if (detail.includes("already") || detail.includes("registered")) {
-    return "You’re already with us. Log in and we’ll take it from there.";
-  }
-  if (detail.includes("smtp") || detail.includes("email") || detail.includes("send")) {
-    return "Email delivery is taking a breather. Try again shortly.";
-  }
+/** Text input with a leading icon. The placeholder replaces the visible label; aria-label keeps it accessible. */
+function IconField({ icon, ...props }: InputHTMLAttributes<HTMLInputElement> & { icon: ReactNode }) {
+  return (
+    <div className={styles.iconField}>
+      <span className={styles.iconFieldIcon} aria-hidden="true">{icon}</span>
+      <input {...props} className={styles.textField} />
+    </div>
+  );
+}
 
-  return createUser
-    ? "Couldn’t send that code just yet. Try again in a moment."
-    : "Couldn’t send a code just yet. Try again in a moment.";
+/** Live guess of what the user is typing, used to swap the identifier icon. */
+function detectIdentifier(raw: string): IdentifierType | null {
+  const value = raw.trim();
+  if (!value) return null;
+  if (value.includes("@")) return "email";
+  if (/^[0-9+() -]{3,}$/.test(value)) return "phone";
+  return null;
+}
+
+function IdentifierIcon({ value }: { value: string }) {
+  const type = detectIdentifier(value);
+  if (type === "email") return <MailIcon size={18} />;
+  if (type === "phone") return <PhoneIcon size={18} />;
+  return <UserIcon size={18} />;
 }
 
 function OtpDigitBoxes({
@@ -70,7 +78,6 @@ function OtpDigitBoxes({
     }
 
     if (val.length > 1) {
-      // Pasted full 6-digit code
       const clean = val.slice(0, 6);
       onChange(clean);
       const nextIdx = Math.min(clean.length, 5);
@@ -92,7 +99,7 @@ function OtpDigitBoxes({
   };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "8px", margin: "10px 0 16px" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "8px", margin: "20px 0 4px" }}>
       {Array.from({ length: 6 }).map((_, idx) => (
         <input
           key={idx}
@@ -101,12 +108,13 @@ function OtpDigitBoxes({
           inputMode="numeric"
           pattern="[0-9]*"
           maxLength={6}
+          aria-label={`Digit ${idx + 1}`}
           value={digits[idx] || ""}
           onChange={(e) => handleChange(idx, e)}
           onKeyDown={(e) => handleKeyDown(idx, e)}
           style={{
             width: "100%",
-            height: "42px",
+            height: "44px",
             textAlign: "center",
             fontSize: "18px",
             fontWeight: "700",
@@ -118,7 +126,7 @@ function OtpDigitBoxes({
                 ? "1.5px solid #18745a"
                 : "1px solid rgba(0, 0, 0, 0.12)",
             background: digits[idx] ? "rgba(24, 116, 90, 0.06)" : "#ffffff",
-            color: "#0a0b0e",
+            color: "#0a0c0e",
             boxShadow: digits[idx] ? "0 0 0 3px rgba(24, 116, 90, 0.18)" : "none",
             outline: "none",
             transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -150,7 +158,10 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
   const router = useRouter();
   const dialogRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<Step>("identifier");
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>("password");
   const [identifier, setIdentifier] = useState("");
+  const [codeEmail, setCodeEmail] = useState("");
+  const [recoveryEmail, setRecoveryEmail] = useState("");
   const [identifierType, setIdentifierType] = useState<IdentifierType | null>(null);
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
@@ -168,44 +179,18 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
   }, [instance, mode]);
 
   const fail = (message: string) => { setError(message); setBusy(false); };
+
   const auth = () => {
-    if (!isSupabaseConfigured()) throw new Error("Authentication is being connected. Add the Supabase keys to switch it on.");
+    if (!isSupabaseConfigured()) throw new Error("Authentication is temporarily unavailable. Please try again shortly.");
     return createClient().auth;
   };
-  const parsed = parseIdentifier(identifier);
-  const isPhone = parsed?.type === "phone" || /^[0-9+() -]{4,}$/.test(identifier.trim());
+
   const settingPassword = recovery || creatingPassword || (mode === "register" && step === "password");
 
-  const begin = async (event: FormEvent) => {
-    event.preventDefault();
-    const result = parseIdentifier(identifier);
-    if (!result) return fail("Try a proper email or Nigerian phone number.");
-    setIdentifier(result.value);
-    setIdentifierType(result.type);
-    setError("");
-    if (recovery) {
-      setBusy(true);
-      if (result.type === "email") {
-        void auth().resetPasswordForEmail(result.value, { redirectTo: `${location.origin}/auth/callback?next=/auth/reset-password` })
-          .then(() => setStep("recovery-sent"))
-          .catch(() => setStep("recovery-sent"))
-          .finally(() => setBusy(false));
-      } else {
-        void sendCode(result.type, result.value, false);
-      }
-      return;
-    }
-    if (mode === "register") {
-      await sendCode(result.type, result.value, true);
-      return;
-    }
-    if (!password) return fail("Add your password, or ask for a code instead.");
-    await loginWithPassword(result);
-  };
-
   const sendCode = async (type = identifierType, value = identifier, createUser = mode === "register") => {
-    if (!type) return;
-    setBusy(true); setError("");
+    if (!type || !value) return;
+    setBusy(true);
+    setError("");
     try {
       const options = {
         shouldCreateUser: createUser,
@@ -218,74 +203,165 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
       const result = type === "email"
         ? await auth().signInWithOtp({ email: value, options })
         : await auth().signInWithOtp({ phone: value, options });
-      if (result.error) return fail(otpErrorMessage(result.error, createUser));
+
+      if (result.error) {
+        const detail = `${result.error.code ?? ""} ${result.error.message}`.toLowerCase();
+        if (result.error.status === 429 || detail.includes("rate limit")) {
+          return fail("Too many attempts. Please try again in a few minutes.");
+        }
+        return fail("Unable to send verification code. Please check your details and try again.");
+      }
       setStep("code");
-    } catch (cause) { fail(cause instanceof Error ? cause.message : "Something got in the way. Try again."); }
-    finally { setBusy(false); }
+    } catch {
+      fail("Unable to send verification code. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const verifyCode = async (event?: FormEvent, submittedCode = code) => {
     if (event) event.preventDefault();
-    if (!identifierType || submittedCode.length !== 6) return fail("Pop in the six-digit code.");
-    setBusy(true); setError("");
+    if (!submittedCode || submittedCode.length !== 6) return fail("Please enter the 6-digit code.");
+    setBusy(true);
+    setError("");
     try {
       const result = identifierType === "email"
         ? await auth().verifyOtp({ email: identifier, token: submittedCode, type: "email" })
         : await auth().verifyOtp({ phone: identifier, token: submittedCode, type: "sms" });
-      if (result.error) return fail("That code didn’t land. Check it, or ask for a fresh one.");
-      if (recovery) setStep("password");
-      else if (result.data.user) await continueAuthenticatedUser(result.data.user);
-      else fail("You’re verified, but we couldn’t open your account. Try once more.");
-    } catch (cause) { fail(cause instanceof Error ? cause.message : "Couldn’t verify that code."); }
-    finally { setBusy(false); }
+
+      if (result.error) return fail("Invalid or expired code. Please try again.");
+      if (recovery) {
+        setStep("password");
+      } else if (result.data.user) {
+        await continueAuthenticatedUser(result.data.user);
+      } else {
+        fail("Unable to complete verification. Please try again.");
+      }
+    } catch {
+      fail("Invalid or expired code. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const loginWithPassword = async (account: NonNullable<ReturnType<typeof parseIdentifier>>) => {
-    if (!password) return fail("Add your password, or ask for a code instead.");
-    setBusy(true); setError("");
+  const submitPasswordLogin = async (event: FormEvent) => {
+    event.preventDefault();
+    const raw = identifier.trim();
+    if (!raw) return fail("Please enter your email or phone number.");
+    if (!password) return fail("Please enter your password.");
+
+    const account = parseIdentifier(raw);
+    if (!account) return fail("Please enter a valid email or Nigerian phone number.");
+
+    setBusy(true);
+    setError("");
     try {
       const credentials = account.type === "email" ? { email: account.value, password } : { phone: account.value, password };
       const { data, error: signInError } = await auth().signInWithPassword(credentials);
-      if (signInError) return fail("Those details don’t match. Try again or reset the password—easy fix.");
+      if (signInError) {
+        const detail = `${signInError.code ?? ""} ${signInError.message}`.toLowerCase();
+        if (signInError.status === 429 || detail.includes("rate limit")) {
+          return fail("Too many attempts. Please try again in a few minutes.");
+        }
+        return fail("Invalid credentials. Please check your details and try again.");
+      }
       if (data.user) await continueAuthenticatedUser(data.user);
-    } catch (cause) { fail(cause instanceof Error ? cause.message : "Couldn’t log you in."); }
-    finally { setBusy(false); }
+    } catch {
+      fail("Invalid credentials. Please check your details and try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const signInWithPassword = async (event: FormEvent) => {
+  const submitGetCode = async (event: FormEvent) => {
     event.preventDefault();
-    const account = parseIdentifier(identifier);
-    if (!account) return fail("Try a proper email or Nigerian phone number.");
-    await loginWithPassword(account);
+    const email = codeEmail.trim().toLowerCase();
+    if (!email) return fail("Please enter your email address.");
+    if (!EMAIL_PATTERN.test(email)) return fail("Please enter a valid email address.");
+
+    setBusy(true);
+    setError("");
+    try {
+      const options = {
+        shouldCreateUser: false,
+        data: {
+          onboarding_version: ONBOARDING_VERSION,
+          onboarding_complete: false,
+          password_enabled: false,
+        },
+      };
+      const result = await auth().signInWithOtp({ email, options });
+      if (result.error) {
+        const detail = `${result.error.code ?? ""} ${result.error.message}`.toLowerCase();
+        if (result.error.status === 429 || detail.includes("rate limit")) {
+          return fail("Too many attempts. Please try again in a few minutes.");
+        }
+        return fail("Unable to send verification code. Please check your email and try again.");
+      }
+      setIdentifier(email);
+      setIdentifierType("email");
+      setCode("");
+      setStep("code");
+    } catch {
+      fail("Unable to send verification code. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const requestLoginCode = async () => {
-    const account = parseIdentifier(identifier);
-    if (!account) return fail("Add your email or Nigerian phone number first.");
-    setIdentifier(account.value);
-    setIdentifierType(account.type);
-    await sendCode(account.type, account.value, false);
+  const submitRegister = async (event: FormEvent) => {
+    event.preventDefault();
+    const raw = identifier.trim();
+    if (!raw) return fail("Please enter your email or phone number.");
+
+    const result = parseIdentifier(raw);
+    if (!result) return fail("Please enter a valid email or Nigerian phone number.");
+
+    setIdentifier(result.value);
+    setIdentifierType(result.type);
+    setError("");
+    await sendCode(result.type, result.value, true);
+  };
+
+  const submitForgotPassword = async (event: FormEvent) => {
+    event.preventDefault();
+    const email = (recoveryEmail || identifier).trim().toLowerCase();
+    if (!email) return fail("Please enter your email address.");
+    if (!EMAIL_PATTERN.test(email)) return fail("Please enter a valid email address.");
+
+    setBusy(true);
+    setError("");
+    try {
+      await auth().resetPasswordForEmail(email, {
+        redirectTo: `${location.origin}/auth/callback?next=/auth/reset-password`,
+      });
+    } catch {
+      // Non-revealing: never disclose whether the account exists.
+    } finally {
+      setBusy(false);
+      setStep("recovery-sent");
+    }
   };
 
   const saveProfile = async (event: FormEvent) => {
     event.preventDefault();
-    if (!validFullName(fullName)) return fail("First and last name, please—your full government-ish name.");
+    if (!validFullName(fullName)) return fail("Please enter your first and last name.");
     setBusy(true);
     const client = createClient();
     const { data: { user } } = await client.auth.getUser();
-    if (!user) return fail("Your session took a breather. Log in again and we’ll pick up here.");
+    if (!user) return fail("Session expired. Please log in again.");
     const name = fullName.trim();
     const { data: authData, error: updateError } = await client.auth.updateUser({
       data: incompleteOnboardingData(user, name),
     });
     const { error: profileError } = await client.from("profiles").update({ full_name: name }).eq("id", user.id);
     setBusy(false);
-    if (updateError || profileError) return fail("Couldn’t save your name just yet. Give it another go.");
+    if (updateError || profileError) return fail("Unable to save name. Please try again.");
     if (hasPassword && authData.user) {
       const { error: completionError } = await client.auth.updateUser({
         data: completedOnboardingData(authData.user, name, "password"),
       });
-      if (completionError) return fail("Your name is safe. One more tap will finish things up.");
+      if (completionError) return fail("Unable to finish setup. Please try again.");
       return finish();
     }
     setStep("password-choice");
@@ -293,11 +369,11 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
 
   const savePassword = async (event: FormEvent) => {
     event.preventDefault();
-    if (!validPassword(password)) return fail("Six characters or more. That’s the whole rule.");
+    if (!validPassword(password)) return fail("Password must be at least 6 characters.");
     setBusy(true);
     const client = createClient();
     const { data: { user } } = await client.auth.getUser();
-    if (!user) return fail("Your session took a breather. Log in again and we’ll pick up here.");
+    if (!user) return fail("Session expired. Please log in again.");
     const name = profileNameFor(user, fullName);
     const nextData = validFullName(name)
       ? completedOnboardingData(user, name, "password")
@@ -308,7 +384,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         };
     const { data, error: updateError } = await client.auth.updateUser({ password, data: nextData });
     setBusy(false);
-    if (updateError) return fail("That password didn’t stick. Try six or more characters.");
+    if (updateError) return fail("Password must be at least 6 characters.");
     setHasPassword(true);
     if (data.user) await continueAuthenticatedUser(data.user);
   };
@@ -327,16 +403,17 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
   };
 
   const finishWithCodes = async () => {
-    setBusy(true); setError("");
+    setBusy(true);
+    setError("");
     const client = createClient();
     const { data: { user } } = await client.auth.getUser();
     const name = user ? profileNameFor(user, fullName) : "";
-    if (!user || !validFullName(name)) return fail("Let’s save your name first, then you’re done.");
+    if (!user || !validFullName(name)) return fail("Please enter your name first.");
     const { error: completionError } = await client.auth.updateUser({
       data: completedOnboardingData(user, name, "code"),
     });
     setBusy(false);
-    if (completionError) return fail("Almost there. Give that one more tap.");
+    if (completionError) return fail("Unable to save preferences. Please try again.");
     finish();
   };
 
@@ -362,12 +439,25 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
 
   const back = () => {
     setError("");
-    if (step === "method") setStep("identifier");
-    else if (step === "code") setStep("identifier");
-    else if (step === "password") setStep(recovery ? "identifier" : settingPassword ? "password-choice" : "method");
-    else if (step === "recovery-sent") setStep("identifier");
-    else if (["profile", "password-choice"].includes(step)) onClose();
-    else onClose();
+    if (recovery) {
+      setRecovery(false);
+      setStep("identifier");
+    } else if (step === "code") {
+      setStep("identifier");
+    } else if (step === "password") {
+      setStep(settingPassword ? "password-choice" : "identifier");
+    } else if (step === "recovery-sent") {
+      setRecovery(false);
+      setStep("identifier");
+    } else {
+      onClose();
+    }
+  };
+
+  const chooseMethod = (method: LoginMethod) => {
+    setLoginMethod(method);
+    setError("");
+    if (method === "code" && !codeEmail && identifier.includes("@")) setCodeEmail(identifier);
   };
 
   return (
@@ -379,163 +469,191 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         <button type="button" onClick={onClose} className={styles.iconButton} aria-label="Close"><CloseIcon size={19} /></button>
       </div>
       <div className={styles.authBody}>
-        {step === "identifier" && (
-          <form
-            className={mode === "login" && !recovery ? styles.loginForm : undefined}
-            onSubmit={begin}
-            noValidate
-          >
-            {!(mode === "login" && !recovery) && (
-              <span className={styles.authEyebrow}>{mode === "register" ? "Join Funda" : "Password rescue"}</span>
-            )}
-            <h2 id={`${instance}-auth-title`}>
-              {mode === "register" ? "Let’s get you in." : recovery ? "We’ve got you." : "Welcome back."}
-            </h2>
-            {!(mode === "login" && !recovery) && (
-              <p>{recovery
-                ? "Drop your email or phone. Getting back in is pleasantly easy."
-                : "Email or phone—whichever you actually remember."}</p>
-            )}
-            <label className={styles.fieldLabel} htmlFor={`${instance}-${mode}-identifier`}>Email or phone number</label>
+        {step === "identifier" && recovery && (
+          <form className={styles.compactForm} onSubmit={submitForgotPassword} noValidate>
+            <h2 id={`${instance}-auth-title`}>Reset password</h2>
 
-            <div style={{ position: "relative" }}>
-              {isPhone && (
-                <span
-                  style={{
-                    position: "absolute",
-                    left: "14px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "13px",
-                    fontFamily: "var(--font-geist-mono), monospace",
-                    fontWeight: "600",
-                    color: "#59605c",
-                    pointerEvents: "none",
-                  }}
-                >
-                  🇳🇬 +234
-                </span>
-              )}
-              <input
-                id={`${instance}-${mode}-identifier`}
-                className={styles.textField}
-                value={identifier}
-                onChange={(e) => { setIdentifier(e.target.value); setError(""); }}
-                autoComplete="username"
-                inputMode="text"
-                placeholder={isPhone ? "801 234 5678" : "you@email.com or 0801 234 5678"}
-                style={{
-                  paddingLeft: isPhone ? "82px" : "15px",
-                }}
+            <div className={styles.fieldStack}>
+              <IconField
+                icon={<MailIcon size={18} />}
+                type="email"
+                value={recoveryEmail}
+                onChange={(e) => { setRecoveryEmail(e.target.value); setError(""); }}
+                autoComplete="email"
+                placeholder="Email address"
+                aria-label="Email address"
               />
             </div>
 
-            {mode === "login" && !recovery && (
-              <>
-                <label className={styles.fieldLabel} htmlFor={`${instance}-login-password`}>Password</label>
-                <input
-                  id={`${instance}-login-password`}
-                  className={styles.textField}
-                  type="password"
-                  value={password}
-                  onChange={(event) => { setPassword(event.target.value); setError(""); }}
-                  autoComplete="current-password"
-                  placeholder="Your password"
-                />
-              </>
-            )}
-
             {error && <p className={styles.fieldError} role="alert">{error}</p>}
-            {mode === "login" && !recovery ? (
-              <div>
-                <button className={styles.authPrimary} disabled={busy} type="submit">
-                  {busy ? "One sec…" : "Log in"} <ArrowRightIcon size={18} />
-                </button>
-                <div className={styles.loginAltActions}>
-                  <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void requestLoginCode()}>
-                    Use a code
-                  </button>
-                  <span aria-hidden="true">·</span>
-                  <button className={styles.authQuiet} type="button" onClick={() => { setRecovery(true); setPassword(""); }}>
-                    Forgot password?
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button className={styles.authPrimary} disabled={busy} type="submit">
-                {busy ? "One sec…" : recovery ? "Help me back in" : "Continue"} <ArrowRightIcon size={18} />
+
+            <button className={styles.authPrimary} disabled={busy} type="submit">
+              {busy ? "Sending…" : "Send reset link"} <ArrowRightIcon size={18} />
+            </button>
+
+            <div className={styles.loginAltActions}>
+              <button className={styles.authQuietLink} type="button" onClick={() => { setRecovery(false); setError(""); }}>
+                Back to login
               </button>
-            )}
+            </div>
           </form>
         )}
 
-        {step === "method" && (
-          <form onSubmit={signInWithPassword} noValidate>
-            <span className={styles.authEyebrow}>Your call</span>
+        {step === "identifier" && !recovery && mode === "login" && (
+          <div className={styles.loginForm}>
             <h2 id={`${instance}-auth-title`}>Welcome back.</h2>
-            <p>Add your password, or get a fresh code. No extra ceremony.</p>
-            <label className={styles.fieldLabel} htmlFor={`${instance}-quick-password`}>Password</label>
-            <input
-              id={`${instance}-quick-password`}
-              className={styles.textField}
-              type="password"
-              value={password}
-              onChange={(event) => { setPassword(event.target.value); setError(""); }}
-              autoComplete="current-password"
-              placeholder="Your password"
-            />
-            {error && <p className={styles.fieldError} role="alert">{error}</p>}
-            <button className={styles.authPrimary} disabled={busy} type="submit">
-              {busy ? "One sec…" : "Log me in"} <ArrowRightIcon size={18} />
-            </button>
-            <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void sendCode(identifierType, identifier, false)}>
-              Send me a code instead
-            </button>
-            <button className={styles.authQuiet} type="button" onClick={() => { setRecovery(true); setStep("identifier"); }}>
-              Forgot password? Easy fix.
-            </button>
-          </form>
+
+            <div className={styles.authTabs} role="tablist" aria-label="Login method">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={loginMethod === "password"}
+                className={styles.authTab}
+                data-active={loginMethod === "password"}
+                onClick={() => chooseMethod("password")}
+              >
+                Login with password
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={loginMethod === "code"}
+                className={styles.authTab}
+                data-active={loginMethod === "code"}
+                onClick={() => chooseMethod("code")}
+              >
+                Get a Code
+              </button>
+            </div>
+
+            {/* Both panels share one grid cell, so the card always takes the taller one's height */}
+            <div className={styles.authTabStack}>
+              <form
+                onSubmit={submitPasswordLogin}
+                className={styles.authTabPanel}
+                data-active={loginMethod === "password"}
+                inert={loginMethod !== "password"}
+                aria-hidden={loginMethod !== "password"}
+                noValidate
+              >
+                <div className={styles.fieldStack}>
+                  <IconField
+                    icon={<IdentifierIcon value={identifier} />}
+                    type="text"
+                    inputMode={detectIdentifier(identifier) === "phone" ? "tel" : "email"}
+                    value={identifier}
+                    onChange={(e) => { setIdentifier(e.target.value); setError(""); }}
+                    autoComplete="username"
+                    placeholder="Email or phone number"
+                    aria-label="Email or phone number"
+                  />
+                  <IconField
+                    icon={<LockIcon size={18} />}
+                    type="password"
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                    autoComplete="current-password"
+                    placeholder="Password"
+                    aria-label="Password"
+                  />
+                </div>
+
+                <div className={styles.authTabBottom}>
+                  {error && loginMethod === "password" && <p className={styles.fieldError} role="alert">{error}</p>}
+
+                  <button className={styles.authPrimary} disabled={busy} type="submit">
+                    {busy ? "Signing in…" : "Log in"} <ArrowRightIcon size={18} />
+                  </button>
+
+                  <div className={styles.loginAltActions}>
+                    <button
+                      className={styles.authQuietLink}
+                      type="button"
+                      onClick={() => {
+                        setRecovery(true);
+                        setRecoveryEmail(identifier.includes("@") ? identifier : "");
+                        setError("");
+                      }}
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              <form
+                onSubmit={submitGetCode}
+                className={styles.authTabPanel}
+                data-active={loginMethod === "code"}
+                inert={loginMethod !== "code"}
+                aria-hidden={loginMethod !== "code"}
+                noValidate
+              >
+                <div className={styles.fieldStack}>
+                  <IconField
+                    icon={<MailIcon size={18} />}
+                    type="email"
+                    value={codeEmail}
+                    onChange={(e) => { setCodeEmail(e.target.value); setError(""); }}
+                    autoComplete="email"
+                    placeholder="Email address"
+                    aria-label="Email address"
+                  />
+                </div>
+
+                <div className={styles.authTabBottom}>
+                  {error && loginMethod === "code" && <p className={styles.fieldError} role="alert">{error}</p>}
+
+                  <button className={styles.authPrimary} disabled={busy} type="submit">
+                    {busy ? "Sending code…" : "Get code"} <ArrowRightIcon size={18} />
+                  </button>
+
+                  {/* Empty row mirrors "Forgot password?" so both buttons sit at the exact same baseline */}
+                  <div className={styles.loginAltActions} aria-hidden="true" style={{ visibility: "hidden" }}>
+                    <span className={styles.authQuietLink}>Placeholder</span>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
 
-        {step === "password" && (
-          <form onSubmit={settingPassword ? savePassword : signInWithPassword} noValidate>
-            <span className={styles.authEyebrow}>{settingPassword ? "Fresh start" : "Password time"}</span>
-            <h2 id={`${instance}-auth-title`}>{settingPassword ? "Pick one you’ll remember." : "You know the drill."}</h2>
-            <p>{settingPassword ? "Six characters minimum. If it slips your mind later, getting it back is easy." : "No peeking—we only ever send this securely to Supabase Auth."}</p>
-            <label className={styles.fieldLabel} htmlFor={`${instance}-password`}>Password</label>
-            <input
-              id={`${instance}-password`}
-              className={styles.textField}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete={settingPassword ? "new-password" : "current-password"}
-              minLength={settingPassword ? 6 : undefined}
-              placeholder={settingPassword ? "6+ characters" : "Your password"}
-            />
+        {step === "identifier" && !recovery && mode === "register" && (
+          <form className={styles.compactForm} onSubmit={submitRegister} noValidate>
+            <h2 id={`${instance}-auth-title`}>Let’s get you in.</h2>
+
+            <div className={styles.fieldStack}>
+              <IconField
+                icon={<IdentifierIcon value={identifier} />}
+                type="text"
+                inputMode={detectIdentifier(identifier) === "phone" ? "tel" : "email"}
+                value={identifier}
+                onChange={(e) => { setIdentifier(e.target.value); setError(""); }}
+                autoComplete="username"
+                placeholder="Email or phone number"
+                aria-label="Email or phone number"
+              />
+            </div>
+
             {error && <p className={styles.fieldError} role="alert">{error}</p>}
+
             <button className={styles.authPrimary} disabled={busy} type="submit">
-              {busy ? "Checking…" : settingPassword ? "Save password" : "Log me in"} <ArrowRightIcon size={18} />
+              {busy ? "Continuing…" : "Continue"} <ArrowRightIcon size={18} />
             </button>
-            {!recovery && (
-              <button className={styles.authQuiet} type="button" onClick={() => { setRecovery(true); setStep("identifier"); }}>
-                Forgot it? We’ll sort it.
+
+            <div className={styles.loginAltActions}>
+              <button className={styles.authQuietLink} type="button" onClick={() => router.push("/login")}>
+                Already have an account? Log in
               </button>
-            )}
+            </div>
           </form>
         )}
 
         {step === "code" && (
-          <form onSubmit={verifyCode} noValidate>
-            <span className={styles.authEyebrow}>One quick check</span>
-            <h2 id={`${instance}-auth-title`}>Code, please.</h2>
-            <p>We sent six digits to your {identifierType === "email" ? "email" : "phone"}.</p>
-            <label className={styles.fieldLabel}>Six-digit code</label>
+          <form className={styles.compactForm} onSubmit={verifyCode} noValidate>
+            <h2 id={`${instance}-auth-title`}>Enter code</h2>
+            <p className={styles.sentTo}>Sent to <strong>{identifier}</strong></p>
 
-            {/* 6-box discrete OTP inputs */}
             <OtpDigitBoxes
               value={code}
               onChange={(val) => { setCode(val); setError(""); }}
@@ -544,66 +662,100 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
             />
 
             {error && <p className={styles.fieldError} role="alert">{error}</p>}
+
             <button className={styles.authPrimary} disabled={busy || code.length !== 6} type="submit">
-              {busy ? "Checking…" : "Verify code"} <ArrowRightIcon size={18} />
+              {busy ? "Verifying…" : "Verify code"} <ArrowRightIcon size={18} />
             </button>
-            <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void sendCode()}>
-              Send a fresh code
-            </button>
+
+            <div className={styles.loginAltActions}>
+              <button className={styles.authQuietLink} disabled={busy} type="button" onClick={() => void sendCode()}>
+                Resend code
+              </button>
+            </div>
           </form>
         )}
 
         {step === "profile" && (
-          <form onSubmit={saveProfile} noValidate>
-            <span className={styles.authEyebrow}>Nice to meet you</span>
+          <form className={styles.compactForm} onSubmit={saveProfile} noValidate>
             <h2 id={`${instance}-auth-title`}>What’s your full name?</h2>
-            <p>The proper version—first and last. We’ll keep it friendly everywhere else.</p>
-            <label className={styles.fieldLabel} htmlFor={`${instance}-full-name`}>Full name</label>
-            <input
-              id={`${instance}-full-name`}
-              className={styles.textField}
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value.slice(0, 100))}
-              autoComplete="name"
-              placeholder="Adaeze Okafor"
-            />
+
+            <div className={styles.fieldStack}>
+              <IconField
+                icon={<UserIcon size={18} />}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value.slice(0, 100))}
+                autoComplete="name"
+                placeholder="Full name"
+                aria-label="Full name"
+              />
+            </div>
+
             {error && <p className={styles.fieldError} role="alert">{error}</p>}
+
             <button className={styles.authPrimary} disabled={busy} type="submit">
-              Keep going <ArrowRightIcon size={18} />
+              Continue <ArrowRightIcon size={18} />
             </button>
           </form>
         )}
 
         {step === "password-choice" && (
-          <div>
-            <span className={styles.authEyebrow}>Last little choice</span>
+          <div className={styles.compactForm}>
             <h2 id={`${instance}-auth-title`}>Password or codes?</h2>
-            <p>Add a password for quick logins, or skip it and we’ll send a code whenever you come back.</p>
-            <button className={styles.authPrimary} type="button" onClick={() => { setCreatingPassword(true); setStep("password"); }}>
-              Add a password <ArrowRightIcon size={18} />
-            </button>
-            <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void finishWithCodes()}>
-              {busy ? "Saving…" : "Codes are fine by me"}
-            </button>
-            <p>Password recovery is easy, by the way. No lifelong commitment here.</p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "24px" }}>
+              <button className={styles.authPrimary} type="button" onClick={() => { setCreatingPassword(true); setStep("password"); }}>
+                Add a password <ArrowRightIcon size={18} />
+              </button>
+              <button className={styles.authQuiet} disabled={busy} type="button" onClick={() => void finishWithCodes()}>
+                {busy ? "Saving…" : "Codes are fine by me"}
+              </button>
+            </div>
+            {error && <p className={styles.fieldError} role="alert">{error}</p>}
           </div>
+        )}
+
+        {step === "password" && (
+          <form className={styles.compactForm} onSubmit={savePassword} noValidate>
+            <h2 id={`${instance}-auth-title`}>{settingPassword ? "Create password" : "Enter password"}</h2>
+
+            <div className={styles.fieldStack}>
+              <IconField
+                icon={<LockIcon size={18} />}
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={settingPassword ? "new-password" : "current-password"}
+                minLength={settingPassword ? 6 : undefined}
+                placeholder={settingPassword ? "Password (6+ characters)" : "Password"}
+                aria-label="Password"
+              />
+            </div>
+
+            {error && <p className={styles.fieldError} role="alert">{error}</p>}
+
+            <button className={styles.authPrimary} disabled={busy} type="submit">
+              {busy ? "Saving…" : settingPassword ? "Save password" : "Log in"} <ArrowRightIcon size={18} />
+            </button>
+          </form>
         )}
 
         {step === "recovery-sent" && (
           <div className={styles.completeState}>
             <span className={styles.completeIcon}><CheckIcon size={30} /></span>
-            <span className={styles.authEyebrow}>Check your inbox</span>
-            <h2 id={`${instance}-auth-title`}>Help is on the way.</h2>
-            <p>If that account exists, the reset link is already heading there. Nice and private.</p>
+            <h2 id={`${instance}-auth-title`}>Check your email</h2>
+            <p>If an account exists for this email, a reset link is on its way.</p>
+            <div style={{ marginTop: "24px" }}>
+              <button className={styles.authPrimary} type="button" onClick={() => { setRecovery(false); setStep("identifier"); }}>
+                Back to login
+              </button>
+            </div>
           </div>
         )}
 
         {step === "complete" && (
           <div className={styles.completeState}>
             <span className={styles.completeIcon}><CheckIcon size={30} /></span>
-            <span className={styles.authEyebrow}>You’re in</span>
-            <h2 id={`${instance}-auth-title`}>Lovely stuff.</h2>
-            <p>Taking you to your dashboard now.</p>
+            <h2 id={`${instance}-auth-title`}>You’re in.</h2>
           </div>
         )}
       </div>
