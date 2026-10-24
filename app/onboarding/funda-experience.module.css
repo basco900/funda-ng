@@ -639,6 +639,23 @@
   text-align: center;
 }
 
+.authTopbarTitle {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #0a0b0e;
+  text-align: center;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 8px;
+}
+
+:global([data-theme="dark"]) .authTopbarTitle {
+  color: #f8fafc;
+}
+
 .iconButton {
   display: grid;
   place-items: center;
@@ -713,7 +730,8 @@
 
 .authBody p strong {
   color: #202323;
-  font-family: var(--font-geist-mono), monospace;
+  font-family: inherit;
+  font-weight: 600;
 }
 
 .fieldLabel {
@@ -738,8 +756,9 @@
 .phoneField:focus-within,
 .otpField:focus,
 .textField:focus {
-  border-color: #2f91a8;
-  box-shadow: 0 0 0 4px rgba(86, 177, 198, 0.14);
+  border-color: #18745a;
+  box-shadow: none;
+  outline: none;
 }
 
 .phoneField[data-error="true"],
@@ -2730,15 +2749,15 @@
 
   .desktopAuth {
     position: relative;
-    width: min(676px, calc(100vw - 48px));
+    width: min(620px, calc(100vw - 48px));
     height: auto;
     max-height: calc(100dvh - 56px);
     overflow: hidden;
     border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 32px;
+    border-radius: 28px;
     background: #ffffff;
-    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.16);
-    animation: desktop-auth-sheet-in 440ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.14);
+    animation: desktop-auth-sheet-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   :global([data-theme="dark"]) .desktopAuth {
@@ -2768,24 +2787,24 @@
   }
 
   .desktopRail .mobileHandle {
-    display: block;
-    width: 46px;
-    height: 5px;
-    margin: 16px auto 2px;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.12);
-  }
-
-  :global([data-theme="dark"]) .desktopRail .mobileHandle {
-    background: rgba(148, 163, 184, 0.42);
+    display: none !important;
   }
 
   .desktopRail .authTopbar {
-    padding: 8px 24px 4px;
+    padding: 20px 24px 8px;
   }
 
   .desktopRail .authWordmark {
     color: var(--warm-white);
+  }
+
+  .desktopRail .authTopbarTitle {
+    color: var(--warm-white);
+    font-size: 20px;
+  }
+
+  :global([data-theme="dark"]) .desktopRail .authTopbarTitle {
+    color: #f8fafc;
   }
 
   :global([data-theme="dark"]) .desktopRail .authWordmark {
@@ -2816,13 +2835,13 @@
 
   .desktopRail .authBody {
     justify-content: flex-start;
-    padding: 16px 32px 34px;
+    padding: 12px 32px 32px;
   }
 
   .desktopRail .authBody > form,
   .desktopRail .authBody > div,
   .desktopRail .completeState {
-    width: min(100%, 548px);
+    width: 100%;
     margin-inline: auto;
   }
 
@@ -2831,9 +2850,12 @@
   }
 
   .desktopRail .authBody h2 {
-    max-width: 14ch;
+    max-width: none;
     color: var(--warm-white) !important;
-    font-size: clamp(34px, 3vw, 44px);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.2;
   }
 
   .desktopRail .authBody form > p,
@@ -2874,8 +2896,17 @@
   .desktopRail .textField:focus,
   .desktopRail .otpField:focus,
   .desktopRail input:focus {
-    border-color: var(--accent) !important;
-    box-shadow: 0 0 0 4px rgba(24, 116, 90, 0.15) !important;
+    border-color: #18745a !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  :global([data-theme="dark"]) .desktopRail .textField:focus,
+  :global([data-theme="dark"]) .desktopRail .otpField:focus,
+  :global([data-theme="dark"]) .desktopRail input:focus {
+    border-color: #2f8f6c !important;
+    box-shadow: none !important;
+    outline: none !important;
   }
 
   .desktopRail .authPrimary {
@@ -3102,56 +3133,56 @@
   }
 }
 
-/* Auth switch & identification enhancements */
+/* Minimal switch */
 .authTabs {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 24px;
-  margin: 20px 0 24px;
-  border-bottom: 1px solid rgba(9, 10, 10, 0.08);
-  width: 100%;
+  gap: 3px;
+  padding: 3px;
+  margin: 4px 0 20px;
+  border: none !important;
+  border-radius: 999px;
+  background: rgba(24, 116, 90, 0.08);
+  width: fit-content;
 }
 
 .authTab {
   position: relative;
-  padding: 0 0 10px 0;
-  border: none;
+  padding: 6px 16px;
+  border: none !important;
+  border-radius: 999px;
   background: transparent;
   font-family: inherit;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
-  color: #767e7a;
+  color: #31584b;
   cursor: pointer;
-  transition: color 160ms ease;
+  transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 
 .authTab:hover {
-  color: #121414;
+  color: #125c49;
 }
 
 .authTab[data-active="true"] {
-  color: #121414;
-  font-weight: 650;
+  background: #ffffff;
+  color: #0a0c0e;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .authTab[data-active="true"]::after {
-  content: "";
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: #18745a;
-  border-radius: 2px;
+  display: none !important;
 }
 
 :global([data-theme="dark"]) .authTabs {
-  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(24, 116, 90, 0.18);
+  border: none !important;
 }
 
 :global([data-theme="dark"]) .authTab {
-  color: #8c9793;
+  color: #9eccba;
 }
 
 :global([data-theme="dark"]) .authTab:hover {
@@ -3159,11 +3190,13 @@
 }
 
 :global([data-theme="dark"]) .authTab[data-active="true"] {
+  background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 :global([data-theme="dark"]) .authTab[data-active="true"]::after {
-  background: #2f8f6c;
+  display: none !important;
 }
 
 /* Icon-inside-field layout */
@@ -3217,6 +3250,63 @@
   width: 100%;
 }
 
+.iconFieldWithAction input,
+.desktopRail .iconFieldWithAction input {
+  padding-right: 120px !important;
+}
+
+.iconFieldAction {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  z-index: 3;
+}
+
+.getCodeBtn {
+  height: 34px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(24, 116, 90, 0.1);
+  color: #18745a;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.getCodeBtn:hover:not(:disabled) {
+  background: #18745a;
+  color: #ffffff;
+}
+
+.getCodeBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.04);
+  color: #788480;
+}
+
+:global([data-theme="dark"]) .getCodeBtn {
+  background: rgba(24, 116, 90, 0.22);
+  color: #5ab18e;
+}
+
+:global([data-theme="dark"]) .getCodeBtn:hover:not(:disabled) {
+  background: #2f8f6c;
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .getCodeBtn:disabled {
+  background: rgba(255, 255, 255, 0.06);
+  color: #64748b;
+}
+
 .iconField .textField::placeholder,
 .iconField input::placeholder {
   color: #8c9490;
@@ -3261,16 +3351,184 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  padding-top: 4px;
+  padding-bottom: 8px;
+}
+
+.compactForm h2 {
+  margin: 0 0 20px !important;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: #0a0b0e;
+}
+
+:global([data-theme="dark"]) .compactForm h2 {
+  color: #f8fafc;
+}
+
+.compactForm .fieldStack {
+  margin-bottom: 20px;
+}
+
+.compactForm .authPrimary {
+  margin-top: 0;
+  width: 100%;
+}
+
+.compactForm .loginAltActions {
+  margin-top: 18px;
 }
 
 .sentTo {
-  margin: 6px 0 16px;
-  font-size: 13px;
-  color: #5c6360;
+  margin: -6px 0 22px;
+  font-size: 14px;
+  color: #525866;
+  line-height: 1.45;
+  font-family: inherit;
+}
+
+.sentTo strong {
+  color: #0a0b0e;
+  font-weight: 600;
+  font-family: inherit !important;
+  word-break: break-all;
 }
 
 :global([data-theme="dark"]) .sentTo {
   color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .sentTo strong {
+  color: #f8fafc;
+}
+
+.otpGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  width: 100%;
+  margin: 0 0 24px;
+}
+
+.otpInput {
+  width: 100%;
+  height: 52px;
+  text-align: center !important;
+  font-size: 22px;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: 14px;
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  color: #0a0b0e;
+  outline: none;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0 !important;
+  box-sizing: border-box;
+}
+
+.otpInput:focus {
+  border-color: #18745a;
+  background: #ffffff;
+  box-shadow: none;
+  outline: none;
+}
+
+.otpInput[data-filled="true"] {
+  border-color: #18745a;
+  background: rgba(24, 116, 90, 0.05);
+}
+
+.otpInput[data-error="true"] {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.04);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.14);
+}
+
+:global([data-theme="dark"]) .otpInput {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f8fafc;
+}
+
+:global([data-theme="dark"]) .otpInput:focus {
+  border-color: #2f8f6c;
+  background: rgba(24, 116, 90, 0.15);
+  box-shadow: 0 0 0 3px rgba(24, 116, 90, 0.28);
+}
+
+:global([data-theme="dark"]) .otpInput[data-filled="true"] {
+  border-color: #2f8f6c;
+  background: rgba(24, 116, 90, 0.12);
+}
+
+.desktopRail .otpInput,
+.mobileAuth .otpInput {
+  padding: 0 !important;
+  text-align: center !important;
+}
+
+.authSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  background: transparent;
+  color: #0a0b0e;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 180ms ease;
+  font-family: inherit;
+}
+
+.authSecondary:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+:global([data-theme="dark"]) .authSecondary {
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f8fafc;
+}
+
+:global([data-theme="dark"]) .authSecondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.completeState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  padding: 16px 0 8px;
+}
+
+.completeState h2 {
+  margin: 0 0 8px !important;
+  text-align: center;
+}
+
+.completeState p {
+  text-align: center;
+}
+
+.completeIcon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 20px;
+  border-radius: 18px;
+  background: #18745a !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(24, 116, 90, 0.25);
 }
 
 .typeBadge {

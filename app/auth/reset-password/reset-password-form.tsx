@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { LockIcon } from "../../onboarding/icons";
 import { validFullName, validPassword } from "../../../lib/auth/identifiers";
 import {
   completedOnboardingData,
@@ -19,7 +20,7 @@ export default function ResetPasswordForm() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!validPassword(password)) return setError("Six characters or more. That’s the whole rule.");
+    if (!validPassword(password)) return setError("Password must be at least 6 characters.");
 
     setBusy(true);
     setError("");
@@ -27,7 +28,7 @@ export default function ResetPasswordForm() {
     const { data: { user } } = await client.auth.getUser();
     if (!user) {
       setBusy(false);
-      return setError("That link has had its moment. Ask for a fresh one and we’ll try again.");
+      return setError("Session expired or invalid link. Please request a new one.");
     }
 
     const { data: profile } = await client.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
@@ -42,14 +43,35 @@ export default function ResetPasswordForm() {
     const { error: updateError } = await client.auth.updateUser({ password, data: onboardingData });
 
     setBusy(false);
-    if (updateError) return setError("That password didn’t stick. Try six or more characters.");
+    if (updateError) return setError("Unable to update password. Please try again.");
     router.replace(validFullName(fullName) ? "/dashboard" : "/register?resume=1");
   };
 
-  return <main className={styles.page}><section className={styles.card}>
-    <span className={styles.brand}>funda.</span><span className={styles.eyebrow}>Fresh start</span><h1>New password. Same you.</h1>
-    <p>Six characters minimum. If it wanders off again, recovery is still easy.</p>
-    <form onSubmit={submit}><label htmlFor="new-password">New password</label><input id="new-password" type="password" minLength={6} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="6+ characters" />
-    {error && <small role="alert">{error}</small>}<button disabled={busy}>{busy ? "Saving…" : "Save and continue"}</button></form>
-  </section></main>;
+  return (
+    <main className={styles.page}>
+      <section className={styles.card}>
+        <span className={styles.brand}>funda.</span>
+        <h1>Create new password</h1>
+        <form onSubmit={submit} noValidate>
+          <div className={styles.iconField}>
+            <span className={styles.iconFieldIcon} aria-hidden="true">
+              <LockIcon size={18} />
+            </span>
+            <input
+              id="new-password"
+              type="password"
+              minLength={6}
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => { setPassword(event.target.value); setError(""); }}
+              placeholder="New password (6+ characters)"
+              aria-label="New password"
+            />
+          </div>
+          {error && <small role="alert">{error}</small>}
+          <button disabled={busy} type="submit">{busy ? "Saving…" : "Save password"}</button>
+        </form>
+      </section>
+    </main>
+  );
 }
