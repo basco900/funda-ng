@@ -15,8 +15,9 @@ export async function evaluateCustomerPurchasePolicy(userId: string, serviceType
   if (!Number.isFinite(amount) || amount <= 0) return deny("INVALID_AMOUNT", "Transaction amount is invalid.");
 
   const client = createAdminClient();
-  const dayStart = new Date();
-  dayStart.setHours(0, 0, 0, 0);
+  // Limits reset at midnight Lagos time (UTC+1, no DST), matching public.lagos_day_start().
+  const lagosNow = new Date(Date.now() + 60 * 60_000);
+  const dayStart = new Date(Date.UTC(lagosNow.getUTCFullYear(), lagosNow.getUTCMonth(), lagosNow.getUTCDate()) - 60 * 60_000);
   const [controlsResult, kycResult, overrideResult, usageResult] = await Promise.all([
     client.from("customer_account_controls").select("account_status,wallet_status,risk_level").eq("user_id", userId).maybeSingle(),
     client.from("kyc_reviews").select("tier").eq("user_id", userId).eq("status", "approved").order("tier", { ascending: false }).limit(1).maybeSingle(),

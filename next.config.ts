@@ -7,6 +7,20 @@ const nextConfig: NextConfig = {
   images: {
     qualities: [72, 75],
     minimumCacheTTL: 60 * 60 * 24 * 30,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "plus.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "funda.ng",
+      },
+    ],
   },
 };
 

@@ -2,9 +2,11 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { AdminPageHeader } from "@/components/admin/page-pattern";
 import { saveDataBundle, syncProviderCatalogue } from "../../actions";
 import AdminIcon from "../../admin-icon";
 import AdminSelect from "../../admin-select";
+import { AdminModal } from "../../admin-ui";
 import styles from "../../../admin.module.css";
 import {
   dataAmountMbFromName,
@@ -123,7 +125,8 @@ function formatOfferOptionLabel(offer: Offer): string {
     planType = raw.replace(/\s*-\s*\d+.*MB.*/i, "").trim() || "Data Plan";
   }
 
-  return validity ? `${size} · ${planType} (${validity})` : `${size} · ${planType}`;
+  const repeatsValidity = validity && planType.toLowerCase().includes(validity.toLowerCase());
+  return validity && !repeatsValidity ? `${size} · ${planType} (${validity})` : `${size} · ${planType}`;
 }
 
 export default function DataBundlesWorkspace({
@@ -145,6 +148,7 @@ export default function DataBundlesWorkspace({
   const [retail, setRetail] = useState("");
   const [margin, setMargin] = useState("");
   const [notice, setNotice] = useState("");
+  const [studioOpen, setStudioOpen] = useState(false);
   const [tableNetwork, setTableNetwork] = useState("all");
   const [tableCategory, setTableCategory] = useState("all");
   const [tableQuery, setTableQuery] = useState("");
@@ -309,6 +313,7 @@ export default function DataBundlesWorkspace({
       });
       setNotice(result.message);
       if (result.ok) {
+        setStudioOpen(false);
         setSelectedId("");
         setRetail("");
         setMargin("");
@@ -427,165 +432,293 @@ export default function DataBundlesWorkspace({
   }
 
   return (
-    <div className={styles.productWorkspace}>
-      {/* Seamless Page Header */}
-      <header className={styles.pageHeading}>
-        <div>
-          <span className={styles.pageEyebrow}>PRODUCTS / CATALOGUE</span>
-          <h1>Data Bundles</h1>
-          <p>Define your customer-facing bundles and map them directly to fulfilment supplier offers.</p>
-        </div>
-        <div className={styles.pageHeadingActions}>
-          <span className={styles.systemStatus}>
-            <span />
-            <strong>{bundles.length}</strong> Active Bundles
-          </span>
-        </div>
-      </header>
+    <div className={styles.workspacePage}>
+      <AdminPageHeader
+        title="Data Bundles"
+        actions={
+          <>
+            <button type="button" className={styles.primaryButton} onClick={() => setStudioOpen(true)}>
+              <AdminIcon name="plus" />
+              Add bundle
+            </button>
+          </>
+        }
+        stats={[
+          { icon: "wifi", tone: "slate", value: bundles.length, label: "Bundles", note: "published data plans" },
+          { icon: "check", tone: "emerald", value: bundles.filter((bundle) => bundle.status === "active").length, label: "Active", note: "visible to customers" },
+          { icon: "pencil", tone: "amber", value: bundles.filter((bundle) => bundle.status === "draft").length, label: "Drafts", note: "not yet published" },
+          { icon: "provider", tone: "primary", value: providers.length, label: "Providers", note: "supplying offers" },
+        ]}
+      />
 
       {notice ? <div className={styles.productNotice}>{notice}</div> : null}
 
-      {/* Unified Studio Workstation (Single continuous panel with internal columns) */}
-      <div className={styles.unifiedStudioPanel}>
-        {/* PANE 1: SOURCE */}
-        <div className={styles.studioPaneSource}>
-          <div className={styles.paneHeader}>
-            <span className={styles.stepBadge}>01 / SOURCE</span>
-            <h2>Supplier Catalogue</h2>
-            <p>Choose a network and connected supplier.</p>
+      {/* Unified Inventory Table */}
+      <section className={`${styles.workspacePanel} ${styles.dataBundleRegistry}`}>
+        <div className={styles.directoryHeader}>
+          <div className={styles.directoryTop}>
+            <div>
+              <div className={styles.directoryTitle}>
+                <h2>Bundle directory</h2>
+                <span className={styles.countPill}>{visibleBundles.length}</span>
+              </div>
+              <p className={styles.directorySub}>Network, category, pricing and status.</p>
+            </div>
+            <div className={styles.directoryTools}>
+              <label className={styles.directorySearch}>
+                <AdminIcon name="search" />
+                <input
+                  value={tableQuery}
+                  onChange={(e) => setTableQuery(e.target.value)}
+                  placeholder="Search bundles..."
+                />
+              </label>
+            </div>
           </div>
 
-          <div className={styles.networkPicker}>
-            <span className={styles.inputLabel}>Network</span>
-            <div className={styles.networkTabs}>
-              {[
-                { id: "mtn", label: "MTN" },
-                { id: "airtel", label: "AIRTEL" },
-                { id: "glo", label: "GLO" },
-                { id: "9mobile", label: "9MOBILE" },
-              ].map((item) => (
+          <nav className={styles.segmentedTabs} aria-label="Network">
+            {publishedNetworks.map((net) => {
+              const count = getNetworkBundleCount(net.id);
+              return (
                 <button
-                  key={item.id}
+                  key={net.id}
                   type="button"
-                  data-active={network === item.id}
+                  data-active={tableNetwork === net.id}
+                  className={styles.networkUnderlineTab}
                   onClick={() => {
-                    setNetwork(item.id);
-                    setSelectedId("");
+                    setTableNetwork(net.id);
+                    setTableCategory("all");
                   }}
                 >
-                  {item.label}
+                  {net.label}
+                  <span className={styles.countPill}>{count}</span>
                 </button>
-              ))}
-            </div>
-          </div>
+              );
+            })}
+          </nav>
 
-          <div className={styles.fieldGroup}>
-            <label htmlFor="provider-select" className={styles.inputLabel}>Provider</label>
-            <AdminSelect
-              id="provider-select"
-              value={providerId}
-              searchable={providers.length > 7}
-              searchPlaceholder="Search providers"
-              options={[
-                { value: "", label: "-- All (none selected) --" },
-                ...providers.map((provider) => ({
-                  value: provider.id,
-                  label: provider.name,
-                  description: provider.status,
-                })),
-              ]}
-              onValueChange={(nextProviderId) => {
-                setProviderId(nextProviderId);
-                setSelectedId("");
-                setQuery("");
-              }}
-            />
-          </div>
-
-          {selectedProvider ? (
-            <button className={styles.syncCatalogueButton} type="button" onClick={syncProvider} disabled={syncing} title={syncing ? "Syncing offers..." : `Sync ${selectedProvider.name}`}>
-              <AdminIcon name="refresh" />
+          <div className={styles.filterPillRow}>
+            <button
+              type="button"
+              data-active={tableCategory === "all"}
+              className={styles.categoryFilterPill}
+              onClick={() => setTableCategory("all")}
+            >
+              All
             </button>
-          ) : null}
+            {availableTableCategories.map((cat) => (
+              <button
+                key={cat.slug}
+                type="button"
+                data-active={tableCategory === cat.slug}
+                className={styles.categoryFilterPill}
+                onClick={() => setTableCategory(cat.slug)}
+              >
+                {cat.name}
+                <span className={styles.countPill}>{getCategoryBundleCount(cat.slug)}</span>
+              </button>
+            ))}
+          </div>
+
         </div>
 
-        {/* PANE 2: CHOOSE OFFER */}
-        <div className={styles.studioPaneCatalogue}>
-          <div className={styles.paneHeader}>
-            <div className={styles.headerWithCount}>
-              <span className={styles.stepBadge}>02 / CHOOSE OFFER</span>
-              <span className={styles.countPill}>{visibleOffers.length} available</span>
-            </div>
-            <h2>Provider Plans</h2>
-          </div>
-
-          <div className={styles.catalogueSearch}>
-            <AdminIcon name="search" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search 5GB, 7 days, SME or code…"
-            />
-          </div>
-
-          <div className={styles.catalogueList}>
-            {visibleOffers.length ? (
-              visibleOffers.map((offer) => {
-                const isSelected = selectedId === offer.id;
-                return (
-                  <button
-                    key={offer.id}
-                    type="button"
-                    data-selected={isSelected}
-                    onClick={() => chooseOffer(offer.id)}
-                    className={styles.offerRow}
-                  >
-                    <span className={styles.offerDataBadge}>{dataLabel(offer)}</span>
-                    <div className={styles.offerDetails}>
-                      <strong>{offer.provider_name}</strong>
-                      <small>
-                        {getOfferValidity(offer).label || (offer.validity_hours ? `${offer.validity_hours}h` : "Standard")} · <code>{offer.provider_product_code}</code>
-                      </small>
+        <div className={styles.workspaceTableWrap}>
+          <table className={styles.workspaceTable}>
+            <thead>
+              <tr>
+                <th>Bundle</th>
+                <th>Provider</th>
+                <th>Price</th>
+                <th>Placement</th>
+                <th>Status</th>
+                <th data-align="right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleBundles.length ? (
+                visibleBundles.map((bundle) => {
+                  const provider = Array.isArray(bundle.provider) ? bundle.provider[0] : bundle.provider;
+                  const placement = bundle.placement?.[0];
+                  const categoryName = getBundleCategory(bundle);
+                  const profit = bundle.selling_price - (bundle.provider_cost || 0);
+                  return (
+                    <tr key={bundle.id}>
+                      <td>
+                        <div className={styles.cellTitle}>
+                          <strong>{bundle.name}</strong>
+                          <small>{bundle.network?.toUpperCase() || "DATA"} · {categoryName}</small>
+                        </div>
+                      </td>
+                      <td>
+                        <div className={styles.cellTitle}>
+                          <strong>{provider ? provider.name : "Unlinked"}</strong>
+                          <small>{provider ? `Cost ${money.format(bundle.provider_cost)}` : "No supplier offer"}</small>
+                        </div>
+                      </td>
+                      <td>
+                        <div className={styles.cellValue}>
+                          <strong>{money.format(bundle.selling_price)}</strong>
+                          <small>{provider ? `${money.format(profit)} profit` : "No margin"}</small>
+                        </div>
+                      </td>
+                      <td className={styles.cellPlain}>
+                        {placement?.is_active ? placement.badge || placement.surface.replace("_", " ") : "Standard"}
+                      </td>
+                      <td>
+                        <span className={styles.statusPill} data-status={bundle.status}>
+                          {bundle.status}
+                        </span>
+                      </td>
+                      <td data-align="right">
+                        <div className={styles.rowActions}>
+                          <button
+                            type="button"
+                            className={styles.iconAction}
+                            aria-label="Edit bundle"
+                            data-tip="Edit bundle"
+                            onClick={() => openEditDrawer(bundle)}
+                          >
+                            <AdminIcon name="pencil" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={6}>
+                    <div className={styles.tableEmpty}>
+                      <AdminIcon name="catalogue" />
+                      <strong>No bundles found</strong>
+                      <span>{bundles.length ? "Change the network or category filter." : "Add your first bundle."}</span>
                     </div>
-                    <div className={styles.offerCost}>
-                      <span>{money.format(offer.provider_cost)}</span>
-                      <small>cost</small>
-                    </div>
-                    {isSelected ? (
-                      <span className={styles.selectedCheck}>
-                        <AdminIcon name="check" />
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })
-            ) : (
-              <div className={styles.catalogueEmpty}>
-                <AdminIcon name="catalogue" />
-                <strong>{providerId ? "No Matching Plans" : "Choose a Supplier"}</strong>
-                <span>
-                  {providerId
-                    ? `No ${network.toUpperCase()} plans match “${query}”.`
-                    : `Imported ${network.toUpperCase()} offers will appear here.`}
-                </span>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <footer className={styles.workspaceFooter}>
+          <span>Showing {visibleBundles.length} of {bundles.length} bundles</span>
+        </footer>
+      </section>
+
+      {studioOpen ? (
+        <AdminModal title="Add data bundle" onClose={() => setStudioOpen(false)} width={1040}>
+          <div className={styles.bundleBuilder}>
+            <div className={styles.bundleBuilderSource}>
+              <div className={styles.builderSection}>
+                <span className={styles.builderLabel}>Network</span>
+                <nav className={styles.segmentedTabs} aria-label="Network">
+                  {[
+                    { id: "mtn", label: "MTN" },
+                    { id: "airtel", label: "Airtel" },
+                    { id: "glo", label: "Glo" },
+                    { id: "9mobile", label: "9mobile" },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={styles.networkUnderlineTab}
+                      data-active={network === item.id}
+                      onClick={() => {
+                        setNetwork(item.id);
+                        setSelectedId("");
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </nav>
               </div>
-            )}
-          </div>
-        </div>
+
+              <div className={styles.builderSection}>
+                <span className={styles.builderLabel}>Provider</span>
+                <div className={styles.builderProviderRow}>
+                  <AdminSelect
+                    id="provider-select"
+                    value={providerId}
+                    searchable={providers.length > 7}
+                    searchPlaceholder="Search providers"
+                    placeholder="Select provider"
+                    options={[
+                      { value: "", label: "All providers" },
+                      ...providers.map((provider) => ({
+                        value: provider.id,
+                        label: provider.name,
+                        description: provider.status,
+                      })),
+                    ]}
+                    onValueChange={(nextProviderId) => {
+                      setProviderId(nextProviderId);
+                      setSelectedId("");
+                      setQuery("");
+                    }}
+                  />
+                  {selectedProvider ? (
+                    <button className={styles.secondaryButton} type="button" onClick={syncProvider} disabled={syncing}>
+                      <AdminIcon name="refresh" />
+                      {syncing ? "Syncing…" : "Sync"}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className={styles.builderSection}>
+                <div className={styles.builderLabelRow}>
+                  <span className={styles.builderLabel}>Supplier offer</span>
+                  <span className={styles.countPill}>{visibleOffers.length}</span>
+                </div>
+                <label className={styles.directorySearch}>
+                  <AdminIcon name="search" />
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Search 5GB, 7 days, SME or code..."
+                  />
+                </label>
+                <div className={styles.offerList}>
+                  {visibleOffers.length ? (
+                    visibleOffers.map((offer) => {
+                      const isSelected = selectedId === offer.id;
+                      return (
+                        <button
+                          key={offer.id}
+                          type="button"
+                          data-selected={isSelected}
+                          onClick={() => chooseOffer(offer.id)}
+                          className={styles.offerItem}
+                        >
+                          <span className={styles.offerSize}>{dataLabel(offer)}</span>
+                          <span className={styles.offerText}>
+                            <strong>{offer.provider_name}</strong>
+                            <small>{getOfferValidity(offer).label || (offer.validity_hours ? `${offer.validity_hours}h` : "Standard")} · {offer.provider_product_code}</small>
+                          </span>
+                          <span className={styles.offerPrice}>{money.format(offer.provider_cost)}</span>
+                          {isSelected ? <AdminIcon name="check" className={styles.offerCheck} /> : null}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className={styles.tableEmpty}>
+                      <AdminIcon name="catalogue" />
+                      <strong>{providerId ? "No matching offers" : "Choose a provider"}</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
         {/* PANE 3: FUNDA PRODUCT FORM */}
         <form
           key={selectedId || "unlinked"}
-          className={styles.studioPaneForm}
+          className={styles.bundleBuilderForm}
           onSubmit={(event) => {
             event.preventDefault();
             submit(event.currentTarget);
           }}
         >
-          <div className={styles.paneHeader}>
-            <span className={styles.stepBadge}>03 / FUNDA PRODUCT</span>
-            <h2>Define the Bundle</h2>
-          </div>
 
           {selected ? (() => {
             const offerValidity = getOfferValidity(selected);
@@ -595,15 +728,14 @@ export default function DataBundlesWorkspace({
               <>
                 <div className={styles.selectedOffer}>
                   <div className={styles.selectedOfferTop}>
-                    <span>ATTACHED SUPPLIER PLAN</span>
-                    <span className={styles.costBadge}>{money.format(cost)}</span>
+                    <strong>{selected.provider_name}</strong>
+                    <span>{money.format(cost)}</span>
                   </div>
-                  <strong>{selected.provider_name} · {dataLabel(selected)}</strong>
-                  <small><code>{selected.provider_product_code}</code> · {offerValidity.label || "Standard"}</small>
+                  <small>{dataLabel(selected)} · {offerValidity.label || "Standard"} · {selected.provider_product_code}</small>
                 </div>
 
                 <div className={styles.fieldGroup}>
-                  <label className={styles.inputLabel}>Customer-Facing Name</label>
+                  <label className={styles.inputLabel}>Name</label>
                   <input
                     name="name"
                     required
@@ -636,7 +768,7 @@ export default function DataBundlesWorkspace({
                 <div className={styles.twoFields}>
                   <div className={styles.fieldGroup}>
                     <label className={styles.inputLabel}>
-                      Duration Group <span style={{ color: "var(--admin-danger, #e5484d)" }}>*</span>
+                      Duration Group <span className={styles.requiredMark}>*</span>
                     </label>
                     <AdminSelect
                       key={`${network}-${selected.id}`}
@@ -656,7 +788,7 @@ export default function DataBundlesWorkspace({
           })() : (
             <>
               <div className={styles.fieldGroup}>
-                <label className={styles.inputLabel}>Customer-Facing Name</label>
+                <label className={styles.inputLabel}>Name</label>
                 <input
                   name="name"
                   required
@@ -686,7 +818,7 @@ export default function DataBundlesWorkspace({
               <div className={styles.twoFields}>
                 <div className={styles.fieldGroup}>
                   <label className={styles.inputLabel}>
-                    Duration Group <span style={{ color: "var(--admin-danger, #e5484d)" }}>*</span>
+                    Duration Group <span className={styles.requiredMark}>*</span>
                   </label>
                   <AdminSelect
                     key={network}
@@ -768,7 +900,7 @@ export default function DataBundlesWorkspace({
           </div>
 
           <div className={styles.fieldGroup}>
-              <label className={styles.inputLabel}>Publishing Status</label>
+              <label className={styles.inputLabel}>Status</label>
             <AdminSelect
               name="status"
               defaultValue="draft"
@@ -780,188 +912,13 @@ export default function DataBundlesWorkspace({
             />
           </div>
 
-          <button className={styles.primaryButton} disabled={saving} type="submit">
-            {saving ? "Saving Bundle…" : "Save Data Bundle"}
+          <button className={`${styles.primaryButton} ${styles.builderSubmit}`} disabled={saving} type="submit">
+            {saving ? "Saving…" : "Save bundle"}
           </button>
         </form>
-      </div>
-
-      {/* Unified Inventory Table */}
-      <section className={`${styles.workspacePanel} ${styles.dataBundleRegistry}`}>
-        <div className={styles.registryHeader}>
-          <div className={styles.registryHeadingRow}>
-            <h2>Published Data Bundles</h2>
           </div>
-
-          {/* Primary Level: Network Underline Tabs */}
-          <div className={styles.networkUnderlineTabs}>
-            {publishedNetworks.map((net) => {
-              const count = getNetworkBundleCount(net.id);
-              const isActive = tableNetwork === net.id;
-              return (
-                <button
-                  key={net.id}
-                  type="button"
-                  data-active={isActive}
-                  className={styles.networkUnderlineTab}
-                  onClick={() => {
-                    setTableNetwork(net.id);
-                    setTableCategory("all");
-                  }}
-                >
-                  <span>{net.label}</span>
-                  <span className={styles.tabCountBadge}>{count}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Secondary Level: Sub-Category Filter Toolbar + Search */}
-        <div className={styles.registryFilterBar}>
-          <div className={styles.categoryFilterGroup}>
-            <span className={styles.filterLabel}>Category:</span>
-            <div className={styles.categoryPillList}>
-              <button
-                type="button"
-                data-active={tableCategory === "all"}
-                className={styles.categoryFilterPill}
-                onClick={() => setTableCategory("all")}
-              >
-                All
-              </button>
-              {availableTableCategories.map((cat) => {
-                const count = getCategoryBundleCount(cat.slug);
-                const isActive = tableCategory === cat.slug;
-                return (
-                  <button
-                    key={cat.slug}
-                    type="button"
-                    data-active={isActive}
-                    className={styles.categoryFilterPill}
-                    onClick={() => setTableCategory(cat.slug)}
-                  >
-                    {cat.name}
-                    {count > 0 ? <small>({count})</small> : null}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className={styles.registrySearchWrap}>
-            <div className={styles.catalogueSearch}>
-              <AdminIcon name="search" />
-              <input
-                value={tableQuery}
-                onChange={(e) => setTableQuery(e.target.value)}
-                placeholder="Search published..."
-              />
-            </div>
-            <span className={styles.countPill}>
-              {visibleBundles.length} {visibleBundles.length === 1 ? "Bundle" : "Bundles"}
-            </span>
-          </div>
-        </div>
-
-        <div className={styles.workspaceTableWrap}>
-          <table className={styles.workspaceTable}>
-            <thead>
-              <tr>
-                <th>Network</th>
-                <th>Bundle Name</th>
-                <th>Category</th>
-                <th>Provider</th>
-                <th>Supplier Cost</th>
-                <th>Selling Price</th>
-                <th>Profit</th>
-                <th>Placement</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleBundles.length ? (
-                visibleBundles.map((bundle) => {
-                  const provider = Array.isArray(bundle.provider) ? bundle.provider[0] : bundle.provider;
-                  const placement = bundle.placement?.[0];
-                  const categoryName = getBundleCategory(bundle);
-                  const profit = bundle.selling_price - (bundle.provider_cost || 0);
-                  return (
-                    <tr key={bundle.id}>
-                      <td>
-                        <span className={styles.networkTag} data-network={bundle.network?.toLowerCase()}>
-                          {bundle.network?.toUpperCase() || "DATA"}
-                        </span>
-                      </td>
-                      <td>
-                        <strong>{bundle.name}</strong>
-                      </td>
-                      <td>
-                        <span className={styles.categoryBadge}>{categoryName}</span>
-                      </td>
-                      <td>
-                        {provider ? provider.name : <span className={styles.unlinkedText}>Unlinked</span>}
-                      </td>
-                      <td>
-                        {provider ? money.format(bundle.provider_cost) : "—"}
-                      </td>
-                      <td>
-                        <strong>{money.format(bundle.selling_price)}</strong>
-                      </td>
-                      <td>
-                        {provider ? (
-                          <span className={styles.profitText}>{money.format(profit)}</span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td>
-                        {placement?.is_active ? (
-                          <span className={styles.featureBadge}>
-                            {placement.badge || placement.surface.replace("_", " ")}
-                          </span>
-                        ) : (
-                          <span className={styles.unlinkedText}>Standard</span>
-                        )}
-                      </td>
-                      <td>
-                        <span className={styles.statusPill} data-status={bundle.status}>
-                          {bundle.status}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className={styles.tableActionBtn}
-                          onClick={() => openEditDrawer(bundle)}
-                        >
-                          <AdminIcon name="sliders" style={{ width: 12, height: 12 }} />
-                          Edit
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={10}>
-                    <div className={styles.tableEmpty}>
-                      <AdminIcon name="catalogue" />
-                      <strong>No Data Bundles Found</strong>
-                      <span>
-                        {bundles.length
-                          ? "No published bundles match the selected network or category filter."
-                          : "Use the studio above to create your first Funda data bundle."}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+        </AdminModal>
+      ) : null}
 
       {/* Slide-Over Edit Drawer */}
       {editingBundle && (
@@ -1055,7 +1012,7 @@ export default function DataBundlesWorkspace({
                 </label>
 
                 <label>
-                  Duration Group <span style={{ color: "var(--admin-danger, #e5484d)" }}>*</span>
+                  <span>Duration Group <span className={styles.requiredMark}>*</span></span>
                   <AdminSelect
                     name="category"
                     defaultValue={editingBundle.metadata?.category || ""}
@@ -1132,7 +1089,7 @@ export default function DataBundlesWorkspace({
                 </label>
               </div>
 
-              <label style={{ display: "grid", gap: "6px" }}>
+              <label>
                 Publishing Status
                 <AdminSelect
                   name="status"

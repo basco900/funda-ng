@@ -6,7 +6,7 @@
   --funda-canvas: var(--background);
   --funda-graphite: var(--surface-subtle);
   --funda-surface: var(--surface);
-  --funda-surface-hover: #f8fbf9;
+  --funda-surface-hover: #ffffff;
   --funda-border: var(--border);
   --funda-border-strong: var(--border-strong);
   --funda-text-primary: var(--text-primary);
@@ -16,7 +16,7 @@
   --accent-violet: var(--brand-primary);
   --accent-violet-bright: var(--brand-primary-bright);
   --accent-cyan: #0891b2;
-  --accent-emerald: #18745a;
+  --accent-emerald: #660033;
   --accent-amber: #d97706;
   --accent-rose: #e11d48;
   --accent-blue: #2563eb;
@@ -25,10 +25,10 @@
   min-height: 100dvh;
   background-color: var(--funda-canvas);
   background-image:
-    radial-gradient(ellipse at 50% -10%, rgba(24, 116, 90, 0.07) 0%, rgba(24, 116, 90, 0.015) 45%, transparent 80%),
-    linear-gradient(180deg, #f8fbf9 0%, var(--funda-canvas) 100%);
+    radial-gradient(ellipse at 50% -10%, rgba(102, 0, 51, 0.07) 0%, rgba(102, 0, 51, 0.015) 45%, transparent 80%),
+    linear-gradient(180deg, #ffffff 0%, var(--funda-canvas) 100%);
   color: var(--funda-text-primary);
-  font-family: var(--font-satoshi), -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
   overflow-x: clip;
   color-scheme: light;
   transition: background-color 0.25s ease, color 0.25s ease;
@@ -38,7 +38,7 @@
   --funda-canvas: var(--background);
   --funda-graphite: var(--surface-subtle);
   --funda-surface: var(--surface);
-  --funda-surface-hover: rgba(24, 38, 31, 0.95);
+  --funda-surface-hover: rgba(35, 27, 31, 0.95);
   --funda-border: var(--border);
   --funda-border-strong: var(--border-strong);
   --funda-text-primary: var(--text-primary);
@@ -48,15 +48,15 @@
   --accent-violet: var(--brand-primary);
   --accent-violet-bright: var(--brand-primary-bright);
   --accent-cyan: #06b6d4;
-  --accent-emerald: #18745a;
+  --accent-emerald: #660033;
   --accent-amber: #f59e0b;
   --accent-rose: #f43f5e;
   --accent-blue: #3b82f6;
 
   background-color: var(--funda-canvas);
   background-image:
-    radial-gradient(ellipse at 50% -10%, rgba(24, 116, 90, 0.16) 0%, rgba(24, 116, 90, 0.045) 45%, transparent 80%),
-    linear-gradient(180deg, #08110d 0%, var(--funda-canvas) 100%);
+    radial-gradient(ellipse at 50% -10%, rgba(102, 0, 51, 0.16) 0%, rgba(102, 0, 51, 0.045) 45%, transparent 80%),
+    linear-gradient(180deg, #111111 0%, var(--funda-canvas) 100%);
   color: #ffffff;
   color-scheme: dark;
 }
@@ -98,13 +98,13 @@
   transform: translateX(-50%);
   width: min(92vw, 600px);
   height: 340px;
-  background: radial-gradient(circle, rgba(24, 116, 90, 0.09) 0%, rgba(24, 116, 90, 0.025) 45%, transparent 70%);
+  background: radial-gradient(circle, rgba(102, 0, 51, 0.09) 0%, rgba(102, 0, 51, 0.025) 45%, transparent 70%);
   filter: blur(85px);
   border-radius: 50%;
 }
 
 :global([data-theme="dark"]) .glowOrbPrimary {
-  background: radial-gradient(circle, rgba(24, 116, 90, 0.18) 0%, rgba(90, 177, 142, 0.06) 45%, transparent 70%);
+  background: radial-gradient(circle, rgba(102, 0, 51, 0.18) 0%, rgba(201, 138, 169, 0.06) 45%, transparent 70%);
 }
 
 .glowOrbSecondary {
@@ -113,7 +113,7 @@
   right: -90px;
   width: 340px;
   height: 340px;
-  background: radial-gradient(circle, rgba(24, 116, 90, 0.04) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(102, 0, 51, 0.04) 0%, transparent 65%);
   filter: blur(95px);
   border-radius: 50%;
 }
@@ -128,13 +128,13 @@
   left: -80px;
   width: 320px;
   height: 320px;
-  background: radial-gradient(circle, rgba(24, 116, 90, 0.045) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(102, 0, 51, 0.045) 0%, transparent 65%);
   filter: blur(100px);
   border-radius: 50%;
 }
 
 :global([data-theme="dark"]) .glowOrbAccent {
-  background: radial-gradient(circle, rgba(90, 177, 142, 0.06) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(201, 138, 169, 0.06) 0%, transparent 65%);
 }
 
 /* --------------------------------------------------------------------------
@@ -244,12 +244,12 @@
 }
 :global([data-theme="dark"]) .toast_success {
   background: rgba(6, 78, 59, 0.35);
-  color: #a7f3d0;
+  color: #ecdfe5;
   border-color: rgba(52, 211, 153, 0.3);
 }
 :global([data-theme="dark"]) .toast_success .toastIcon {
   background: rgba(52, 211, 153, 0.18);
-  color: #34d399;
+  color: #c98aa9;
 }
 
 /* Refund / Failure Type (Lighter Warm Amber / Cream Shade, NOT GREEN) */
@@ -377,15 +377,15 @@
   gap: 5px;
   font-size: 11px;
   font-weight: 600;
-  color: #18745a;
+  color: #660033;
 }
 
 .beaconDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #18745a;
-  box-shadow: 0 0 8px #18745a;
+  background-color: #660033;
+  box-shadow: 0 0 8px #660033;
   animation: beaconPulse 2s ease-in-out infinite;
 }
 
@@ -512,12 +512,12 @@
 .proWalletHeroCard {
   position: relative;
   width: 100%;
-  border-radius: 26px;
+  border-radius: 16px;
   padding: 22px;
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(circle at 15% 15%, rgba(24, 116, 90, 0.24) 0%, transparent 60%),
+    radial-gradient(circle at 15% 15%, rgba(102, 0, 51, 0.24) 0%, transparent 60%),
     linear-gradient(165deg, #0c0d12 0%, #161822 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
@@ -530,8 +530,8 @@
 
 :global([data-theme="dark"]) .proWalletHeroCard {
   background:
-    radial-gradient(circle at 10% 10%, rgba(24, 116, 90, 0.2) 0%, transparent 52%),
-    linear-gradient(170deg, #0d1712 0%, #080d0a 100%);
+    radial-gradient(circle at 10% 10%, rgba(102, 0, 51, 0.2) 0%, transparent 52%),
+    linear-gradient(170deg, #141012 0%, #0c090a 100%);
   border-color: rgba(255, 255, 255, 0.045);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.3);
 }
@@ -730,9 +730,9 @@
   gap: 5px;
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(24, 116, 90, 0.15);
-  border: 1px solid rgba(90, 177, 142, 0.3);
-  color: #6ee7b7;
+  background: rgba(217, 180, 106, 0.14);
+  border: 1px solid rgba(217, 180, 106, 0.32);
+  color: #e6c785;
   font-size: 11px;
   font-weight: 600;
 }
@@ -760,7 +760,7 @@
   border: 0;
   border-radius: 14px;
   background: #ffffff;
-  color: #07090e;
+  color: #0a0a0a;
   font-size: 14px;
   font-weight: 780;
   white-space: nowrap;
@@ -802,7 +802,7 @@
   border-radius: 14px;
   border: none;
   background: #ffffff;
-  color: #07090e;
+  color: #0a0a0a;
   font-size: 13.5px;
   font-weight: 750;
   cursor: pointer;
@@ -936,9 +936,9 @@
 
 .bentoServiceTile:hover {
   background: #ffffff;
-  border-color: rgba(24, 116, 90, 0.3);
+  border-color: rgba(102, 0, 51, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(24, 116, 90, 0.1);
+  box-shadow: 0 8px 20px rgba(102, 0, 51, 0.1);
 }
 
 :global([data-theme="dark"]) .bentoServiceTile:hover {
@@ -1062,9 +1062,9 @@
 .smartIconSquircle[data-tone="lime"],
 .sheetServiceIcon[data-tone="lime"],
 .menuItemIcon[data-tone="lime"] {
-  background: rgba(24, 116, 90, 0.1);
-  color: #a7f3d0;
-  border-color: rgba(90, 177, 142, 0.18);
+  background: rgba(102, 0, 51, 0.1);
+  color: #ecdfe5;
+  border-color: rgba(201, 138, 169, 0.18);
 }
 
 .tileIconBackdrop[data-tone="pink"],
@@ -1132,9 +1132,9 @@
 
 .smartRepeatCard:hover {
   background: #ffffff;
-  border-color: rgba(24, 116, 90, 0.3);
+  border-color: rgba(102, 0, 51, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(24, 116, 90, 0.1);
+  box-shadow: 0 6px 18px rgba(102, 0, 51, 0.1);
 }
 
 :global([data-theme="dark"]) .smartRepeatCard:hover {
@@ -1269,8 +1269,8 @@
 }
 
 .txTogglePillActive {
-  background: #0d0f12;
-  border-color: #0d0f12;
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
 }
@@ -1369,7 +1369,7 @@
 .txSearchInput:focus {
   background: #ffffff;
   border-color: var(--accent-violet);
-  box-shadow: 0 0 0 3px rgba(24, 116, 90, 0.15);
+  box-shadow: 0 0 0 3px rgba(102, 0, 51, 0.15);
 }
 
 :global([data-theme="dark"]) .txSearchInput {
@@ -1431,9 +1431,9 @@
 
 .txItemCard:hover {
   background: #ffffff;
-  border-color: rgba(24, 116, 90, 0.25);
+  border-color: rgba(102, 0, 51, 0.25);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(24, 116, 90, 0.08);
+  box-shadow: 0 6px 16px rgba(102, 0, 51, 0.08);
 }
 
 :global([data-theme="dark"]) .txItemCard:hover {
@@ -1454,15 +1454,15 @@
   color: var(--funda-text-primary);
 }
 
-.txIconWrapper[data-category="data"] { color: #125c49; background: rgba(24, 116, 90, 0.1); }
+.txIconWrapper[data-category="data"] { color: #4d0026; background: rgba(102, 0, 51, 0.1); }
 .txIconWrapper[data-category="electricity"] { color: #d97706; background: rgba(245, 158, 11, 0.1); }
-.txIconWrapper[data-category="funding"] { color: #18745a; background: rgba(24, 116, 90, 0.1); }
+.txIconWrapper[data-category="funding"] { color: #660033; background: rgba(102, 0, 51, 0.1); }
 .txIconWrapper[data-category="airtime"] { color: #e11d48; background: rgba(244, 63, 94, 0.1); }
 .txIconWrapper[data-category="tv"] { color: #0891b2; background: rgba(6, 182, 212, 0.1); }
 
-:global([data-theme="dark"]) .txIconWrapper[data-category="data"] { color: #6ee7b7; background: rgba(24, 116, 90, 0.14); }
+:global([data-theme="dark"]) .txIconWrapper[data-category="data"] { color: #e2cfd9; background: rgba(102, 0, 51, 0.14); }
 :global([data-theme="dark"]) .txIconWrapper[data-category="electricity"] { color: #fde68a; background: rgba(245, 158, 11, 0.1); }
-:global([data-theme="dark"]) .txIconWrapper[data-category="funding"] { color: #a7f3d0; background: rgba(24, 116, 90, 0.1); }
+:global([data-theme="dark"]) .txIconWrapper[data-category="funding"] { color: #ecdfe5; background: rgba(102, 0, 51, 0.1); }
 :global([data-theme="dark"]) .txIconWrapper[data-category="airtime"] { color: #fda4af; background: rgba(244, 63, 94, 0.1); }
 :global([data-theme="dark"]) .txIconWrapper[data-category="tv"] { color: #a5f3fc; background: rgba(6, 182, 212, 0.1); }
 
@@ -1496,14 +1496,14 @@
 .cashbackTag {
   font-size: 9px;
   font-weight: 700;
-  color: #125c49;
+  color: #8a6420;
   padding: 1px 5px;
   border-radius: 5px;
-  background: rgba(24, 116, 90, 0.1);
+  background: var(--gold-soft);
 }
 
 :global([data-theme="dark"]) .cashbackTag {
-  color: #5ab18e;
+  color: var(--gold);
 }
 
 .txSubRow {
@@ -1529,11 +1529,11 @@
 .amountPositive {
   font-size: 13.5px;
   font-weight: 750;
-  color: #125c49;
+  color: #4d0026;
 }
 
 :global([data-theme="dark"]) .amountPositive {
-  color: #5ab18e;
+  color: #c98aa9;
 }
 
 .amountNegative {
@@ -1707,29 +1707,29 @@
 }
 
 .dockTabActive {
-  color: #125c49 !important;
+  color: #4d0026 !important;
 }
 
 :global([data-theme="dark"]) .dockTabActive {
-  color: #34d399 !important;
+  color: #c98aa9 !important;
 }
 
 .dockTabActive .dockIconWrapper {
-  color: #125c49;
+  color: #4d0026;
   transform: translateY(-1px);
 }
 
 :global([data-theme="dark"]) .dockTabActive .dockIconWrapper {
-  color: #34d399;
+  color: #c98aa9;
 }
 
 .dockTabActive .dockLabel {
-  color: #125c49;
+  color: #4d0026;
   font-weight: 700;
 }
 
 :global([data-theme="dark"]) .dockTabActive .dockLabel {
-  color: #34d399;
+  color: #c98aa9;
 }
 
 /* Elevated Center Floating + Button nested in clean cutout */
@@ -1747,11 +1747,11 @@
   place-items: center;
   cursor: pointer;
   transform: translateY(-14px);
-  background: linear-gradient(135deg, #18745a 0%, #0f5945 100%);
+  background: linear-gradient(135deg, #660033 0%, #590f34 100%);
   color: #ffffff;
   border: 1.5px solid rgba(255, 255, 255, 0.35);
   box-shadow:
-    0 8px 20px -2px rgba(24, 116, 90, 0.45),
+    0 8px 20px -2px rgba(102, 0, 51, 0.45),
     0 3px 8px rgba(0, 0, 0, 0.1);
   transition: all 240ms cubic-bezier(0.16, 1, 0.3, 1);
   -webkit-tap-highlight-color: transparent;
@@ -1762,14 +1762,14 @@
 :global([data-theme="dark"]) .dockCenterFloatingBtn {
   border-color: rgba(255, 255, 255, 0.15);
   box-shadow:
-    0 10px 24px -2px rgba(24, 116, 90, 0.65),
+    0 10px 24px -2px rgba(102, 0, 51, 0.65),
     0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .dockCenterFloatingBtn:hover {
   transform: translateY(-14px) rotate(45deg);
   box-shadow:
-    0 10px 24px -2px rgba(24, 116, 90, 0.55),
+    0 10px 24px -2px rgba(102, 0, 51, 0.55),
     0 3px 8px rgba(0, 0, 0, 0.14);
 }
 
@@ -1842,9 +1842,9 @@
   font-weight: 650;
   padding: 2px 6px;
   border-radius: 999px;
-  background: rgba(24, 116, 90, 0.12);
-  color: #125c49;
-  border: 1px solid rgba(24, 116, 90, 0.25);
+  background: rgba(102, 0, 51, 0.12);
+  color: #4d0026;
+  border: 1px solid rgba(102, 0, 51, 0.25);
 }
 
 .quickMenuItem {
@@ -1970,8 +1970,10 @@
 .sideDrawerSheet {
   width: min(100%, 520px);
   max-height: 94dvh;
-  overflow-y: hidden;
-  border-radius: 28px 28px 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 16px 16px 0 0;
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.05);
   border-bottom: none;
@@ -2074,7 +2076,7 @@
   height: 40px;
   border-radius: 12px;
   border: none;
-  background: rgba(24, 116, 90, 0.08);
+  background: rgba(102, 0, 51, 0.08);
   flex-shrink: 0;
 }
 
@@ -2151,8 +2153,8 @@
   gap: 6px;
   padding: 5px 11px;
   border-radius: 9px;
-  border: 1px solid #0d0f12;
-  background: #0d0f12;
+  border: 1px solid var(--brand-primary);
+  background: var(--brand-primary);
   color: #ffffff;
   font-size: 11.5px;
   font-weight: 700;
@@ -2161,8 +2163,8 @@
 }
 
 .copyBtn:hover {
-  background: var(--accent-violet);
-  border-color: var(--accent-violet);
+  background: var(--brand-primary-hover);
+  border-color: var(--brand-primary-hover);
 }
 
 :global([data-theme="dark"]) .copyBtn {
@@ -2173,7 +2175,7 @@
 
 :global([data-theme="dark"]) .copyBtn:hover {
   background: #ffffff;
-  color: #07090e;
+  color: #0a0a0a;
 }
 
 /* Modal Form Styles */
@@ -2478,7 +2480,7 @@
 
 :global([data-theme="dark"]) .amountChipActive {
   background: #ffffff !important;
-  color: #07090e !important;
+  color: #0a0a0a !important;
 }
 
 .topPickChip {
@@ -2514,8 +2516,6 @@
   gap: 7px;
   padding: 2px 4px 2px 2px;
   margin: 1px 0;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
 }
 
 .bundleRowListContainer::-webkit-scrollbar {
@@ -2568,16 +2568,16 @@
 
 /* Row Selected State - Shines vividly with active brand glow, active border & tint */
 .bundleRowSelected {
-  border-color: #125c49 !important;
-  background: rgba(24, 116, 90, 0.05) !important;
-  box-shadow: 0 4px 14px -2px rgba(24, 116, 90, 0.18), 0 0 0 1px rgba(24, 116, 90, 0.22) !important;
+  border-color: #4d0026 !important;
+  background: rgba(102, 0, 51, 0.05) !important;
+  box-shadow: 0 4px 14px -2px rgba(102, 0, 51, 0.18), 0 0 0 1px rgba(102, 0, 51, 0.22) !important;
   transform: translateY(-0.5px);
 }
 
 :global([data-theme="dark"]) .bundleRowSelected {
-  border-color: #34d399 !important;
-  background: rgba(52, 211, 153, 0.08) !important;
-  box-shadow: 0 4px 18px -2px rgba(52, 211, 153, 0.25), 0 0 0 1px rgba(52, 211, 153, 0.2) !important;
+  border-color: #c98aa9 !important;
+  background: rgba(211, 52, 132, 0.08) !important;
+  box-shadow: 0 4px 18px -2px rgba(211, 52, 132, 0.25), 0 0 0 1px rgba(211, 52, 132, 0.2) !important;
 }
 
 .bundleRowSelected .bundleRowTitle {
@@ -2590,24 +2590,24 @@
 }
 
 .bundleRowSelected .bundleRowPrice {
-  color: #125c49 !important;
+  color: #4d0026 !important;
   font-weight: 850 !important;
 }
 
 :global([data-theme="dark"]) .bundleRowSelected .bundleRowPrice {
-  color: #34d399 !important;
+  color: #c98aa9 !important;
 }
 
 .bundleRowSelected .bundleRowIconWrapper {
-  background: #125c49 !important;
+  background: #4d0026 !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(24, 116, 90, 0.35);
+  box-shadow: 0 2px 8px rgba(102, 0, 51, 0.35);
 }
 
 :global([data-theme="dark"]) .bundleRowSelected .bundleRowIconWrapper {
-  background: #34d399 !important;
-  color: #064e3b !important;
-  box-shadow: 0 2px 8px rgba(52, 211, 153, 0.4);
+  background: #c98aa9 !important;
+  color: #3d001f !important;
+  box-shadow: 0 2px 8px rgba(211, 52, 132, 0.4);
 }
 
 /* Hot Bundle subtle border pop */
@@ -2629,16 +2629,16 @@
   height: 34px;
   border-radius: 9px;
   flex-shrink: 0;
-  background: rgba(24, 116, 90, 0.08);
+  background: rgba(102, 0, 51, 0.08);
   border: none;
-  color: #125c49;
+  color: #4d0026;
   line-height: 1;
   transition: all 140ms ease;
 }
 
 :global([data-theme="dark"]) .bundleRowIconWrapper {
-  background: rgba(24, 116, 90, 0.15);
-  color: #6ee7b7;
+  background: rgba(102, 0, 51, 0.15);
+  color: #e2cfd9;
 }
 
 .bundleRowIconWrapper[data-net="mtn"] {
@@ -2763,16 +2763,16 @@
 .bundleCashbackTag {
   font-size: 7.5px;
   font-weight: 700;
-  color: #125c49;
+  color: #4d0026;
   padding: 0.5px 4px;
   border-radius: 4px;
-  background: rgba(24, 116, 90, 0.1);
+  background: rgba(102, 0, 51, 0.1);
   white-space: nowrap;
 }
 
 :global([data-theme="dark"]) .bundleCashbackTag {
-  color: #5ab18e;
-  background: rgba(24, 116, 90, 0.16);
+  color: #c98aa9;
+  background: rgba(102, 0, 51, 0.16);
 }
 
 .bundleRowSubRow {
@@ -2825,17 +2825,17 @@
 
 .bundleRowStatusActive {
   color: #ffffff !important;
-  background: #125c49 !important;
+  background: #4d0026 !important;
   font-weight: 750 !important;
   padding: 1.5px 7px !important;
   border-radius: 999px !important;
-  box-shadow: 0 1px 4px rgba(24, 116, 90, 0.3) !important;
+  box-shadow: 0 1px 4px rgba(102, 0, 51, 0.3) !important;
 }
 
 :global([data-theme="dark"]) .bundleRowStatusActive {
-  color: #064e3b !important;
-  background: #34d399 !important;
-  box-shadow: 0 1px 6px rgba(52, 211, 153, 0.35) !important;
+  color: #3d001f !important;
+  background: #c98aa9 !important;
+  box-shadow: 0 1px 6px rgba(211, 52, 132, 0.35) !important;
 }
 
 .bundleEmptyStateBox {
@@ -2916,7 +2916,7 @@
   height: 45px;
   border-radius: 13px;
   border: none;
-  background: #0d0f12;
+  background: var(--brand-primary);
   color: #ffffff;
   font-size: 13px;
   font-weight: 750;
@@ -2928,13 +2928,13 @@
 }
 
 .submitPrimaryBtn:hover {
-  background: var(--accent-violet);
+  background: var(--brand-primary-hover);
   transform: translateY(-0.5px);
 }
 
 :global([data-theme="dark"]) .submitPrimaryBtn {
   background: #ffffff;
-  color: #07090e;
+  color: #0a0a0a;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
@@ -2984,15 +2984,15 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(24, 116, 90, 0.12);
-  color: #125c49;
-  border: 1px solid rgba(24, 116, 90, 0.25);
+  background: rgba(102, 0, 51, 0.12);
+  color: #4d0026;
+  border: 1px solid rgba(102, 0, 51, 0.25);
   margin-bottom: 10px;
 }
 
 :global([data-theme="dark"]) .receiptCheckIcon {
-  color: #5ab18e;
-  border-color: rgba(90, 177, 142, 0.25);
+  color: #c98aa9;
+  border-color: rgba(201, 138, 169, 0.25);
 }
 
 .receiptAmount {
@@ -3005,13 +3005,13 @@
 .receiptStatusTag {
   font-size: 10.5px;
   font-weight: 700;
-  color: #125c49;
+  color: #4d0026;
   text-transform: uppercase;
   margin-top: 3px;
 }
 
 :global([data-theme="dark"]) .receiptStatusTag {
-  color: #5ab18e;
+  color: #c98aa9;
 }
 
 .receiptFailedIcon {
@@ -3138,11 +3138,11 @@
 }
 
 .receiptRewardHighlight {
-  color: #125c49 !important;
+  color: #4d0026 !important;
 }
 
 :global([data-theme="dark"]) .receiptRewardHighlight {
-  color: #5ab18e !important;
+  color: #c98aa9 !important;
 }
 
 .receiptActionsRow {
@@ -3254,13 +3254,13 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand-primary-bright) 0%, #0c0d12 100%);
+  background: linear-gradient(135deg, var(--brand-primary-bright) 0%, var(--ash-ink) 100%);
   color: #ffffff;
   font-size: 19px;
   font-weight: 750;
   border: 2px solid rgba(255, 255, 255, 0.9);
   margin-bottom: 9px;
-  box-shadow: 0 6px 20px rgba(24, 116, 90, 0.24);
+  box-shadow: 0 6px 20px rgba(102, 0, 51, 0.24);
 }
 
 .drawerUserName {
@@ -3318,7 +3318,7 @@
 .drawerLinkItem:hover {
   background: #ffffff;
   border-color: var(--accent-violet);
-  box-shadow: 0 2px 8px rgba(24, 116, 90, 0.1);
+  box-shadow: 0 2px 8px rgba(102, 0, 51, 0.1);
 }
 
 :global([data-theme="dark"]) .drawerLinkItem {
@@ -3374,7 +3374,7 @@
   margin-bottom: max(16px, env(safe-area-inset-bottom));
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 28px;
+  border-radius: 16px;
   background: #ffffff;
   backdrop-filter: blur(36px) saturate(180%);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.04);
@@ -3445,7 +3445,7 @@
   height: 42px;
   margin: 0;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand-primary-bright) 0%, #0c0d12 100%);
+  background: linear-gradient(135deg, var(--brand-primary-bright) 0%, var(--ash-ink) 100%);
   display: grid;
   place-items: center;
   color: #ffffff;
@@ -3485,16 +3485,16 @@
   gap: 4px;
   flex: 0 0 auto;
   padding: 4px 10px;
-  border: 1px solid rgba(24, 116, 90, 0.25);
+  border: 1px solid rgba(102, 0, 51, 0.25);
   border-radius: 999px;
-  background: rgba(24, 116, 90, 0.1);
-  color: #125c49 !important;
+  background: rgba(102, 0, 51, 0.1);
+  color: #4d0026 !important;
   font-size: 10.5px;
   font-weight: 650;
 }
 
 :global([data-theme="dark"]) .verifiedAccountPill {
-  color: #5ab18e !important;
+  color: #c98aa9 !important;
 }
 
 .profileTabs {
@@ -3546,12 +3546,9 @@
   min-height: 0;
   overflow-y: auto;
   padding: 16px 24px 24px;
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
-  scrollbar-width: thin;
 }
 
 :global([data-theme="dark"]) .profileCenterScroll {
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
 .accountForm,
@@ -3616,12 +3613,12 @@
 
 .appearanceCardActive {
   border-color: var(--accent-violet) !important;
-  background: rgba(24, 116, 90, 0.07) !important;
-  box-shadow: 0 0 0 2px var(--accent-violet), 0 4px 14px rgba(24, 116, 90, 0.14) !important;
+  background: rgba(102, 0, 51, 0.07) !important;
+  box-shadow: 0 0 0 2px var(--accent-violet), 0 4px 14px rgba(102, 0, 51, 0.14) !important;
 }
 
 :global([data-theme="dark"]) .appearanceCardActive {
-  background: rgba(24, 116, 90, 0.15) !important;
+  background: rgba(102, 0, 51, 0.15) !important;
 }
 
 .appearanceIconWrapper {
@@ -3630,14 +3627,14 @@
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: rgba(24, 116, 90, 0.1);
+  background: rgba(102, 0, 51, 0.1);
   color: var(--accent-violet);
   margin-bottom: 8px;
 }
 
 :global([data-theme="dark"]) .appearanceIconWrapper {
-  background: rgba(24, 116, 90, 0.2);
-  color: #6ee7b7;
+  background: rgba(102, 0, 51, 0.2);
+  color: #e2cfd9;
 }
 
 .appearanceCardText {
@@ -3722,7 +3719,7 @@
 .phoneEnrollment input:focus {
   border-color: var(--accent-violet);
   background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(24, 116, 90, 0.14);
+  box-shadow: 0 0 0 3px rgba(102, 0, 51, 0.14);
 }
 
 :global([data-theme="dark"]) .accountFieldGrid input:focus,
@@ -3736,7 +3733,7 @@
   height: 40px;
   border-radius: 11px;
   border: 0;
-  background: #0d0f12;
+  background: var(--brand-primary);
   color: #ffffff;
   font-size: 12.5px;
   font-weight: 700;
@@ -3746,7 +3743,7 @@
 }
 
 .accountPrimaryButton:hover {
-  background: var(--accent-violet);
+  background: var(--brand-primary-hover);
   transform: translateY(-1px);
 }
 
@@ -3802,13 +3799,13 @@
 }
 
 .accountSuccess {
-  border: 1px solid rgba(90, 177, 142, 0.25);
-  background: rgba(24, 116, 90, 0.1);
-  color: #125c49;
+  border: 1px solid rgba(201, 138, 169, 0.25);
+  background: rgba(102, 0, 51, 0.1);
+  color: #4d0026;
 }
 
 :global([data-theme="dark"]) .accountSuccess {
-  color: #5ab18e;
+  color: #c98aa9;
 }
 
 .accountError {
@@ -3856,13 +3853,13 @@
 }
 
 .infoCard small {
-  color: #125c49;
+  color: #4d0026;
   font-size: 10.5px;
   font-weight: 650;
 }
 
 :global([data-theme="dark"]) .infoCard small {
-  color: #5ab18e;
+  color: #c98aa9;
 }
 
 .phoneEnrollment {
@@ -3870,9 +3867,9 @@
   flex-direction: column;
   gap: 10px;
   padding: 12px 14px;
-  border: 1px solid rgba(24, 116, 90, 0.18);
+  border: 1px solid rgba(102, 0, 51, 0.18);
   border-radius: 14px;
-  background: rgba(24, 116, 90, 0.055);
+  background: rgba(102, 0, 51, 0.055);
 }
 
 .phoneEnrollment h4 {
@@ -3920,11 +3917,11 @@
 }
 
 .securityActiveText {
-  color: #125c49 !important;
+  color: #4d0026 !important;
 }
 
 :global([data-theme="dark"]) .securityActiveText {
-  color: #5ab18e !important;
+  color: #c98aa9 !important;
 }
 
 .accountResourceLinks {
@@ -4093,7 +4090,7 @@
   .iosBottomSheet,
   .iosReceiptSheet,
   .sideDrawerSheet {
-    border-radius: 28px;
+    border-radius: 16px;
     margin-bottom: 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   }
@@ -4111,7 +4108,7 @@
     margin: 0 auto;
     padding: 0 14px 0 28px;
     border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 999px;
+    border-radius: 14px;
     background: rgba(255, 255, 255, 0.92);
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.04);
     backdrop-filter: blur(28px);
@@ -4172,7 +4169,7 @@
     width: 100%;
     padding: 16px 18px max(24px, calc(18px + env(safe-area-inset-bottom)));
     gap: 10px;
-    border-radius: 24px 24px 0 0;
+    border-radius: 16px 16px 0 0;
     max-height: 92dvh;
   }
 
@@ -4289,7 +4286,7 @@
     border-right: 0;
     border-bottom: 0;
     border-left: 0;
-    border-radius: 26px 26px 0 0;
+    border-radius: 16px 16px 0 0;
   }
 
   .profileCenterHeader,
@@ -4357,5 +4354,3858 @@
   .primaryAddFundsBtn,
   .dockCenterFloatingBtn {
     transition: none !important;
+  }
+}
+
+
+/* ==========================================================================
+   AIRTIME VTU & 16-DIGIT RECHARGE CARD (e-PIN) PURCHASE + RECEIPT VAULT
+   ========================================================================== */
+.airtimeModeSwitch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.045);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 4px;
+}
+
+:global([data-theme="dark"]) .airtimeModeSwitch {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.airtimeModeBtn {
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #64748b;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:global([data-theme="dark"]) .airtimeModeBtn {
+  color: #94a3b8;
+}
+
+.airtimeModeBtnActive {
+  background: #ffffff;
+  color: var(--text-primary);
+  font-weight: 700;
+  border-color: rgba(0, 0, 0, 0.07);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+:global([data-theme="dark"]) .airtimeModeBtnActive {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+}
+
+.airtimeQuickGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.airtimeQuickBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  border-radius: 11px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+:global([data-theme="dark"]) .airtimeQuickBtn {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+.airtimeQuickBtn:hover {
+  border-color: rgba(102, 0, 51, 0.35);
+}
+
+.airtimeQuickBtnActive {
+  border-color: #660033 !important;
+  background: rgba(102, 0, 51, 0.08) !important;
+  color: #660033 !important;
+  box-shadow: 0 0 0 1px rgba(102, 0, 51, 0.18);
+}
+
+:global([data-theme="dark"]) .airtimeQuickBtnActive {
+  border-color: #c98aa9 !important;
+  background: rgba(211, 52, 132, 0.12) !important;
+  color: #e2cfd9 !important;
+}
+
+.epinDenomGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.epinDenomCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  color: #0f172a;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+:global([data-theme="dark"]) .epinDenomCard {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+.epinDenomCard strong {
+  font-size: 13.5px;
+  font-weight: 750;
+}
+
+.epinDenomCard small {
+  font-size: 9.5px;
+  color: #64748b;
+  font-weight: 550;
+}
+
+:global([data-theme="dark"]) .epinDenomCard small {
+  color: #94a3b8;
+}
+
+.epinDenomCardActive {
+  border-color: #660033 !important;
+  background: rgba(102, 0, 51, 0.08) !important;
+  color: #660033 !important;
+  box-shadow: 0 0 0 1px rgba(102, 0, 51, 0.18);
+}
+
+.epinDenomCardActive small {
+  color: #660033 !important;
+}
+
+:global([data-theme="dark"]) .epinDenomCardActive {
+  border-color: #c98aa9 !important;
+  background: rgba(211, 52, 132, 0.12) !important;
+  color: #e2cfd9 !important;
+}
+
+:global([data-theme="dark"]) .epinDenomCardActive small {
+  color: #e2cfd9 !important;
+}
+
+.epinQtyRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.epinNoteBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: rgba(102, 0, 51, 0.055);
+  border: 1px solid rgba(102, 0, 51, 0.18);
+  font-size: 11.5px;
+  color: #334155;
+}
+
+:global([data-theme="dark"]) .epinNoteBox {
+  background: rgba(102, 0, 51, 0.12);
+  border-color: rgba(131, 48, 89, 0.28);
+  color: #cbd5e1;
+}
+
+.epinNoteBox strong {
+  color: #660033;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   SAVED BENEFICIARIES DECK & ELECTRICITY TOKEN FLOW
+   ========================================================================== */
+.beneficiaryDeck {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.beneficiaryDeck::-webkit-scrollbar {
+  display: none;
+}
+
+.beneficiaryChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  background: #ffffff;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 120ms ease;
+  flex-shrink: 0;
+}
+
+:global([data-theme="dark"]) .beneficiaryChip {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.beneficiaryChip:hover {
+  border-color: #660033;
+  color: #660033;
+}
+
+.beneficiaryChipActive {
+  background: rgba(102, 0, 51, 0.08) !important;
+  border-color: #660033 !important;
+  color: #660033 !important;
+}
+
+:global([data-theme="dark"]) .beneficiaryChipActive {
+  background: rgba(211, 52, 132, 0.15) !important;
+  border-color: #c98aa9 !important;
+  color: #f8fafc !important;
+}
+
+.discoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 480px) {
+  .discoGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.discoCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition: all 140ms ease;
+}
+
+:global([data-theme="dark"]) .discoCard {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+.discoCard strong {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+:global([data-theme="dark"]) .discoCard strong {
+  color: #f8fafc;
+}
+
+.discoCard small {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+:global([data-theme="dark"]) .discoCard small {
+  color: #94a3b8;
+}
+
+.discoCard:hover {
+  border-color: rgba(102, 0, 51, 0.4);
+}
+
+.discoCardActive {
+  border-color: #660033 !important;
+  background: rgba(102, 0, 51, 0.06) !important;
+  box-shadow: 0 0 0 1px #660033;
+}
+
+:global([data-theme="dark"]) .discoCardActive {
+  border-color: #c98aa9 !important;
+  background: rgba(211, 52, 132, 0.12) !important;
+  box-shadow: 0 0 0 1px #c98aa9;
+}
+
+.meterVerifyCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  margin-top: 6px;
+  margin-bottom: 8px;
+}
+
+:global([data-theme="dark"]) .meterVerifyCard {
+  background: rgba(22, 101, 52, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.meterVerifyIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.meterVerifyInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.meterCustomerName {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #14532d;
+  letter-spacing: -0.01em;
+}
+
+:global([data-theme="dark"]) .meterCustomerName {
+  color: #86efac;
+}
+
+.meterCustomerAddress {
+  font-size: 11px;
+  color: #166534;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+:global([data-theme="dark"]) .meterCustomerAddress {
+  color: #bbf7d0;
+}
+
+.orderSummaryCard {
+  background: rgba(0, 0, 0, 0.025);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  margin-bottom: 6px;
+}
+
+:global([data-theme="dark"]) .orderSummaryCard {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.orderSummaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+:global([data-theme="dark"]) .orderSummaryRow {
+  color: #94a3b8;
+}
+
+.orderSummaryTotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 750;
+  color: #0f172a;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+  margin-top: 4px;
+}
+
+:global([data-theme="dark"]) .orderSummaryTotal {
+  color: #ffffff;
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+.couponRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.couponInput {
+  flex: 1;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+:global([data-theme="dark"]) .couponInput {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+.couponBtn {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid #660033;
+  background: #660033;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.couponBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.couponBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+:global([data-theme="dark"]) .couponBadge {
+  background: rgba(6, 95, 70, 0.2);
+  border-color: rgba(52, 211, 153, 0.3);
+  color: #6ee7b7;
+}
+
+.couponBadgeRemove {
+  background: none;
+  border: none;
+  color: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+:global([data-theme="dark"]) .epinNoteBox strong {
+  color: #e2cfd9;
+}
+
+.epinVaultList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 12px;
+  max-height: 210px;
+  overflow-y: auto;
+}
+
+.epinVaultCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(102, 0, 51, 0.06);
+  border: 1px solid rgba(102, 0, 51, 0.24);
+}
+
+:global([data-theme="dark"]) .epinVaultCard {
+  background: rgba(102, 0, 51, 0.14);
+  border-color: rgba(211, 52, 132, 0.28);
+}
+
+.epinVaultTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-weight: 650;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+:global([data-theme="dark"]) .epinVaultTop {
+  color: #94a3b8;
+}
+
+.epinVaultPin {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+  text-align: center;
+  padding: 4px 0;
+}
+
+:global([data-theme="dark"]) .epinVaultPin {
+  color: #f8fafc;
+}
+
+.epinVaultActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.epinActionBtn,
+.epinDialBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  font-weight: 650;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.epinActionBtn {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  color: #0f172a;
+}
+
+:global([data-theme="dark"]) .epinActionBtn {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+}
+
+.epinDialBtn {
+  border: none;
+  background: #660033;
+  color: #ffffff;
+}
+
+.epinDialBtn:hover {
+  background: #5c1237;
+}
+
+
+/* ========================================================================= */
+/* VIRTUAL BANK ACCOUNT EXTRAS                                               */
+/* ========================================================================= */
+.vaHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.vaNoMinBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(102, 0, 51, 0.12);
+  color: #660033;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+:global([data-theme="dark"]) .vaNoMinBadge {
+  background: rgba(34, 197, 94, 0.16);
+  color: #4ade80;
+}
+
+.vaPendingBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.vaPendingText {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--funda-text-secondary);
+}
+
+.vaActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.vaSecondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
+  color: var(--funda-text-primary);
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+:global([data-theme="dark"]) .vaSecondaryBtn {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.vaBvnBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vaHintNote {
+  margin: 2px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--funda-text-secondary);
+}
+
+:global([data-theme="dark"]) .vaHintNote {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+.vaVerifiedStrip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: rgba(102, 0, 51, 0.09);
+  border: 1px solid rgba(102, 0, 51, 0.2);
+  color: #660033;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+:global([data-theme="dark"]) .vaVerifiedStrip {
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.25);
+  color: #e2cfd9;
+}
+
+/* One-time (temporary) bank transfer account, issued by Bachs for an exact amount */
+.vaTempBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px dashed rgba(0, 0, 0, 0.14);
+}
+
+:global([data-theme="dark"]) .vaTempBox {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.vaTempTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--funda-text-primary);
+}
+
+.vaTempRow {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.vaTempInput {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
+  color: var(--funda-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+:global([data-theme="dark"]) .vaTempInput {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.vaTempError {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #c2410c;
+}
+
+/* Temporary Virtual Account Live Styles */
+.vaTimerBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 750;
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  letter-spacing: 0.02em;
+}
+
+:global([data-theme="dark"]) .vaTimerBadge {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.radarPulseDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: radarPulse 1.8s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes radarPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.vaLiveRadarStrip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  font-size: 11px;
+  font-weight: 600;
+  color: #065f46;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+:global([data-theme="dark"]) .vaLiveRadarStrip {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+}
+
+.tempVaActionsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.cancelSecondaryBtn {
+  width: 100%;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: transparent;
+  color: var(--funda-text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.cancelSecondaryBtn:hover {
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--funda-text-primary);
+}
+
+:global([data-theme="dark"]) .cancelSecondaryBtn {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .cancelSecondaryBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.vaTempGeneratorBox {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f8f9fa;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+:global([data-theme="dark"]) .vaTempGeneratorBox {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.vaGeneratorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vaGeneratorTitle {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 750;
+  color: var(--funda-text-primary);
+}
+
+.vaGeneratorDesc {
+  margin: -4px 0 2px 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--funda-text-secondary);
+}
+
+.vaAmountInputWrapper {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  transition: border-color 140ms ease;
+}
+
+.vaAmountInputWrapper:focus-within {
+  border-color: var(--brand-primary, #660033);
+}
+
+:global([data-theme="dark"]) .vaAmountInputWrapper {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+:global([data-theme="dark"]) .vaAmountInputWrapper:focus-within {
+  border-color: #c98aa9;
+}
+
+.nairaPrefix {
+  font-size: 18px;
+  font-weight: 750;
+  color: var(--funda-text-secondary);
+  margin-right: 8px;
+  user-select: none;
+}
+
+.vaAmountInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--funda-text-primary);
+  font-size: 17px;
+  font-weight: 750;
+  outline: none;
+  font-family: var(--font-geist-mono), monospace;
+}
+
+:global([data-theme="dark"]) .vaAmountInput {
+  color: #ffffff;
+}
+
+/* Polished Temporary Account Card Hero Styles */
+.vaCardLoadingBox {
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 28px 20px;
+  border-radius: 18px;
+  background: #f8f9fa;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  gap: 12px;
+}
+
+:global([data-theme="dark"]) .vaCardLoadingBox {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.vaLoadingSpinner {
+  animation: fundaSpin 0.75s linear infinite;
+  color: var(--brand-primary, #660033);
+}
+
+:global([data-theme="dark"]) .vaLoadingSpinner {
+  color: #e2cfd9;
+}
+
+.vaLoadingTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 750;
+  color: var(--funda-text-primary);
+}
+
+.vaLoadingSub {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--funda-text-secondary);
+  max-width: 290px;
+}
+
+.accountNumberHeroBox {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+:global([data-theme="dark"]) .accountNumberHeroBox {
+  background: rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+.accountNumberLabelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.instantCreditPill {
+  font-size: 10px;
+  font-weight: 750;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  padding: 2.5px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+:global([data-theme="dark"]) .instantCreditPill {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.accountNumberBigRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.accountNumberBigText {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 24px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  color: var(--funda-text-primary);
+}
+
+.copyBtnLarge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 15px;
+  border-radius: 10px;
+  background: var(--brand-primary, #660033);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 750;
+  border: none;
+  cursor: pointer;
+  transition: all 140ms ease;
+  flex-shrink: 0;
+}
+
+.copyBtnLarge:hover {
+  background: var(--brand-primary-hover, #4d0026);
+  transform: translateY(-0.5px);
+}
+
+:global([data-theme="dark"]) .copyBtnLarge {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+:global([data-theme="dark"]) .copyBtnLarge:hover {
+  background: #ffffff;
+  color: #000000;
+}
+
+.vaTagGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vaLiveTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  padding: 2.5px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+:global([data-theme="dark"]) .vaLiveTag {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.bankDetailCol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bankValueHighlight {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+:global([data-theme="dark"]) .bankValueHighlight {
+  color: #ffffff;
+}
+
+.vaAmountRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme="dark"]) .vaAmountRow {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.vaAmountText {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--brand-primary, #660033);
+}
+
+:global([data-theme="dark"]) .vaAmountText {
+  color: #e2cfd9;
+}
+
+.vaAmountPill {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--funda-text-secondary);
+  background: rgba(0, 0, 0, 0.04);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+:global([data-theme="dark"]) .vaAmountPill {
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+}
+
+/* ========================================================================= */
+/* UNIFIED BANK TRANSFER BOX & WAITING SPINNER                               */
+/* ========================================================================= */
+
+.bankTransferWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.bankDetailsUnifiedBox {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 11px;
+  padding: 11px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.03);
+}
+
+:global([data-theme="dark"]) .bankDetailsUnifiedBox {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+/* Amount selector chips inside unified box */
+.fundAmountSelectorSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fundAmountHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fundAmountLabel {
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--funda-text-secondary, #64748b);
+}
+
+.fundTimerPill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 650;
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+:global([data-theme="dark"]) .fundTimerPill {
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.fundAmountChipsRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fundAmountChip {
+  padding: 6px 11px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #f8fafc;
+  color: var(--funda-text-primary, #1e293b);
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 130ms ease;
+  flex: 1 1 auto;
+  text-align: center;
+  min-width: 58px;
+}
+
+.fundAmountChip:hover {
+  border-color: var(--brand-primary, #660033);
+  color: var(--brand-primary, #660033);
+  background: rgba(102, 0, 51, 0.04);
+}
+
+.fundAmountChipActive {
+  background: var(--brand-primary, #660033) !important;
+  color: #ffffff !important;
+  border-color: var(--brand-primary, #660033) !important;
+  font-weight: 750;
+}
+
+:global([data-theme="dark"]) .fundAmountChip {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .fundAmountChip:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: #f472b6;
+  color: #f472b6;
+}
+
+:global([data-theme="dark"]) .fundAmountChipActive {
+  background: var(--brand-primary, #800040) !important;
+  border-color: var(--brand-primary, #800040) !important;
+  color: #ffffff !important;
+}
+
+.customAmountRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.customAmountPrefix {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--funda-text-secondary, #64748b);
+}
+
+.customAmountInput {
+  flex: 1;
+  height: 33px;
+  padding: 0 9px;
+  border-radius: 7px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  color: var(--funda-text-primary, #0f172a);
+  font-size: 12.5px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 140ms ease;
+}
+
+.customAmountInput:focus {
+  border-color: var(--brand-primary, #660033);
+}
+
+:global([data-theme="dark"]) .customAmountInput {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+}
+
+.customAmountUpdateBtn {
+  height: 33px;
+  padding: 0 12px;
+  border-radius: 7px;
+  background: var(--brand-primary, #660033);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 130ms ease;
+  flex-shrink: 0;
+}
+
+.customAmountUpdateBtn:hover {
+  background: var(--brand-primary-hover, #4d0026);
+}
+
+.unifiedDivider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.07);
+  margin: 1px 0;
+}
+
+:global([data-theme="dark"]) .unifiedDivider {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.unifiedBoxHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 2px;
+}
+
+.unifiedBoxHeading {
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--funda-text-secondary, #64748b);
+}
+
+.unifiedExpiryBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+:global([data-theme="dark"]) .unifiedExpiryBadge {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+}
+
+.expiryDotPulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+
+.naturalDetailsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.naturalDetailLine {
+  display: grid;
+  grid-template-columns: 105px 1fr;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.35;
+}
+
+.naturalLabel {
+  font-size: 11.5px;
+  font-weight: 550;
+  color: var(--funda-text-secondary, #64748b);
+  white-space: nowrap;
+}
+
+.naturalValue {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--funda-text-primary, #0f172a);
+  text-align: left;
+}
+
+.naturalAmountHighlight {
+  font-size: 12.5px;
+  font-weight: 750;
+  color: var(--brand-primary, #660033);
+  text-align: left;
+  letter-spacing: 0.01em;
+}
+
+:global([data-theme="dark"]) .naturalAmountHighlight {
+  color: #f472b6;
+}
+
+.naturalAccountGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.naturalAccountDigits {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  font-size: 13.5px;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  color: var(--funda-text-primary, #0f172a);
+}
+
+.naturalReferenceDigits {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  font-size: 14.5px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  color: var(--brand-primary, #660033);
+}
+
+:global([data-theme="dark"]) .naturalReferenceDigits {
+  color: #f472b6;
+}
+
+.naturalSubNote {
+  font-size: 11px;
+  font-weight: 550;
+  color: var(--funda-text-secondary, #64748b);
+  margin-top: -4px;
+  padding-left: 135px;
+}
+
+.unifiedCopyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--brand-primary, #660033);
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 650;
+  border: none;
+  cursor: pointer;
+  transition: all 140ms ease;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.unifiedCopyBtn:hover {
+  background: var(--brand-primary-hover, #4d0026);
+  transform: translateY(-0.5px);
+}
+
+.unifiedCopyBtnCopied {
+  background: #059669 !important;
+  color: #ffffff !important;
+}
+
+:global([data-theme="dark"]) .unifiedCopyBtn {
+  background: var(--brand-primary, #800040);
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .unifiedCopyBtn:hover {
+  background: #99004d;
+}
+
+/* Fee Notice */
+.bankFeeNoticeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.feeNoticeTag {
+  font-size: 10px;
+  font-weight: 750;
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 2.5px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+:global([data-theme="dark"]) .feeNoticeTag {
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.feeNoticeText {
+  font-size: 11.5px;
+  font-weight: 550;
+  color: var(--funda-text-secondary, #64748b);
+  line-height: 1.3;
+}
+
+/* Waiting spinner strip */
+.unifiedWaitingStrip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.07);
+  border: 1px solid rgba(16, 185, 129, 0.16);
+  color: #065f46;
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.35;
+}
+
+:global([data-theme="dark"]) .unifiedWaitingStrip {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+}
+
+.waitingSpinner {
+  animation: waitingSpin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes waitingSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Confirmation Action Button Container */
+.confirmActionContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.confirmTransferBtn {
+  width: 100%;
+  height: 38px;
+  border-radius: 9px;
+  background: var(--brand-primary, #660033);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 650;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 140ms ease;
+  letter-spacing: 0.01em;
+}
+
+.confirmTransferBtn:hover {
+  background: var(--brand-primary-hover, #4d0026);
+  transform: translateY(-0.5px);
+}
+
+.confirmTransferBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+:global([data-theme="dark"]) .confirmTransferBtn {
+  background: var(--brand-primary, #800040);
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .confirmTransferBtn:hover {
+  background: #99004d;
+}
+
+/* Amount Entry Screen (Step 1: Choose Amount First) - Minimal & Compact */
+.fundAmountEntryForm {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.fundAmountInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fundInputLabel {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--funda-text-secondary, #64748b);
+}
+
+.fundAmountInlineRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.fundAmountInputWrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 9px;
+  padding: 0 11px;
+  height: 38px;
+  transition: all 140ms ease;
+  min-width: 0;
+}
+
+.fundAmountInputWrapper:focus-within {
+  border-color: var(--brand-primary, #660033);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(102, 0, 51, 0.08);
+}
+
+:global([data-theme="dark"]) .fundAmountInputWrapper {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+:global([data-theme="dark"]) .fundAmountInputWrapper:focus-within {
+  border-color: #f472b6;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.15);
+}
+
+.fundAmountNairaPrefix {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--brand-primary, #660033);
+  margin-right: 5px;
+  user-select: none;
+}
+
+:global([data-theme="dark"]) .fundAmountNairaPrefix {
+  color: #f472b6;
+}
+
+.fundMainAmountInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--funda-text-primary, #0f172a);
+  outline: none;
+  font-family: var(--font-geist-mono), monospace;
+  letter-spacing: 0.02em;
+  -moz-appearance: textfield;
+  appearance: textfield;
+  min-width: 0;
+}
+
+.fundMainAmountInput::-webkit-outer-spin-button,
+.fundMainAmountInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+:global([data-theme="dark"]) .fundMainAmountInput {
+  color: #ffffff;
+}
+
+/* Inline Get Account Button - in front of the amount */
+.fundInlineGetBtn {
+  height: 38px;
+  padding: 0 13px;
+  border-radius: 9px;
+  background: var(--brand-primary, #660033);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 650;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 140ms ease;
+}
+
+.fundInlineGetBtn:hover:not(:disabled) {
+  background: var(--brand-primary-hover, #4d0026);
+  transform: translateY(-0.5px);
+}
+
+.fundInlineGetBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+:global([data-theme="dark"]) .fundInlineGetBtn {
+  background: var(--brand-primary, #800040);
+}
+
+:global([data-theme="dark"]) .fundInlineGetBtn:hover:not(:disabled) {
+  background: #99004d;
+}
+
+/* Suggested amount pills - smaller & compact */
+.fundAmountPresetRow {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.fundPresetChip {
+  padding: 3.5px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #f8fafc;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--funda-text-primary, #1e293b);
+  cursor: pointer;
+  transition: all 130ms ease;
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+.fundPresetChip:hover {
+  border-color: var(--brand-primary, #660033);
+  color: var(--brand-primary, #660033);
+}
+
+.fundPresetChipActive {
+  background: var(--brand-primary, #660033) !important;
+  color: #ffffff !important;
+  border-color: var(--brand-primary, #660033) !important;
+}
+
+:global([data-theme="dark"]) .fundPresetChip {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+:global([data-theme="dark"]) .fundPresetChipActive {
+  background: var(--brand-primary, #800040) !important;
+  color: #ffffff !important;
+}
+
+/* You will receive calculation line - compact */
+.fundReceiveCalculationLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 550;
+  color: var(--funda-text-secondary, #64748b);
+  padding: 5px 9px;
+  background: rgba(102, 0, 51, 0.03);
+  border: 1px solid rgba(102, 0, 51, 0.07);
+  border-radius: 7px;
+  line-height: 1.35;
+}
+
+:global([data-theme="dark"]) .fundReceiveCalculationLine {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.07);
+  color: #94a3b8;
+}
+
+.fundReceiveHighlight {
+  color: var(--brand-primary, #660033);
+  font-weight: 750;
+  font-family: var(--font-geist-mono), monospace;
+}
+
+:global([data-theme="dark"]) .fundReceiveHighlight {
+  color: #f472b6;
+}
+
+.fundReceiveFeeSub {
+  font-size: 10px;
+  color: var(--funda-text-secondary, #64748b);
+  font-weight: 500;
+}
+
+.fundErrorNotice {
+  font-size: 11.5px;
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-weight: 600;
+}
+
+.fundAmountHint {
+  font-size: 11.5px;
+  color: var(--funda-text-secondary, #64748b);
+  line-height: 1.4;
+  margin: 0;
+}
+
+:global([data-theme="dark"]) .fundProceedPrimaryBtn:hover {
+  background: #99004d;
+}
+
+.changeAmountLinkBtn {
+  background: none;
+  border: none;
+  color: var(--funda-text-secondary, #64748b);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  margin: 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 140ms ease;
+}
+
+.changeAmountLinkBtn:hover {
+  color: var(--brand-primary, #660033);
+  text-decoration: underline;
+}
+
+:global([data-theme="dark"]) .changeAmountLinkBtn:hover {
+  color: #f472b6;
+}
+
+/* ==========================================================================
+   DASHBOARD REDESIGN — black, burgundy & gold
+   Layered over the base styles above; scoped to .iosViewport so it wins
+   without touching the original rules.
+   ========================================================================== */
+
+.iosViewport {
+  --rd-ink: #0b0b0c;
+  --rd-card: #ffffff;
+  --rd-line: rgba(11, 11, 12, 0.07);
+  --rd-soft: #f3f2ef;
+  --rd-burgundy: #660033;
+  --rd-burgundy-deep: #3d001f;
+  --rd-gold: #d9b46a;
+  background-image: none;
+}
+
+:global([data-theme="dark"]) .iosViewport {
+  --rd-ink: #ffffff;
+  --rd-card: #131313;
+  --rd-line: rgba(255, 255, 255, 0.07);
+  --rd-soft: #1c1c1c;
+  background-image: none;
+}
+
+.iosViewport .ambientMeshContainer {
+  display: none;
+}
+
+/* ---------- Greeting ---------- */
+.iosViewport .greetingTitle {
+  font-size: clamp(30px, 7vw, 40px);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.iosViewport .greetingDot {
+  color: var(--rd-burgundy);
+}
+
+:global([data-theme="dark"]) .iosViewport .greetingDot {
+  color: var(--brand-primary-bright);
+}
+
+.iosViewport .todayDateText {
+  letter-spacing: 0.12em;
+  font-size: 10.5px;
+  color: var(--funda-text-muted);
+}
+
+/* ---------- Wallet card ---------- */
+.iosViewport .proWalletHeroCard {
+  isolation: isolate;
+  border-radius: 18px;
+  padding: 24px;
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(217, 180, 106, 0.16) 0%, transparent 45%),
+    radial-gradient(90% 120% at 0% 100%, rgba(140, 26, 79, 0.55) 0%, transparent 55%),
+    linear-gradient(150deg, #2a0015 0%, #4a0027 48%, #160009 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 30px 60px -24px rgba(61, 0, 31, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Thin orbital lines, echoing the landing artwork */
+.iosViewport .proWalletHeroCard::before,
+.iosViewport .proWalletHeroCard::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.iosViewport .proWalletHeroCard::before {
+  width: 420px;
+  height: 420px;
+  right: -170px;
+  top: -210px;
+}
+
+.iosViewport .proWalletHeroCard::after {
+  width: 300px;
+  height: 300px;
+  right: -110px;
+  top: -150px;
+  border-color: rgba(217, 180, 106, 0.16);
+}
+
+.iosViewport .cardInnerGlow {
+  background: linear-gradient(90deg, transparent 8%, rgba(255, 255, 255, 0.22), transparent 92%);
+}
+
+.iosViewport .virtualAccountChip,
+.iosViewport .cardHistorySubtleBtn,
+.iosViewport .cardIconBtn {
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.iosViewport .balanceLeftBlock {
+  margin: 30px 0 26px;
+}
+
+.iosViewport .balanceSubLabel {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+}
+
+.iosViewport .currencyPrefix {
+  color: var(--rd-gold);
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.iosViewport .balanceValue {
+  font-size: clamp(40px, 10vw, 58px);
+  font-weight: 600;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.iosViewport .cashbackBadgePill {
+  border-radius: 8px;
+  padding: 5px 12px;
+}
+
+.iosViewport .heroPrimaryActionRow {
+  grid-template-columns: 1.4fr 1fr 1fr;
+}
+
+.iosViewport .fundWalletPrimaryBtn,
+.iosViewport .walletSecondaryActionBtn {
+  height: 50px;
+  border-radius: 12px;
+}
+
+.iosViewport .fundWalletPrimaryBtn {
+  background: #ffffff;
+  color: var(--rd-burgundy-deep);
+  box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.45);
+}
+
+.iosViewport .fundWalletPrimaryBtn:hover {
+  background: #f7efe0;
+}
+
+.iosViewport .walletSecondaryActionBtn {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+}
+
+.iosViewport .walletSecondaryActionBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(217, 180, 106, 0.45);
+}
+
+/* ---------- Section headings ---------- */
+.iosViewport .sectionEyebrow {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--funda-text-muted);
+}
+
+.iosViewport .sectionMainTitle {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+/* ---------- Services: monochrome tiles, one featured ---------- */
+.iosViewport .bentoServicesGrid {
+  gap: 10px;
+}
+
+.iosViewport .bentoServiceTile {
+  position: relative;
+  align-items: center;
+  padding: 16px 8px 14px;
+  border-radius: 14px;
+  background: var(--rd-card);
+  border: 1px solid var(--rd-line);
+  box-shadow: none;
+}
+
+.iosViewport .bentoServiceTile:hover {
+  background: var(--rd-card);
+  border-color: rgba(102, 0, 51, 0.35);
+  box-shadow: 0 14px 28px -16px rgba(61, 0, 31, 0.35);
+}
+
+.iosViewport .tileIconBackdrop,
+.iosViewport .tileIconBackdrop[data-tone] {
+  position: static;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--rd-soft);
+  color: var(--rd-ink);
+}
+
+.iosViewport .tileBadge {
+  top: 10px;
+  right: 10px;
+  padding: 2px 7px;
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  background: var(--rd-ink);
+  color: var(--rd-card);
+  border: 0;
+  border-radius: 6px;
+}
+
+.iosViewport .tileName {
+  font-size: 12.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.iosViewport .tileSub {
+  max-width: 100%;
+  font-size: 10px;
+  color: var(--funda-text-muted);
+}
+
+/* Featured first tile */
+.iosViewport .bentoServiceTile:first-child {
+  background: linear-gradient(160deg, #660033 0%, #3d001f 100%);
+  border-color: transparent;
+}
+
+.iosViewport .bentoServiceTile:first-child .tileIconBackdrop {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.iosViewport .bentoServiceTile:first-child .tileName {
+  color: #ffffff;
+}
+
+.iosViewport .bentoServiceTile:first-child .tileSub {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.iosViewport .bentoServiceTile:first-child .tileBadge {
+  background: var(--rd-gold);
+  color: #2a1a00;
+}
+
+/* ---------- Beneficiaries ---------- */
+.iosViewport .oneTapPill {
+  color: var(--funda-text-secondary);
+  background: var(--rd-soft);
+  border-color: transparent;
+}
+
+.iosViewport .smartRepeatCard {
+  min-height: 150px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--rd-card);
+  border: 1px solid var(--rd-line);
+  box-shadow: none;
+}
+
+.iosViewport .smartRepeatCard:hover {
+  background: var(--rd-card);
+  border-color: rgba(102, 0, 51, 0.35);
+}
+
+.iosViewport .smartIconSquircle,
+.iosViewport .smartIconSquircle[data-tone] {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 0;
+  background: var(--rd-soft);
+  color: var(--rd-ink);
+}
+
+.iosViewport .smartPriceTag {
+  border-radius: 6px;
+  padding: 3px 9px;
+  background: var(--rd-soft);
+  color: var(--rd-ink);
+}
+
+.iosViewport .smartTitle {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--rd-ink);
+}
+
+.iosViewport .smartRepeatBtn {
+  height: 34px;
+  border-radius: 10px;
+  border: 0;
+  background: var(--rd-ink);
+  color: var(--rd-card);
+  font-size: 11.5px;
+  font-weight: 650;
+}
+
+.iosViewport .smartRepeatBtn:hover {
+  background: var(--rd-burgundy);
+  color: #ffffff;
+}
+
+/* ---------- Transactions: one card, divided rows ---------- */
+.iosViewport .txTogglePill,
+.iosViewport .segmentedBtn {
+  border-radius: 10px;
+}
+
+.iosViewport .txTogglePillActive,
+.iosViewport .segmentedActive {
+  background: var(--rd-ink);
+  border-color: var(--rd-ink);
+  color: var(--rd-card);
+}
+
+.iosViewport .searchBarWrapper {
+  border-radius: 12px;
+}
+
+.iosViewport .txListContainer {
+  gap: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+}
+
+.iosViewport .txItemCard {
+  padding: 12px;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.iosViewport .txItemCard + .txItemCard {
+  border-top: 1px solid var(--rd-line);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.iosViewport .txItemCard:hover {
+  background: var(--rd-soft);
+  border-color: var(--rd-line);
+  box-shadow: none;
+  transform: none;
+}
+
+.iosViewport .txIconWrapper,
+.iosViewport .txIconWrapper[data-category] {
+  border-radius: 10px;
+  background: var(--rd-soft);
+  color: var(--rd-ink);
+  border: 0;
+}
+
+/* ---------- Bottom nav: smoked-glass bar, quiet active pill, burgundy action ---------- */
+.iosViewport .floatingIosDock,
+:global([data-theme="dark"]) .iosViewport .floatingIosDock {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: auto;
+  height: auto;
+  padding: 5px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(30, 30, 32, 0.96) 0%, rgba(12, 12, 13, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 22px 44px -16px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+:global([data-theme="dark"]) .iosViewport .floatingIosDock {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 22px 44px -16px rgba(0, 0, 0, 0.8);
+}
+
+.iosViewport .dockTabBtn,
+:global([data-theme="dark"]) .iosViewport .dockTabBtn {
+  flex-direction: row;
+  gap: 7px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0 10px;
+  border-radius: 13px;
+  color: rgba(255, 255, 255, 0.62);
+  transition: background 260ms ease, color 200ms ease, padding 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.iosViewport .dockTabBtn:hover,
+:global([data-theme="dark"]) .iosViewport .dockTabBtn:hover {
+  color: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.iosViewport .dockTabBtn:hover .dockIconWrapper {
+  transform: none;
+}
+
+/* Inactive labels stay readable to screen readers but hidden visually */
+.iosViewport .dockLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.iosViewport .dockTabActive,
+.iosViewport .dockTabActive:hover,
+:global([data-theme="dark"]) .iosViewport .dockTabActive {
+  padding: 0 14px 0 11px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px -6px rgba(0, 0, 0, 0.5);
+  color: #0b0b0c !important;
+}
+
+.iosViewport .dockTabActive .dockIconWrapper,
+:global([data-theme="dark"]) .iosViewport .dockTabActive .dockIconWrapper {
+  color: #0b0b0c !important;
+  transform: none;
+}
+
+.iosViewport .dockTabActive .dockLabel,
+:global([data-theme="dark"]) .iosViewport .dockTabActive .dockLabel {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  color: #0b0b0c !important;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.iosViewport .dockCenterElevatedContainer {
+  margin: 0 4px;
+}
+
+.iosViewport .dockIconWrapper svg {
+  width: 18px;
+  height: 18px;
+}
+
+.iosViewport .dockCenterFloatingBtn,
+:global([data-theme="dark"]) .iosViewport .dockCenterFloatingBtn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(217, 180, 106, 0.38);
+  border-radius: 13px;
+  background: linear-gradient(180deg, #8a1d52 0%, #5a002d 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 8px 18px -8px rgba(102, 0, 51, 0.9);
+  transform: none;
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), background 200ms ease, box-shadow 200ms ease;
+}
+
+.iosViewport .dockCenterFloatingBtn:hover {
+  background: linear-gradient(180deg, #9a2560 0%, #660033 100%);
+  transform: rotate(90deg);
+}
+
+.iosViewport .dockCenterFloatingBtn:active {
+  transform: scale(0.95);
+}
+
+.iosViewport .dockCenterActive,
+:global([data-theme="dark"]) .iosViewport .dockCenterActive {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  transform: rotate(45deg) !important;
+}
+
+/* Blurred fade along the bottom of the screen, behind the nav */
+.dockBackdropBlur {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 79;
+  height: calc(110px + env(safe-area-inset-bottom));
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(251, 251, 250, 0.75), rgba(251, 251, 250, 0));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  mask-image: linear-gradient(to top, #000 45%, transparent);
+  -webkit-mask-image: linear-gradient(to top, #000 45%, transparent);
+}
+
+:global([data-theme="dark"]) .dockBackdropBlur {
+  background: linear-gradient(to top, rgba(10, 10, 10, 0.8), rgba(10, 10, 10, 0));
+}
+
+/* ---------- Dark mode specifics ---------- */
+:global([data-theme="dark"]) .iosViewport .bentoServiceTile,
+:global([data-theme="dark"]) .iosViewport .smartRepeatCard {
+  background: var(--rd-card);
+  border-color: var(--rd-line);
+}
+
+:global([data-theme="dark"]) .iosViewport .bentoServiceTile:hover,
+:global([data-theme="dark"]) .iosViewport .smartRepeatCard:hover {
+  background: #181818;
+  border-color: rgba(194, 69, 126, 0.4);
+}
+
+:global([data-theme="dark"]) .iosViewport .bentoServiceTile:first-child {
+  background: linear-gradient(160deg, #8c1a4f 0%, #3d001f 100%);
+}
+
+:global([data-theme="dark"]) .iosViewport .tileIconBackdrop,
+:global([data-theme="dark"]) .iosViewport .smartIconSquircle,
+:global([data-theme="dark"]) .iosViewport .txIconWrapper {
+  background: var(--rd-soft);
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .iosViewport .bentoServiceTile:first-child .tileIconBackdrop {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+:global([data-theme="dark"]) .iosViewport .smartPriceTag {
+  color: #ffffff;
+  background: var(--rd-soft);
+}
+
+:global([data-theme="dark"]) .iosViewport .smartTitle {
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .iosViewport .smartRepeatBtn {
+  background: #ffffff;
+  border: 0;
+  color: #0b0b0c;
+}
+
+:global([data-theme="dark"]) .iosViewport .smartRepeatBtn:hover {
+  background: var(--brand-primary);
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .iosViewport .txItemCard {
+  background: transparent;
+}
+
+:global([data-theme="dark"]) .iosViewport .txItemCard:hover {
+  background: var(--rd-soft);
+}
+
+/* Services as app icons with labels, not boxed cards */
+.iosViewport .bentoServicesGrid {
+  gap: 16px 8px;
+}
+
+.iosViewport .bentoServiceTile,
+.iosViewport .bentoServiceTile:first-child,
+:global([data-theme="dark"]) .iosViewport .bentoServiceTile,
+:global([data-theme="dark"]) .iosViewport .bentoServiceTile:first-child {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.iosViewport .bentoServiceTile:hover,
+:global([data-theme="dark"]) .iosViewport .bentoServiceTile:hover {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.iosViewport .tileIconBackdrop,
+.iosViewport .tileIconBackdrop[data-tone],
+:global([data-theme="dark"]) .iosViewport .tileIconBackdrop {
+  width: 54px;
+  height: 54px;
+  margin-bottom: 7px;
+  border-radius: 14px;
+  background: #f4f3f1;
+  border: 1px solid transparent;
+  color: #660033;
+}
+
+:global([data-theme="dark"]) .iosViewport .tileIconBackdrop {
+  background: #1c1c1c;
+  color: #e0709f;
+}
+
+.iosViewport .bentoServiceTile:hover .tileIconBackdrop {
+  border-color: rgba(102, 0, 51, 0.35);
+}
+
+.iosViewport .bentoServiceTile:first-child .tileIconBackdrop,
+:global([data-theme="dark"]) .iosViewport .bentoServiceTile:first-child .tileIconBackdrop {
+  background: #f7eaf0;
+  border-color: transparent;
+  color: #660033;
+}
+
+:global([data-theme="dark"]) .iosViewport .bentoServiceTile:first-child .tileIconBackdrop {
+  background: rgba(140, 26, 79, 0.22);
+  color: #e0709f;
+}
+
+.iosViewport .bentoServiceTile:first-child .tileName {
+  color: var(--funda-text-primary);
+}
+
+.iosViewport .bentoServiceTile:first-child .tileSub {
+  color: var(--funda-text-muted);
+}
+
+.iosViewport .tileBadge {
+  top: -6px;
+  right: 50%;
+  transform: translateX(34px);
+  padding: 1px 5px;
+  font-size: 7px;
+}
+
+.iosViewport .tileName {
+  font-size: 11.5px;
+}
+
+.iosViewport .tileSub {
+  font-size: 9.5px;
+}
+
+/* Beneficiaries: compact horizontal scroll */
+.iosViewport .smartRepeatScrollDeck {
+  display: flex;
+  gap: 8px;
+  margin: 0 -20px;
+  padding: 0 20px 4px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.iosViewport .smartRepeatScrollDeck::-webkit-scrollbar {
+  display: none;
+}
+
+.iosViewport .smartRepeatCard {
+  flex: 0 0 148px;
+  min-height: 0;
+  padding: 11px;
+  scroll-snap-align: start;
+}
+
+.iosViewport .smartIconSquircle,
+.iosViewport .smartIconSquircle[data-tone] {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+
+.iosViewport .smartRepeatBody {
+  margin: 8px 0;
+}
+
+.iosViewport .smartTitle {
+  font-size: 12px;
+}
+
+.iosViewport .smartPriceTag {
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+.iosViewport .smartRepeatBtn {
+  height: 30px;
+  font-size: 11px;
+}
+
+@media (min-width: 600px) {
+  .iosViewport .smartRepeatScrollDeck {
+    margin: 0 -24px;
+    padding: 0 24px 4px;
+  }
+}
+
+/* ---------- Services: small circular icons, 4 per row on phones, 5 on desktop ---------- */
+.iosViewport .bentoServicesGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px 6px;
+}
+
+@media (min-width: 600px) {
+  .iosViewport .bentoServicesGrid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.iosViewport .tileIconBackdrop,
+.iosViewport .tileIconBackdrop[data-tone],
+:global([data-theme="dark"]) .iosViewport .tileIconBackdrop {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+}
+
+.iosViewport .tileIconBackdrop svg {
+  width: 20px;
+  height: 20px;
+}
+
+.iosViewport .tileBadge {
+  transform: translateX(30px);
+}
+
+/* ---------- Transactions: short list on the dashboard, full list in a sheet ---------- */
+.txViewAllBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--brand-primary);
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.txViewAllBtn:hover {
+  background: var(--brand-primary-soft);
+}
+
+:global([data-theme="dark"]) .txViewAllBtn {
+  color: var(--brand-primary-bright);
+}
+
+.txSeeAllRow {
+  width: 100%;
+  height: 42px;
+  margin-top: 10px;
+  border: 1px solid var(--rd-line, rgba(0, 0, 0, 0.07));
+  border-radius: 10px;
+  background: transparent;
+  color: var(--funda-text-primary);
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.txSeeAllRow:hover {
+  border-color: rgba(102, 0, 51, 0.35);
+  background: var(--brand-primary-soft);
+}
+
+.txHistorySheet {
+  display: flex;
+  flex-direction: column;
+  height: min(88dvh, 780px);
+  overflow: hidden;
+}
+
+.txHistorySheet .filterControlsRow {
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+
+.txHistoryList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 0 -6px;
+  padding: 0 6px;
+}
+
+/* ---------- Receipt: close button + aligned actions ---------- */
+.iosReceiptSheet {
+  position: relative;
+}
+
+.receiptCloseBtn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+}
+
+.receiptActionsRow .submitPrimaryBtn {
+  height: 48px;
+  margin: 0;
+}
+
+/* ---------- Money in / money out / status colours ---------- */
+.iosViewport {
+  --flow-in: #15803d;
+  --flow-in-soft: rgba(22, 163, 74, 0.1);
+  --flow-out: var(--funda-text-primary);
+  --status-ok: #15803d;
+  --status-wait: #b45309;
+  --status-wait-soft: rgba(217, 119, 6, 0.1);
+  --status-fail: #dc2626;
+  --status-fail-soft: rgba(220, 38, 38, 0.08);
+}
+
+:global([data-theme="dark"]) .iosViewport {
+  --flow-in: #4ade80;
+  --flow-in-soft: rgba(74, 222, 128, 0.12);
+  --status-ok: #4ade80;
+  --status-wait: #fbbf24;
+  --status-wait-soft: rgba(251, 191, 36, 0.12);
+  --status-fail: #f87171;
+  --status-fail-soft: rgba(248, 113, 113, 0.12);
+}
+
+/* Amounts */
+.iosViewport .amountPositive,
+:global([data-theme="dark"]) .iosViewport .amountPositive {
+  color: var(--flow-in);
+}
+
+.iosViewport .amountNegative,
+:global([data-theme="dark"]) .iosViewport .amountNegative {
+  color: var(--flow-out);
+}
+
+.iosViewport .txItemCard[data-status="failed"] .amountPositive,
+.iosViewport .txItemCard[data-status="failed"] .amountNegative {
+  color: var(--funda-text-muted);
+  text-decoration: line-through;
+}
+
+/* Row icons: green for money in, neutral for money out, tinted by status when not completed */
+.iosViewport .txItemCard[data-flow="in"] .txIconWrapper,
+:global([data-theme="dark"]) .iosViewport .txItemCard[data-flow="in"] .txIconWrapper {
+  background: var(--flow-in-soft);
+  color: var(--flow-in);
+}
+
+.iosViewport .txItemCard[data-status="processing"] .txIconWrapper,
+:global([data-theme="dark"]) .iosViewport .txItemCard[data-status="processing"] .txIconWrapper {
+  background: var(--status-wait-soft);
+  color: var(--status-wait);
+}
+
+.iosViewport .txItemCard[data-status="failed"] .txIconWrapper,
+:global([data-theme="dark"]) .iosViewport .txItemCard[data-status="failed"] .txIconWrapper {
+  background: var(--status-fail-soft);
+  color: var(--status-fail);
+}
+
+/* Status label with a coloured dot */
+.iosViewport .txStatusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-transform: capitalize;
+}
+
+.iosViewport .txStatusPill::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.iosViewport .txStatusPill[data-status="completed"] { color: var(--status-ok); }
+.iosViewport .txStatusPill[data-status="processing"] { color: var(--status-wait); }
+.iosViewport .txStatusPill[data-status="failed"] { color: var(--status-fail); }
+
+/* Receipt */
+.iosViewport .receiptAmount[data-flow="in"] {
+  color: var(--flow-in);
+}
+
+.iosViewport .receiptAmount[data-status="failed"] {
+  color: var(--funda-text-muted);
+  text-decoration: line-through;
+}
+
+.iosViewport .receiptCheckIcon,
+:global([data-theme="dark"]) .iosViewport .receiptCheckIcon {
+  background: var(--flow-in-soft);
+  color: var(--status-ok);
+  border-color: transparent;
+}
+
+.iosViewport .receiptStatusTag,
+:global([data-theme="dark"]) .iosViewport .receiptStatusTag {
+  color: var(--status-ok);
+}
+
+.iosViewport .receiptStatusTagFailed {
+  color: var(--status-fail) !important;
+}
+
+.iosViewport .receiptStatusTagProcessing {
+  color: var(--status-wait) !important;
+}
+
+.iosViewport .receiptFailedIcon {
+  background: var(--status-fail-soft);
+  color: var(--status-fail);
+  border-color: transparent;
+}
+
+.iosViewport .receiptProcessingIcon {
+  background: var(--status-wait-soft);
+  color: var(--status-wait);
+  border-color: transparent;
+}
+
+/* ---------- Notifications: unread count on the bell ---------- */
+.unreadCountBadge {
+  position: absolute;
+  top: 4px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--brand-primary);
+  border: 2px solid var(--funda-surface, #ffffff);
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+:global([data-theme="dark"]) .unreadCountBadge {
+  border-color: #0a0a0a;
+}
+
+/* ---------- Notifications sheet: grouped list, same language as transactions ---------- */
+.notifGroup + .notifGroup {
+  margin-top: 14px;
+}
+
+.notifDayLabel {
+  margin: 0 0 4px;
+  padding: 0 12px;
+  color: var(--funda-text-muted);
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.notifRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.notifRow + .notifRow {
+  border-top: 1px solid var(--rd-line, rgba(0, 0, 0, 0.07));
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.notifRowIcon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--rd-soft, #f3f2ef);
+  color: var(--funda-text-primary);
+}
+
+.notifRow[data-tone="in"] .notifRowIcon {
+  background: var(--flow-in-soft);
+  color: var(--flow-in);
+}
+
+.notifRow[data-tone="wait"] .notifRowIcon {
+  background: var(--status-wait-soft);
+  color: var(--status-wait);
+}
+
+.notifRow[data-tone="fail"] .notifRowIcon {
+  background: var(--status-fail-soft);
+  color: var(--status-fail);
+}
+
+.notifRow[data-tone="info"] .notifRowIcon {
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
+}
+
+.notifRowBody {
+  min-width: 0;
+}
+
+.notifRowTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.notifRowTop strong {
+  overflow: hidden;
+  color: var(--funda-text-secondary);
+  font-size: 13.5px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notifRowTop time {
+  flex-shrink: 0;
+  color: var(--funda-text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.notifRowBody p {
+  margin: 3px 0 0;
+  color: var(--funda-text-muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+/* Unread: stronger text, faint brand wash, dot on the left */
+.notifRow[data-unread] {
+  background: rgba(102, 0, 51, 0.04);
+}
+
+:global([data-theme="dark"]) .notifRow[data-unread] {
+  background: rgba(140, 26, 79, 0.1);
+}
+
+.notifRow[data-unread] .notifRowTop strong {
+  color: var(--funda-text-primary);
+  font-weight: 700;
+}
+
+.notifRow[data-unread] .notifRowBody p {
+  color: var(--funda-text-secondary);
+}
+
+.notifRow[data-unread]::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+}
+
+:global([data-theme="dark"]) .notifRow[data-unread]::before {
+  background: var(--brand-primary-bright);
+}
+
+/* ---------- Transaction filters: burgundy chips with icon + count ---------- */
+.txFilterScroller {
+  position: relative;
+}
+
+.txFilterChips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.txFilterChips::-webkit-scrollbar {
+  display: none;
+}
+
+/* Edge arrows: a fade into the sheet colour plus a small round button */
+.txChipArrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  padding: 0;
+  border: 0;
+  color: var(--brand-primary);
+  cursor: pointer;
+}
+
+.txChipArrow svg {
+  box-sizing: content-box;
+  padding: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid rgba(102, 0, 51, 0.18);
+  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.25);
+}
+
+.txChipArrowRight {
+  right: 0;
+  justify-items: end;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), #ffffff 55%);
+}
+
+.txChipArrowLeft {
+  left: 0;
+  justify-items: start;
+  background: linear-gradient(270deg, rgba(255, 255, 255, 0), #ffffff 55%);
+}
+
+.txChipArrowLeft svg {
+  transform: rotate(180deg);
+}
+
+:global([data-theme="dark"]) .txChipArrow {
+  color: #e0709f;
+}
+
+:global([data-theme="dark"]) .txChipArrowRight {
+  background: linear-gradient(90deg, rgba(12, 16, 26, 0), rgb(12, 16, 26) 55%);
+}
+
+:global([data-theme="dark"]) .txChipArrowLeft {
+  background: linear-gradient(270deg, rgba(12, 16, 26, 0), rgb(12, 16, 26) 55%);
+}
+
+:global([data-theme="dark"]) .txChipArrow svg {
+  background: #1c1c1c;
+  border-color: rgba(224, 112, 159, 0.3);
+}
+
+.txFilterChip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 8px 0 11px;
+  border: 1px solid rgba(102, 0, 51, 0.14);
+  border-radius: 10px;
+  background: #f9f1f5;
+  color: #660033;
+  font-size: 12.5px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 160ms ease;
+}
+
+.txFilterChip:hover {
+  border-color: rgba(102, 0, 51, 0.32);
+  background: #f4e4ec;
+}
+
+.txFilterChip:active {
+  transform: scale(0.97);
+}
+
+.txFilterCount {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: rgba(102, 0, 51, 0.1);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.txFilterChipActive,
+.txFilterChipActive:hover {
+  border-color: #660033;
+  background: #660033;
+  color: #ffffff;
+  box-shadow: 0 8px 18px -10px rgba(102, 0, 51, 0.7);
+}
+
+.txFilterChipActive .txFilterCount {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .txFilterChip {
+  border-color: rgba(194, 69, 126, 0.22);
+  background: rgba(140, 26, 79, 0.14);
+  color: #e0709f;
+}
+
+:global([data-theme="dark"]) .txFilterChip:hover {
+  border-color: rgba(194, 69, 126, 0.4);
+  background: rgba(140, 26, 79, 0.24);
+}
+
+:global([data-theme="dark"]) .txFilterCount {
+  background: rgba(224, 112, 159, 0.16);
+}
+
+:global([data-theme="dark"]) .txFilterChipActive,
+:global([data-theme="dark"]) .txFilterChipActive:hover {
+  border-color: #8c1a4f;
+  background: #8c1a4f;
+  color: #ffffff;
+}
+
+:global([data-theme="dark"]) .txFilterChipActive .txFilterCount {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ---------- Receipt sections + download/share ---------- */
+.receiptSectionTitle {
+  display: block;
+  margin: 2px 0 4px;
+  color: var(--funda-text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.iosViewport .receiptDetailsList,
+:global([data-theme="dark"]) .iosViewport .receiptDetailsList {
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.iosViewport .receiptDetailsList + .receiptDetailsList {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rd-line, rgba(0, 0, 0, 0.07));
+}
+
+.iosViewport .receiptRow {
+  padding: 5px 0;
+  font-size: 13px;
+}
+
+.iosReceiptSheet > * {
+  flex-shrink: 0;
+}
+
+.receiptSecondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.receiptSecondaryBtn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.receiptDoneBtn {
+  height: 46px;
+  margin-top: 10px;
+}
+
+.iosViewport .receiptActionsRow .receiptSecondaryBtn {
+  height: 44px;
+}
+
+/* ---------- All services catalogue ---------- */
+.catalogScroll {
+  flex: 1;
+  min-height: 0;
+  margin: 4px -6px 0;
+  padding: 0 6px 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.catalogSection {
+  padding: 14px 0 16px;
+}
+
+.catalogSection + .catalogSection {
+  border-top: 1px solid var(--rd-line, rgba(0, 0, 0, 0.07));
+}
+
+.catalogTitle {
+  margin: 0 0 12px;
+  color: var(--funda-text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.catalogGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px 6px;
+}
+
+.catalogItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--funda-text-primary);
+  text-align: center;
+  cursor: pointer;
+}
+
+.catalogIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background: #f4f3f1;
+  color: #660033;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.catalogItem:hover .catalogIcon {
+  background: #f7eaf0;
+  transform: translateY(-1px);
+}
+
+.catalogName {
+  font-size: 11.5px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.catalogSub {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--funda-text-muted);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalogItem[data-soon] .catalogIcon {
+  background: transparent;
+  border: 1px dashed rgba(0, 0, 0, 0.14);
+  color: var(--funda-text-muted);
+}
+
+.catalogItem[data-soon] .catalogName {
+  color: var(--funda-text-secondary);
+}
+
+.catalogSoon {
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: #0b0b0c;
+  color: #ffffff;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: translateX(10px);
+}
+
+:global([data-theme="dark"]) .catalogIcon {
+  background: #1c1c1c;
+  color: #e0709f;
+}
+
+:global([data-theme="dark"]) .catalogItem:hover .catalogIcon {
+  background: rgba(140, 26, 79, 0.22);
+}
+
+:global([data-theme="dark"]) .catalogItem[data-soon] .catalogIcon {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--funda-text-muted);
+}
+
+:global([data-theme="dark"]) .catalogSoon {
+  background: #ffffff;
+  color: #0b0b0c;
+}
+
+@media (min-width: 600px) {
+  .catalogGrid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* ---------- Bottom nav: a touch larger on desktop, padding kept tight ---------- */
+@media (min-width: 960px) {
+  .iosViewport .floatingIosDock,
+  :global([data-theme="dark"]) .iosViewport .floatingIosDock {
+    gap: 4px;
+    padding: 5px;
+    border-radius: 20px;
+  }
+
+  .iosViewport .dockTabBtn,
+  :global([data-theme="dark"]) .iosViewport .dockTabBtn {
+    height: 46px;
+    min-width: 54px;
+    padding: 0 12px;
+    border-radius: 15px;
+  }
+
+  .iosViewport .dockTabActive,
+  .iosViewport .dockTabActive:hover,
+  :global([data-theme="dark"]) .iosViewport .dockTabActive {
+    padding: 0 16px 0 13px;
+  }
+
+  .iosViewport .dockTabActive .dockLabel,
+  :global([data-theme="dark"]) .iosViewport .dockTabActive .dockLabel {
+    font-size: 13px;
+  }
+
+  .iosViewport .dockIconWrapper svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .iosViewport .dockCenterElevatedContainer {
+    margin: 0 6px;
+  }
+
+  .iosViewport .dockCenterFloatingBtn,
+  :global([data-theme="dark"]) .iosViewport .dockCenterFloatingBtn {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+  }
+}
+
+/* ---------- Notifications: compact type scale ---------- */
+.notifDayLabel {
+  margin-bottom: 2px;
+  padding: 0 10px;
+  font-size: 9.5px;
+}
+
+.notifGroup + .notifGroup {
+  margin-top: 10px;
+}
+
+.notifRow {
+  gap: 10px;
+  padding: 9px 10px;
+}
+
+.notifRowIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+
+.notifRowIcon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.notifRowTop strong {
+  font-size: 12.5px;
+}
+
+.notifRowTop time {
+  font-size: 10.5px;
+}
+
+.notifRowBody p {
+  display: -webkit-box;
+  margin-top: 1px;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.notifRow[data-unread]::before {
+  left: 2px;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+}
+
+/* ---------- Receipt: compact, fits without scrolling ---------- */
+.iosViewport .iosReceiptSheet {
+  gap: 10px;
+  padding-top: 14px;
+  padding-bottom: max(18px, calc(12px + env(safe-area-inset-bottom)));
+}
+
+.iosViewport .receiptTopHeader {
+  padding: 0;
+}
+
+.iosViewport .receiptCheckIcon,
+.iosViewport .receiptFailedIcon,
+.iosViewport .receiptProcessingIcon {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 6px;
+}
+
+.iosViewport .receiptCheckIcon svg,
+.iosViewport .receiptFailedIcon svg,
+.iosViewport .receiptProcessingIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.iosViewport .receiptAmount {
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.iosViewport .receiptStatusTag {
+  margin-top: 2px;
+  font-size: 9.5px;
+}
+
+.iosViewport .receiptTitle {
+  margin-top: 2px;
+  font-size: 12.5px;
+}
+
+.iosViewport .receiptSectionTitle {
+  margin: 0 0 2px;
+  font-size: 9.5px;
+}
+
+.iosViewport .receiptRow {
+  padding: 3px 0;
+  font-size: 12px;
+}
+
+.iosViewport .receiptDetailsList + .receiptDetailsList {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.iosViewport .receiptActionsRow {
+  grid-template-columns: 1fr 1fr 1.3fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.iosViewport .receiptActionsRow .receiptSecondaryBtn,
+.iosViewport .receiptActionsRow .receiptDoneBtn {
+  height: 40px;
+  margin: 0;
+  border-radius: 11px;
+  font-size: 12.5px;
+}
+
+.fieldBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.fieldBlockLabel,
+.accountSelectField > span {
+  color: var(--funda-text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.accountSelectField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* ---------- Custom select (replaces native <select>) ---------- */
+.fundaSelect {
+  position: relative;
+  width: 100%;
+  font-weight: 500;
+}
+
+.fundaSelectTrigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--funda-text-primary);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.fundaSelect[data-open] .fundaSelectTrigger,
+.fundaSelectTrigger:focus-visible {
+  border-color: #660033;
+  box-shadow: 0 0 0 3px rgba(102, 0, 51, 0.1);
+  outline: none;
+}
+
+.fundaSelectTrigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.fundaSelectValue {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fundaSelectValue[data-placeholder] {
+  color: var(--funda-text-muted);
+  font-weight: 400;
+}
+
+.fundaSelectMeta {
+  flex-shrink: 0;
+  color: #660033;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.fundaSelectChevron {
+  flex-shrink: 0;
+  color: var(--funda-text-muted);
+  transition: transform 180ms ease;
+}
+
+.fundaSelect[data-open] .fundaSelectChevron {
+  transform: rotate(180deg);
+}
+
+.fundaSelectMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 60;
+  max-height: 264px;
+  padding: 5px;
+  overflow-y: auto;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.28);
+  animation: fundaSelectIn 140ms ease both;
+}
+
+@keyframes fundaSelectIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.fundaSelectOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--funda-text-primary);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fundaSelectOption[data-active] {
+  background: #f4f3f1;
+}
+
+.fundaSelectOption[data-selected] {
+  color: #660033;
+  font-weight: 600;
+}
+
+.fundaSelectOption small {
+  flex-shrink: 0;
+  color: var(--funda-text-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fundaSelectOption[data-selected] small {
+  color: #660033;
+}
+
+.fundaSelectEmpty {
+  margin: 0;
+  padding: 10px;
+  color: var(--funda-text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+:global([data-theme="dark"]) .fundaSelectTrigger,
+:global([data-theme="dark"]) .fundaSelectMenu {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: #161616;
+}
+
+:global([data-theme="dark"]) .fundaSelect[data-open] .fundaSelectTrigger {
+  border-color: #c2457e;
+  box-shadow: 0 0 0 3px rgba(194, 69, 126, 0.18);
+}
+
+:global([data-theme="dark"]) .fundaSelectMeta,
+:global([data-theme="dark"]) .fundaSelectOption[data-selected],
+:global([data-theme="dark"]) .fundaSelectOption[data-selected] small {
+  color: #e0709f;
+}
+
+:global([data-theme="dark"]) .fundaSelectOption[data-active] {
+  background: #222222;
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 600px) {
+  .iosViewport .heroPrimaryActionRow {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .iosViewport .fundWalletPrimaryBtn {
+    grid-column: 1 / -1;
+  }
+
+  .iosViewport .tileIconBackdrop,
+  .iosViewport .tileIconBackdrop[data-tone] {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.fundAmountInputWrapperLocked {
+  background: rgba(102, 0, 51, 0.03);
+  border-color: rgba(102, 0, 51, 0.12);
+}
+
+:global([data-theme="dark"]) .fundAmountInputWrapperLocked {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.fundMainAmountInputLocked {
+  cursor: default;
+  color: var(--brand-primary, #660033);
+}
+
+:global([data-theme="dark"]) .fundMainAmountInputLocked {
+  color: #f472b6;
+}
+
+.fundInlineChangeBtn {
+  height: 38px;
+  padding: 0 13px;
+  border-radius: 9px;
+  background: rgba(102, 0, 51, 0.07);
+  color: var(--brand-primary, #660033);
+  font-size: 11.5px;
+  font-weight: 650;
+  border: 1px solid rgba(102, 0, 51, 0.16);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 140ms ease;
+}
+
+.fundInlineChangeBtn:hover {
+  background: rgba(102, 0, 51, 0.14);
+  border-color: var(--brand-primary, #660033);
+}
+
+:global([data-theme="dark"]) .fundInlineChangeBtn {
+  background: rgba(244, 114, 182, 0.1);
+  color: #f472b6;
+  border-color: rgba(244, 114, 182, 0.2);
+}
+
+:global([data-theme="dark"]) .fundInlineChangeBtn:hover {
+  background: rgba(244, 114, 182, 0.18);
+}
+
+.fundEditBtnGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.fundInlineCancelBtn {
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--funda-text-secondary, #64748b);
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 130ms ease;
+}
+
+.fundInlineCancelBtn:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--funda-text-primary, #0f172a);
+}
+
+:global([data-theme="dark"]) .fundInlineCancelBtn {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .fundInlineCancelBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.cancelTransferBtn {
+  width: 100%;
+  height: 30px;
+  background: transparent;
+  color: var(--funda-text-secondary, #64748b);
+  font-size: 11px;
+  font-weight: 550;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 130ms ease;
+  border-radius: 7px;
+  margin-top: -2px;
+}
+
+.cancelTransferBtn:hover {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.05);
+}
+
+:global([data-theme="dark"]) .cancelTransferBtn {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .cancelTransferBtn:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+/* ---------- Quick tools (after Quick Services) ---------- */
+.quickToolsSection {
+  position: relative;
+  margin-top: 14px;
+}
+
+.quickToolsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quickToolCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--rd-line, rgba(0, 0, 0, 0.07));
+  border-radius: 14px;
+  background: var(--rd-card, #ffffff);
+  color: var(--funda-text-primary);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+button.quickToolCard,
+a.quickToolCard {
+  cursor: pointer;
+}
+
+button.quickToolCard:hover,
+a.quickToolCard:hover {
+  border-color: rgba(102, 0, 51, 0.35);
+  transform: translateY(-1px);
+}
+
+.quickToolWide {
+  grid-column: 1 / -1;
+}
+
+.quickToolIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(102, 0, 51, 0.08);
+  color: #660033;
+}
+
+.quickToolText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.quickToolText small {
+  overflow: hidden;
+  color: var(--funda-text-secondary);
+  font-size: 10.5px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quickToolText strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quickToolAction {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--rd-soft, rgba(0, 0, 0, 0.04));
+  color: var(--funda-text-secondary);
+}
+
+.quickToolMeta {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--rd-soft, rgba(0, 0, 0, 0.04));
+  color: var(--funda-text-secondary);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+:global([data-theme="dark"]) .quickToolIcon {
+  background: rgba(224, 112, 159, 0.12);
+  color: #e0709f;
+}
+
+@media (min-width: 600px) {
+  .quickToolWide {
+    grid-column: auto;
   }
 }

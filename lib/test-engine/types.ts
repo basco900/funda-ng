@@ -1,6 +1,25 @@
-export type VendorId = "vtpass" | "smeplug" | "gladtidings" | "pairgate" | "private_sim" | "absvendor" | "maskawasub";
+export type VendorId = "vtpass" | "smeplug" | "pairgate" | "absvendor" | "maskawasub";
 export type NetworkId = "mtn" | "airtel" | "glo" | "9mobile";
-export type ServiceType = "data" | "airtime";
+export type ServiceType = "data" | "airtime" | "electricity" | "tv" | "education";
+export type AirtimeMode = "vtu" | "epin";
+
+export type RechargePinItem = {
+  pin: string;
+  serial?: string;
+  amount: number;
+  network?: NetworkId | string;
+  dialCode?: string;
+  instructions?: string;
+};
+
+export type EducationPinItem = {
+  pin: string;
+  serial?: string;
+  token?: string;
+  examBody: string;
+  serviceName: string;
+  instructions?: string;
+};
 
 export type DataPlan = {
   id: string;
@@ -14,11 +33,29 @@ export type DataPlan = {
 
 export type PurchaseInput = {
   type: ServiceType;
-  network: NetworkId;
+  mode?: AirtimeMode;
+  network?: NetworkId;
   phone: string;
+  email?: string;
   amount: number;
+  quantity?: number;
+  cardName?: string;
   planId?: string;
   reference: string;
+  disco?: string;
+  meterNumber?: string;
+  meterType?: "prepaid" | "postpaid";
+  customerName?: string;
+  customerAddress?: string;
+  operator?: string;
+  smartcardNumber?: string;
+  packageCode?: string;
+  subscriptionType?: "change" | "renew";
+  // Education fields
+  examBody?: string;
+  serviceCode?: string;
+  profileCode?: string;
+  candidateName?: string;
 };
 
 export type PurchaseResult = {
@@ -26,6 +63,10 @@ export type PurchaseResult = {
   reference: string;
   providerReference?: string;
   message: string;
+  pins?: RechargePinItem[];
+  educationPins?: EducationPinItem[];
+  token?: string;
+  units?: string;
   raw?: unknown;
 };
 

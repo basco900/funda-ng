@@ -214,7 +214,7 @@ insert into public.provider_registry (name, slug, status, capabilities, priority
   ('VTPass', 'vtpass', 'standby', array['airtime', 'data', 'electricity', 'cable'], 20),
   ('SMEPlug', 'smeplug', 'standby', array['airtime', 'data'], 30),
   ('Pairgate', 'pairgate', 'standby', array['airtime', 'data'], 40),
-  ('GladTidings', 'gladtidings', 'standby', array['airtime', 'data'], 50)
+  ('Maskawasub', 'maskawasub', 'operational', array['airtime', 'data', 'electricity', 'cable', 'education'], 15)
 on conflict (slug) do update set capabilities = excluded.capabilities;
 
 drop trigger if exists admin_roles_updated_at on public.admin_roles;

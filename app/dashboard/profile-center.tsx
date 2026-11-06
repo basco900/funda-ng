@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import { parseIdentifier } from "../../lib/auth/identifiers";
 import { createClient } from "../../lib/supabase/client";
-import { CheckIcon, CloseIcon, SunIcon, MoonIcon, SystemThemeIcon } from "../onboarding/icons";
+import { CheckIcon, CloseIcon, SunIcon, MoonIcon, SystemThemeIcon, SpinnerIcon } from "../onboarding/icons";
 import { useTheme } from "../../lib/theme";
 import {
   changeAccountPassword,
@@ -15,6 +15,7 @@ import {
   type AccountActionResult,
 } from "./actions";
 import styles from "./dashboard.module.css";
+import FundaSelect from "./funda-select";
 
 type AccountTab = "profile" | "account" | "security" | "settings";
 
@@ -338,7 +339,14 @@ export default function ProfileCenter({ user, settings: initialSettings, onClose
             </div>
             <StatusMessage result={result} />
             <button className={styles.accountPrimaryButton} disabled={pending}>
-              {pending ? "Saving…" : "Save Changes"}
+              {pending ? (
+                <>
+                  <SpinnerIcon size={16} />
+                  <span>Saving…</span>
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </button>
           </form>
         )}
@@ -411,7 +419,16 @@ export default function ProfileCenter({ user, settings: initialSettings, onClose
                   </button>
                 )}
                 <button className={styles.accountPrimaryButton} disabled={phoneBusy}>
-                  {phoneBusy ? "Sending…" : phoneStep === "entry" ? "Send SMS Code" : "Verify Phone"}
+                  {phoneBusy ? (
+                    <>
+                      <SpinnerIcon size={16} />
+                      <span>{phoneStep === "entry" ? "Sending code…" : "Verifying…"}</span>
+                    </>
+                  ) : phoneStep === "entry" ? (
+                    "Send SMS Code"
+                  ) : (
+                    "Verify Phone"
+                  )}
                 </button>
               </div>
             </form>
@@ -465,13 +482,22 @@ export default function ProfileCenter({ user, settings: initialSettings, onClose
               </div>
               <StatusMessage result={result} />
               <button className={styles.accountPrimaryButton} disabled={pending}>
-                {pending ? "Updating…" : "Update Password"}
+                {pending ? (
+                  <>
+                    <SpinnerIcon size={16} />
+                    <span>Updating…</span>
+                  </>
+                ) : (
+                  "Update Password"
+                )}
               </button>
             </form>
 
             <div className={styles.accountResourceLinks}>
               <Link href="/policies">Privacy & Security Policy</Link>
               <Link href="/faq">Help & FAQ</Link>
+              <Link href="/blog">Blog & Guides</Link>
+              <Link href="/support/chat">Live Support Chat</Link>
             </div>
           </section>
         )}
@@ -586,31 +612,38 @@ export default function ProfileCenter({ user, settings: initialSettings, onClose
               />
             </div>
             <div className={styles.accountFieldGrid}>
-              <label>
-                Language
-                <select
+              <div className={styles.accountSelectField}>
+                <span>Language</span>
+                <FundaSelect
+                  ariaLabel="Language"
                   value={settings.preferredLanguage}
-                  onChange={(event) =>
-                    setSettings({ ...settings, preferredLanguage: event.target.value as "en" })
-                  }
-                >
-                  <option value="en">English (UK)</option>
-                </select>
-              </label>
-              <label>
-                Timezone
-                <select
+                  onChange={(value) => setSettings({ ...settings, preferredLanguage: value as "en" })}
+                  options={[{ value: "en", label: "English (UK)" }]}
+                />
+              </div>
+              <div className={styles.accountSelectField}>
+                <span>Timezone</span>
+                <FundaSelect
+                  ariaLabel="Timezone"
                   value={settings.timezone}
-                  onChange={(event) => setSettings({ ...settings, timezone: event.target.value })}
-                >
-                  <option value="Africa/Lagos">West Africa Time (WAT)</option>
-                  <option value="UTC">UTC</option>
-                </select>
-              </label>
+                  onChange={(value) => setSettings({ ...settings, timezone: value })}
+                  options={[
+                    { value: "Africa/Lagos", label: "West Africa Time (WAT)" },
+                    { value: "UTC", label: "UTC" },
+                  ]}
+                />
+              </div>
             </div>
             <StatusMessage result={result} />
             <button className={styles.accountPrimaryButton} disabled={pending}>
-              {pending ? "Saving…" : "Save Preferences"}
+              {pending ? (
+                <>
+                  <SpinnerIcon size={16} />
+                  <span>Saving…</span>
+                </>
+              ) : (
+                "Save Preferences"
+              )}
             </button>
           </form>
         )}

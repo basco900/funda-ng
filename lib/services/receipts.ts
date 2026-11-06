@@ -12,6 +12,10 @@ export type PurchaseReceiptData = {
   destination: string;
   network?: string;
   serviceType: string;
+  mode?: "vtu" | "epin";
+  pinCount?: number;
+  token?: string | null;
+  units?: string | null;
   status: "successful" | "failed" | "pending";
   message?: string;
   balance?: number;
@@ -20,12 +24,42 @@ export type PurchaseReceiptData = {
 export async function dispatchPurchaseReceipt(data: PurchaseReceiptData) {
   const client = createAdminClient();
 
-  // 1. In-App Notification Record
+  // 1. In-App Notification Record (awaited so it is immediately persisted)
   try {
     const isSuccess = data.status === "successful";
     const isFailed = data.status === "failed";
-    const title = isSuccess ? "Purchase Successful" : isFailed ? "Purchase Refunded" : "Purchase Processing";
-    const body = `${data.productName} for ${data.destination} · ₦${data.amount.toLocaleString("en-NG")} — ${data.message || (isSuccess ? "Delivered successfully" : "Status pending")}`;
+    const isEpin = data.mode === "epin" || /e-pin|recharge pin/i.test(data.productName);
+    const isData = data.serviceType === "data";
+    const isElectricity = data.serviceType === "electricity";
+    const isTv = data.serviceType === "tv" || data.serviceType === "cable_tv" || data.serviceType === "cable";
+    const isEducation = data.serviceType === "education";
+
+    const title = isSuccess
+      ? isElectricity
+        ? "Electricity Token Generated"
+        : isTv
+        ? "Cable TV Renewed"
+        : isEducation
+        ? "Exam PIN / Token Generated"
+        : isEpin
+        ? "Recharge PIN Generated"
+        : isData
+        ? "Data Bundle Activated"
+        : "Airtime Top-Up Successful"
+      : isFailed
+      ? "Purchase Refunded"
+      : "Purchase Processing";
+
+    const body =
+      isSuccess && isElectricity && data.token
+        ? `Token: ${data.token}${data.units ? ` (${data.units} kWh)` : ""} for meter ${data.destination} (${data.productName}).`
+        : isSuccess && isTv
+        ? `Renewed ${data.productName} for smartcard ${data.destination}. ${data.message || "Active immediately."}`
+        : isSuccess && isEducation
+        ? `${data.productName} · ₦${data.amount.toLocaleString("en-NG")} — ${data.token ? `PIN: ${data.token}. ` : ""}${data.pinCount && data.pinCount > 1 ? `${data.pinCount}× PINs generated. ` : ""}${data.message || "Ready for instant checking."}`
+        : isSuccess && isEpin
+        ? `${data.productName} · ₦${data.amount.toLocaleString("en-NG")} — ${data.pinCount && data.pinCount > 1 ? `${data.pinCount}× 16-digit PINs` : "16-digit PIN"} ready to dial (*311*PIN#) in your receipt vault.`
+        : `${data.productName} for ${data.destination} · ₦${data.amount.toLocaleString("en-NG")} — ${data.message || (isSuccess ? "Delivered successfully" : "Status pending")}`;
 
     await client.from("user_notifications").insert({
       user_id: data.userId,
@@ -45,8 +79,9 @@ export async function dispatchPurchaseReceipt(data: PurchaseReceiptData) {
     console.warn("[Receipt] In-app notification error:", err);
   }
 
-  // 2. Automated Email Receipt (Resend)
-  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  // 2. Automated Email Receipt (Resend) & SMS (Termii) in background
+  void (async () => {
+    const resendApiKey = process.env.RESEND_API_KEY?.trim();
   if (resendApiKey) {
     try {
       const { data: userRecord } = await client.auth.admin.getUserById(data.userId);
@@ -170,4 +205,5 @@ export async function dispatchPurchaseReceipt(data: PurchaseReceiptData) {
       console.warn("[Receipt] SMS alert error:", err);
     }
   }
+  })();
 }

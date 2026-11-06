@@ -24,7 +24,7 @@ async function call(path: string, init?: RequestInit) {
   if (!response.ok) {
     let message = providerMessage(payload, `SMEPlug returned ${response.status}.`);
     if (/no phone number added|active sim/i.test(message)) {
-      message = "Your SMEPlug account has no active dispensing SIM/number for this network. Add the network line in the SMEPlug dashboard, or use GladTidings for this purchase.";
+      message = "Your SMEPlug account has no active dispensing SIM/number for this network. Add the network line in the SMEPlug dashboard, or switch to Maskawasub.";
     }
     throw new ProviderRequestError(message, response.status >= 400 && response.status < 500);
   }
@@ -66,16 +66,17 @@ export const smeplug: VtuVendor = {
     }));
   },
   async purchase(input: PurchaseInput) {
+    const network = input.network || "mtn";
     const path = input.type === "data" ? "/data/purchase" : "/airtime/purchase";
     const payload = await call(path, {
       method: "POST",
       body: JSON.stringify(input.type === "data" ? {
-        network_id: networkIds[input.network],
+        network_id: networkIds[network],
         plan_id: input.planId && /^\d+$/.test(input.planId) ? Number(input.planId) : input.planId,
         phone: input.phone,
         customer_reference: input.reference,
       } : {
-        network_id: networkIds[input.network],
+        network_id: networkIds[network],
         phone: input.phone,
         amount: input.amount,
         customer_reference: input.reference,

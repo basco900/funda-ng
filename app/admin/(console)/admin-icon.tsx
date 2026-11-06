@@ -3,6 +3,18 @@ import type { SVGProps } from "react";
 type AdminIconProps = SVGProps<SVGSVGElement> & { name: string };
 
 const paths: Record<string, React.ReactNode> = {
+  mail: <><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></>,
+  arrowRight: <path d="M5 12h14M13 6l6 6-6 6"/>,
+  plus: <path d="M12 5v14M5 12h14"/>,
+  pencil: <><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></>,
+  trash: <><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>,
+  external: <><path d="M14 4h6v6"/><path d="M10 14 20 4"/><path d="M20 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5"/></>,
+  chevronsLeft: <path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/>,
+  chevronsRight: <path d="m13 17 5-5-5-5M6 17l5-5-5-5"/>,
+  chevronUp: <path d="m18 15-6-6-6 6"/>,
+  logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></>,
+  eyeOff: <><path d="M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-2.2 3.2M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.8 9.8 0 0 0 5.4-1.6"/><path d="m2 2 20 20M9.9 9.9a3 3 0 0 0 4.2 4.2"/></>,
+  arrowUpRight: <path d="M7 17 17 7M8 7h9v9"/>,
   grid: <><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></>,
   pulse: <><path d="M3 12h4l2.2-6 4.1 12 2.1-6H21"/><path d="M4 4h16v16H4z" opacity="0"/></>,
   users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>,
@@ -19,7 +31,9 @@ const paths: Record<string, React.ReactNode> = {
   wifi: <><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 20h.01M2 9a15 15 0 0 1 20 0"/></>,
   phone: <><rect x="7" y="2" width="10" height="20" rx="3"/><path d="M10 5h4M11 18h2"/></>,
   bolt: <path d="m13 2-9 12h8l-1 8 9-12h-8l1-8Z"/>,
+  zap: <path d="m13 2-9 12h8l-1 8 9-12h-8l1-8Z"/>,
   tv: <><rect x="3" y="6" width="18" height="13" rx="3"/><path d="m8 2 4 4 4-4M8 22h8"/></>,
+  education: <><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></>,
   catalogue: <><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><path d="M17 14v6M14 17h6"/></>,
   provider: <><path d="M4 18V8l8-5 8 5v10"/><path d="M2 21h20M8 21v-7h8v7"/></>,
   pricing: <><path d="M20.6 13.1 11 22.7 1.3 13V3.4h9.7Z"/><circle cx="7" cy="9" r="1.5"/></>,

@@ -1,9 +1,9 @@
 "use client";
 
 import { forwardRef, useEffect, useRef, useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import { ArrowRightIcon, BackIcon, CheckIcon, CloseIcon, LockIcon, MailIcon, PhoneIcon, UserIcon } from "../onboarding/icons";
+import { ArrowRightIcon, BackIcon, CheckIcon, CloseIcon, LockIcon, MailIcon, PhoneIcon, SpinnerIcon, UserIcon } from "../onboarding/icons";
 import { parseIdentifier, validFullName, validPassword, type IdentifierType } from "../../lib/auth/identifiers";
 import {
   completedOnboardingData,
@@ -18,7 +18,7 @@ import { isSupabaseConfigured } from "../../lib/supabase/config";
 import styles from "../onboarding/funda-experience.module.css";
 
 type Mode = "login" | "register";
-type Step = "identifier" | "method" | "password" | "code" | "profile" | "password-choice" | "recovery-sent" | "complete";
+type Step = "identifier" | "existing" | "method" | "password" | "code" | "profile" | "password-choice" | "recovery-sent" | "complete";
 type LoginMethod = "password" | "code";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -58,30 +58,75 @@ function OtpDigitBoxes({
   onChange,
   onComplete,
   error,
+  firstInputRef,
 }: {
   value: string;
   onChange: (val: string) => void;
   onComplete?: (code: string) => void;
   error?: boolean;
+  firstInputRef?: React.Ref<HTMLInputElement>;
 }) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const digits = Array.from({ length: 6 }, (_, i) => value[i] ?? "");
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData("text");
+    const clean = text.replace(/\D/g, "").slice(0, 6);
+    if (!clean) return;
+    onChange(clean);
+    const nextIdx = Math.min(clean.length, 5);
+    inputRefs.current[nextIdx]?.focus();
+    if (clean.length === 6 && onComplete) {
+      onComplete(clean);
+    }
+  };
+
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !digits[index] && index > 0) {
+    if (e.key === "Backspace") {
+      if (!digits[index] && index > 0) {
+        e.preventDefault();
+        const nextArr = [...digits];
+        nextArr[index - 1] = "";
+        onChange(nextArr.join("").trimEnd());
+        inputRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      e.preventDefault();
       inputRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      e.preventDefault();
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
   const handleChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, "");
     if (!val) {
-      const next = value.slice(0, index) + value.slice(index + 1);
-      onChange(next);
+      const nextArr = [...digits];
+      nextArr[index] = "";
+      onChange(nextArr.join("").trimEnd());
       return;
     }
 
     if (val.length > 1) {
+      // If user typed a single replacement digit into an already filled box
+      if (val.length === 2 && digits[index]) {
+        const char = val.replace(digits[index], "") || val.slice(-1);
+        const nextArr = [...digits];
+        nextArr[index] = char;
+        const combined = nextArr.join("");
+        onChange(combined);
+        if (index < 5) {
+          inputRefs.current[index + 1]?.focus();
+        }
+        if (combined.length === 6 && onComplete) {
+          onComplete(combined);
+        }
+        return;
+      }
+
+      // Pasted or autofilled multiple characters
       const clean = val.slice(0, 6);
       onChange(clean);
       const nextIdx = Math.min(clean.length, 5);
@@ -107,15 +152,24 @@ function OtpDigitBoxes({
       {Array.from({ length: 6 }).map((_, idx) => (
         <input
           key={idx}
-          ref={(el) => { inputRefs.current[idx] = el; }}
+          ref={(el) => {
+            inputRefs.current[idx] = el;
+            if (idx === 0 && firstInputRef) {
+              if (typeof firstInputRef === "function") firstInputRef(el);
+              else (firstInputRef as any).current = el;
+            }
+          }}
           type="text"
           inputMode="numeric"
           pattern="[0-9]*"
           maxLength={6}
+          autoComplete={idx === 0 ? "one-time-code" : "off"}
           aria-label={`Digit ${idx + 1}`}
           value={digits[idx] || ""}
           onChange={(e) => handleChange(idx, e)}
           onKeyDown={(e) => handleKeyDown(idx, e)}
+          onPaste={handlePaste}
+          onFocus={(e) => e.target.select()}
           className={styles.otpInput}
           data-filled={Boolean(digits[idx])}
           data-error={Boolean(error)}
@@ -139,16 +193,33 @@ async function accountStateFor(user: User) {
     if (!error) return { name, passwordEnabled, step: "complete" as const };
   }
 
+  // Password is not optional: direct to set password if name is already saved
+  if (nextStep === "password-choice") {
+    return { name, passwordEnabled: false, step: "password" as const };
+  }
+
   return { name, passwordEnabled, step: nextStep };
 }
 
 export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onClose: () => void; instance: "desktop" | "mobile" }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const previewStep = searchParams?.get("previewStep") as Step | null;
+  const previewIdent = searchParams?.get("previewIdentifier");
+  const queryIdent = searchParams?.get("identifier");
+  const previewExisting = searchParams?.get("previewExisting") === "true";
+
   const dialogRef = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState<Step>("identifier");
+  const [step, setStep] = useState<Step>(() => {
+    if (previewExisting) return "existing";
+    if (previewStep && ["identifier", "existing", "code", "profile", "password", "recovery-sent", "complete"].includes(previewStep)) {
+      return previewStep;
+    }
+    return "identifier";
+  });
   const [loginMethod, setLoginMethod] = useState<LoginMethod>("password");
-  const [identifier, setIdentifier] = useState("");
-  const [codeEmail, setCodeEmail] = useState("");
+  const [identifier, setIdentifier] = useState(() => previewIdent || queryIdent || "");
+  const [codeEmail, setCodeEmail] = useState(() => (queryIdent && queryIdent.includes("@") ? queryIdent : ""));
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [identifierType, setIdentifierType] = useState<IdentifierType | null>(null);
   const [code, setCode] = useState("");
@@ -159,6 +230,8 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
   const [recovery, setRecovery] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [existingAccountDetected, setExistingAccountDetected] = useState<boolean>(() => previewExisting);
+  const [welcomeName, setWelcomeName] = useState("");
   const [loginCode, setLoginCode] = useState("");
   const [sendingCode, setSendingCode] = useState(false);
   const [codeCountdown, setCodeCountdown] = useState(0);
@@ -174,16 +247,18 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
   }, [codeCountdown]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const preview = params.get("previewStep") as Step | null;
-      if (preview) {
-        setStep(preview);
-        const ident = params.get("previewIdentifier");
-        if (ident) setIdentifier(ident);
-      }
+    if (previewExisting) {
+      setExistingAccountDetected(true);
+      setStep("existing");
+    } else if (previewStep && ["identifier", "existing", "code", "profile", "password", "recovery-sent", "complete"].includes(previewStep)) {
+      setStep(previewStep);
     }
-  }, []);
+    const ident = previewIdent || queryIdent;
+    if (ident) {
+      setIdentifier(ident);
+      if (ident.includes("@")) setCodeEmail(ident);
+    }
+  }, [previewStep, previewIdent, queryIdent, previewExisting]);
 
   useEffect(() => {
     if (instance !== "mobile" || !window.matchMedia("(max-width: 959px)").matches) return;
@@ -200,7 +275,11 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
 
   const settingPassword = recovery || creatingPassword || (mode === "register" && step === "password");
 
-  const sendCode = async (type = identifierType, value = identifier, createUser = mode === "register") => {
+  const sendCode = async (
+    type = identifierType,
+    value = identifier,
+    createUser = mode === "register" && !existingAccountDetected,
+  ) => {
     if (!type || !value) return;
     setBusy(true);
     setError("");
@@ -225,6 +304,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         return fail("Unable to send verification code. Please check your details and try again.");
       }
       setStep("code");
+      setCodeCountdown(60);
     } catch {
       fail("Unable to send verification code. Please try again.");
     } finally {
@@ -278,7 +358,9 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         }
         return fail("Invalid credentials. Please check your details and try again.");
       }
-      if (data.user) await continueAuthenticatedUser(data.user);
+      if (data.user) {
+        return finish(profileNameFor(data.user) || undefined);
+      }
     } catch {
       fail("Invalid credentials. Please check your details and try again.");
     } finally {
@@ -308,6 +390,9 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         if (result.error.status === 429 || detail.includes("rate limit")) {
           return fail("Too many attempts. Please try again in a few minutes.");
         }
+        if (detail.includes("signups not allowed") || detail.includes("user not found") || result.error.status === 400) {
+          return fail("No account found with this email. Please check your spelling or create an account.");
+        }
         return fail("Unable to send verification code. Please check your email and try again.");
       }
       setCodeSentSuccess(true);
@@ -320,13 +405,13 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
     }
   };
 
-  const submitCodeLogin = async (event: FormEvent) => {
-    event.preventDefault();
+  const submitCodeLogin = async (event?: FormEvent, submittedCode = loginCode) => {
+    if (event) event.preventDefault();
     const email = codeEmail.trim().toLowerCase();
     if (!email) return fail("Please enter your email address.");
     if (!EMAIL_PATTERN.test(email)) return fail("Please enter a valid email address.");
 
-    const trimmedCode = loginCode.trim();
+    const trimmedCode = submittedCode.trim();
     if (!trimmedCode) {
       if (!codeSentSuccess) {
         return fail("Please click 'Get code' to receive your verification code.");
@@ -367,6 +452,27 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
     setIdentifier(result.value);
     setIdentifierType(result.type);
     setError("");
+    setBusy(true);
+
+    try {
+      const checkRes = await fetch("/api/auth/check-identifier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: result.value }),
+      })
+        .then((r) => r.json())
+        .catch(() => ({ exists: false }));
+
+      if (checkRes?.exists) {
+        setExistingAccountDetected(true);
+        setStep("existing");
+        setBusy(false);
+        return;
+      }
+    } catch {
+      // Proceed to standard OTP registration if lookup is unavailable
+    }
+
     await sendCode(result.type, result.value, true);
   };
 
@@ -392,94 +498,96 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
 
   const saveProfile = async (event: FormEvent) => {
     event.preventDefault();
-    if (!validFullName(fullName)) return fail("Please enter your first and last name.");
-    setBusy(true);
-    const client = createClient();
-    const { data: { user } } = await client.auth.getUser();
-    if (!user) return fail("Session expired. Please log in again.");
     const name = fullName.trim();
-    const { data: authData, error: updateError } = await client.auth.updateUser({
-      data: incompleteOnboardingData(user, name),
-    });
-    const { error: profileError } = await client.from("profiles").update({ full_name: name }).eq("id", user.id);
-    setBusy(false);
-    if (updateError || profileError) return fail("Unable to save name. Please try again.");
-    if (hasPassword && authData.user) {
-      const { error: completionError } = await client.auth.updateUser({
-        data: completedOnboardingData(authData.user, name, "password"),
+    if (!validFullName(name)) return fail("Please enter your first and last name.");
+    if (!validPassword(password)) return fail("Password must be at least 6 characters.");
+
+    setBusy(true);
+    setError("");
+    try {
+      const client = createClient();
+      const { data: { user } } = await client.auth.getUser();
+      if (!user) return fail("Session expired. Please log in again.");
+
+      const { data: authData, error: updateError } = await client.auth.updateUser({
+        password,
+        data: completedOnboardingData(user, name, "password"),
       });
-      if (completionError) return fail("Unable to finish setup. Please try again.");
-      return finish();
+
+      if (updateError) {
+        setBusy(false);
+        return fail(updateError.message || "Unable to set password. Please try again.");
+      }
+
+      await client.from("profiles").update({ full_name: name }).eq("id", user.id);
+      setBusy(false);
+      setHasPassword(true);
+      finish();
+    } catch {
+      fail("Unable to finish setup. Please try again.");
+    } finally {
+      setBusy(false);
     }
-    setStep("password-choice");
   };
 
   const savePassword = async (event: FormEvent) => {
     event.preventDefault();
     if (!validPassword(password)) return fail("Password must be at least 6 characters.");
     setBusy(true);
-    const client = createClient();
-    const { data: { user } } = await client.auth.getUser();
-    if (!user) return fail("Session expired. Please log in again.");
-    const name = profileNameFor(user, fullName);
-    const nextData = validFullName(name)
-      ? completedOnboardingData(user, name, "password")
-      : {
-          ...incompleteOnboardingData(user),
-          password_enabled: true,
-          login_preference: "password",
-        };
-    const { data, error: updateError } = await client.auth.updateUser({ password, data: nextData });
-    setBusy(false);
-    if (updateError) return fail("Password must be at least 6 characters.");
-    setHasPassword(true);
-    if (data.user) await continueAuthenticatedUser(data.user);
+    setError("");
+    try {
+      const client = createClient();
+      const { data: { user } } = await client.auth.getUser();
+      if (!user) return fail("Session expired. Please log in again.");
+      const name = profileNameFor(user, fullName);
+      const nextData = validFullName(name)
+        ? completedOnboardingData(user, name, "password")
+        : {
+            ...incompleteOnboardingData(user),
+            password_enabled: true,
+            login_preference: "password",
+          };
+      const { data, error: updateError } = await client.auth.updateUser({ password, data: nextData });
+      if (updateError) {
+        setBusy(false);
+        return fail(updateError.message || "Password must be at least 6 characters.");
+      }
+      setHasPassword(true);
+      if (data.user) {
+        return finish(profileNameFor(data.user) || undefined);
+      }
+    } catch {
+      fail("Unable to save password. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const finish = () => {
-    setStep("complete");
-    setTimeout(() => router.replace("/dashboard"), 550);
+  const finish = (name?: string) => {
+    if (name) setWelcomeName(name);
+    router.replace("/dashboard");
   };
 
   const continueAuthenticatedUser = async (user: User) => {
     const account = await accountStateFor(user);
     setFullName(account.name);
     setHasPassword(account.passwordEnabled);
-    if (account.step === "complete") return finish();
+    if (mode === "login" || account.step === "complete" || existingAccountDetected) {
+      return finish(account.name);
+    }
     setStep(account.step);
-  };
-
-  const finishWithCodes = async () => {
-    setBusy(true);
-    setError("");
-    const client = createClient();
-    const { data: { user } } = await client.auth.getUser();
-    const name = user ? profileNameFor(user, fullName) : "";
-    if (!user || !validFullName(name)) return fail("Please enter your name first.");
-    const { error: completionError } = await client.auth.updateUser({
-      data: completedOnboardingData(user, name, "code"),
-    });
-    setBusy(false);
-    if (completionError) return fail("Unable to save preferences. Please try again.");
-    finish();
   };
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     let active = true;
     void (async () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("previewStep")) return;
       const { data } = await createClient().auth.getUser();
       if (!data.user) return;
-      const account = await accountStateFor(data.user);
       if (!active) return;
-      setFullName(account.name);
-      setHasPassword(account.passwordEnabled);
-      if (account.step === "complete") {
-        setStep("complete");
-        setTimeout(() => router.replace("/dashboard"), 550);
-      } else {
-        setStep(account.step);
-      }
+      router.replace("/dashboard");
     })();
     return () => { active = false; };
   }, [router]);
@@ -489,10 +597,13 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
     if (recovery) {
       setRecovery(false);
       setStep("identifier");
-    } else if (step === "code") {
+    } else if (step === "existing" || step === "code") {
       setStep("identifier");
+      setExistingAccountDetected(false);
+    } else if (step === "profile") {
+      setStep("code");
     } else if (step === "password") {
-      setStep(settingPassword ? "password-choice" : "identifier");
+      setStep(mode === "register" ? "profile" : "identifier");
     } else if (step === "recovery-sent") {
       setRecovery(false);
       setStep("identifier");
@@ -509,15 +620,17 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
 
   const getStepTitle = () => {
     if (step === "identifier") {
-      if (recovery) return "Reset password";
+      if (recovery) return "Reset password.";
       return mode === "login" ? "Welcome back." : "Let’s get you in.";
     }
-    if (step === "code") return "Enter code";
-    if (step === "profile") return "What’s your full name?";
-    if (step === "password-choice") return "Password or codes?";
-    if (step === "password") return settingPassword ? "Create password" : "Enter password";
-    if (step === "recovery-sent") return "Check your email";
-    if (step === "complete") return "You’re in.";
+    if (step === "existing") return "Account already exists.";
+    if (step === "code") return "Check your inbox.";
+    if (step === "profile") return "The essentials.";
+    if (step === "password") return "Create a password.";
+    if (step === "recovery-sent") return "Check your email.";
+    if (step === "complete") {
+      return "You’re in.";
+    }
     return "Welcome back.";
   };
 
@@ -547,7 +660,17 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
             {error && <p className={styles.fieldError} role="alert">{error}</p>}
 
             <button className={styles.authPrimary} disabled={busy} type="submit">
-              {busy ? "Sending…" : "Send reset link"} <ArrowRightIcon size={18} />
+              {busy ? (
+                <>
+                  <SpinnerIcon size={18} />
+                  <span>Sending…</span>
+                </>
+              ) : (
+                <>
+                  <span>Send reset link</span>
+                  <ArrowRightIcon size={18} />
+                </>
+              )}
             </button>
 
             <div className={styles.loginAltActions}>
@@ -619,7 +742,17 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
                   {error && loginMethod === "password" && <p className={styles.fieldError} role="alert">{error}</p>}
 
                   <button className={styles.authPrimary} disabled={busy} type="submit">
-                    {busy ? "Signing in…" : "Log in"} <ArrowRightIcon size={18} />
+                    {busy ? (
+                      <>
+                        <SpinnerIcon size={18} />
+                        <span>Signing in…</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Log in</span>
+                        <ArrowRightIcon size={18} />
+                      </>
+                    )}
                   </button>
 
                   <div className={styles.loginAltActions}>
@@ -662,22 +795,28 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
                         onClick={requestLoginCode}
                         disabled={sendingCode || codeCountdown > 0 || !codeEmail.trim()}
                       >
-                        {sendingCode ? "Sending…" : codeCountdown > 0 ? `Resend (${codeCountdown}s)` : codeSentSuccess ? "Resend" : "Get code"}
+                        {sendingCode ? (
+                          <>
+                            <SpinnerIcon size={13} />
+                            <span>Sending…</span>
+                          </>
+                        ) : codeCountdown > 0 ? (
+                          `Resend (${codeCountdown}s)`
+                        ) : codeSentSuccess ? (
+                          "Resend"
+                        ) : (
+                          "Get code"
+                        )}
                       </button>
                     }
                   />
 
-                  <IconField
-                    ref={loginCodeRef}
-                    icon={<LockIcon size={18} />}
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={6}
+                  <OtpDigitBoxes
                     value={loginCode}
-                    onChange={(e) => { setLoginCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
-                    placeholder="6-digit code"
-                    aria-label="6-digit verification code"
+                    onChange={(val) => { setLoginCode(val); setError(""); }}
+                    onComplete={(completedCode) => void submitCodeLogin(undefined, completedCode)}
+                    error={Boolean(error && loginMethod === "code")}
+                    firstInputRef={loginCodeRef}
                   />
                 </div>
 
@@ -685,12 +824,31 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
                   {error && loginMethod === "code" && <p className={styles.fieldError} role="alert">{error}</p>}
 
                   <button className={styles.authPrimary} disabled={busy} type="submit">
-                    {busy ? "Logging in…" : "Log in"} <ArrowRightIcon size={18} />
+                    {busy ? (
+                      <>
+                        <SpinnerIcon size={18} />
+                        <span>Logging in…</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Log in</span>
+                        <ArrowRightIcon size={18} />
+                      </>
+                    )}
                   </button>
 
-                  {/* Empty row mirrors "Forgot password?" so both buttons sit at the exact same baseline */}
-                  <div className={styles.loginAltActions} aria-hidden="true" style={{ visibility: "hidden" }}>
-                    <span className={styles.authQuietLink}>Placeholder</span>
+                  <div className={styles.loginAltActions}>
+                    <button
+                      className={styles.authQuietLink}
+                      type="button"
+                      onClick={() => {
+                        const ident = (identifier || codeEmail).trim();
+                        const query = ident ? `?identifier=${encodeURIComponent(ident)}` : "";
+                        router.push(`/register${query}`);
+                      }}
+                    >
+                      Don’t have an account? Create one
+                    </button>
                   </div>
                 </div>
               </form>
@@ -716,37 +874,121 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
             {error && <p className={styles.fieldError} role="alert">{error}</p>}
 
             <button className={styles.authPrimary} disabled={busy} type="submit">
-              {busy ? "Continuing…" : "Continue"} <ArrowRightIcon size={18} />
+              {busy ? (
+                <>
+                  <SpinnerIcon size={18} />
+                  <span>Continuing…</span>
+                </>
+              ) : (
+                <>
+                  <span>Continue</span>
+                  <ArrowRightIcon size={18} />
+                </>
+              )}
             </button>
 
             <div className={styles.loginAltActions}>
-              <button className={styles.authQuietLink} type="button" onClick={() => router.push("/login")}>
+              <button
+                className={styles.authQuietLink}
+                type="button"
+                onClick={() => {
+                  const query = identifier.trim() ? `?identifier=${encodeURIComponent(identifier.trim())}` : "";
+                  router.push(`/login${query}`);
+                }}
+              >
                 Already have an account? Log in
               </button>
             </div>
           </form>
         )}
 
+        {step === "existing" && (
+          <div className={styles.compactForm}>
+            <p className={styles.authSubtitle}>
+              This {detectIdentifier(identifier) === "phone" ? "phone number" : "email"} is already linked to a Funda account.
+            </p>
+
+            <div className={styles.fieldStack}>
+              <div className={styles.existingIdentityPill}>
+                <span className={styles.existingIdentityIcon} aria-hidden="true">
+                  <IdentifierIcon value={identifier} />
+                </span>
+                <span className={styles.existingIdentityValue}>{identifier}</span>
+                <span className={styles.existingIdentityBadge} aria-label="Registered account">
+                  <CheckIcon size={14} />
+                </span>
+              </div>
+            </div>
+
+            <button
+              className={styles.authPrimary}
+              type="button"
+              onClick={() => {
+                setError("");
+                setStep("identifier");
+                setExistingAccountDetected(false);
+                router.push(`/login?identifier=${encodeURIComponent(identifier)}`);
+              }}
+            >
+              <span>Continue to Log in</span>
+              <ArrowRightIcon size={18} />
+            </button>
+
+            <div className={styles.loginAltActions}>
+              <button
+                type="button"
+                className={styles.authQuietLink}
+                onClick={() => {
+                  setError("");
+                  setExistingAccountDetected(false);
+                  setStep("identifier");
+                }}
+              >
+                Use a different email or phone
+              </button>
+            </div>
+          </div>
+        )}
+
         {step === "code" && (
           <form className={styles.compactForm} onSubmit={verifyCode} noValidate>
-            <p className={styles.sentTo}>Sent to <strong>{identifier}</strong></p>
+            <p className={styles.authSubtitle}>
+              Code sent to <strong>{identifier}</strong>
+            </p>
 
-            <OtpDigitBoxes
-              value={code}
-              onChange={(val) => { setCode(val); setError(""); }}
-              onComplete={(completedCode) => void verifyCode(undefined, completedCode)}
-              error={Boolean(error)}
-            />
+            <div className={styles.fieldStack}>
+              <OtpDigitBoxes
+                value={code}
+                onChange={(val) => { setCode(val); setError(""); }}
+                onComplete={(completedCode) => void verifyCode(undefined, completedCode)}
+                error={Boolean(error)}
+              />
+            </div>
 
             {error && <p className={styles.fieldError} role="alert">{error}</p>}
 
             <button className={styles.authPrimary} disabled={busy || code.length !== 6} type="submit">
-              {busy ? "Verifying…" : "Verify code"} <ArrowRightIcon size={18} />
+              {busy ? (
+                <>
+                  <SpinnerIcon size={18} />
+                  <span>Verifying…</span>
+                </>
+              ) : (
+                <>
+                  <span>Verify code</span>
+                  <ArrowRightIcon size={18} />
+                </>
+              )}
             </button>
 
             <div className={styles.loginAltActions}>
-              <button className={styles.authQuietLink} disabled={busy} type="button" onClick={() => void sendCode()}>
-                Resend code
+              <button
+                className={styles.authQuietLink}
+                disabled={busy || codeCountdown > 0}
+                type="button"
+                onClick={() => void sendCode()}
+              >
+                {codeCountdown > 0 ? `Resend code in ${codeCountdown}s` : "Didn’t get it? Resend code"}
               </button>
             </div>
           </form>
@@ -754,49 +996,62 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
 
         {step === "profile" && (
           <form className={styles.compactForm} onSubmit={saveProfile} noValidate>
+            <p className={styles.authSubtitle}>
+              Enter your name and set a password.
+            </p>
+
             <div className={styles.fieldStack}>
               <IconField
                 icon={<UserIcon size={18} />}
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value.slice(0, 100))}
+                onChange={(e) => { setFullName(e.target.value.slice(0, 100)); setError(""); }}
                 autoComplete="name"
-                placeholder="Full name"
+                placeholder="Full name (first & last)"
                 aria-label="Full name"
+              />
+
+              <IconField
+                icon={<LockIcon size={18} />}
+                type="password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                autoComplete="new-password"
+                minLength={6}
+                placeholder="Choose a password (6+ characters)"
+                aria-label="Password"
               />
             </div>
 
             {error && <p className={styles.fieldError} role="alert">{error}</p>}
 
             <button className={styles.authPrimary} disabled={busy} type="submit">
-              Continue <ArrowRightIcon size={18} />
+              {busy ? (
+                <>
+                  <SpinnerIcon size={18} />
+                  <span>Creating account…</span>
+                </>
+              ) : (
+                <>
+                  <span>Create account</span>
+                  <ArrowRightIcon size={18} />
+                </>
+              )}
             </button>
           </form>
         )}
 
-        {step === "password-choice" && (
-          <div className={styles.compactForm}>
-            <p className={styles.sentTo}>Choose how you want to sign in next time.</p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "6px" }}>
-              <button className={styles.authPrimary} type="button" onClick={() => { setCreatingPassword(true); setStep("password"); }}>
-                Create a password <ArrowRightIcon size={18} />
-              </button>
-              <button className={styles.authSecondary} disabled={busy} type="button" onClick={() => void finishWithCodes()}>
-                {busy ? "Saving…" : "Continue with codes"}
-              </button>
-            </div>
-            {error && <p className={styles.fieldError} role="alert">{error}</p>}
-          </div>
-        )}
-
         {step === "password" && (
           <form className={styles.compactForm} onSubmit={savePassword} noValidate>
+            <p className={styles.authSubtitle}>
+              {settingPassword ? "Set a secure password for your account." : "Enter your account password."}
+            </p>
+
             <div className={styles.fieldStack}>
               <IconField
                 icon={<LockIcon size={18} />}
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setError(""); }}
                 autoComplete={settingPassword ? "new-password" : "current-password"}
                 minLength={settingPassword ? 6 : undefined}
                 placeholder={settingPassword ? "Password (6+ characters)" : "Password"}
@@ -807,7 +1062,17 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
             {error && <p className={styles.fieldError} role="alert">{error}</p>}
 
             <button className={styles.authPrimary} disabled={busy} type="submit">
-              {busy ? "Saving…" : settingPassword ? "Save password" : "Log in"} <ArrowRightIcon size={18} />
+              {busy ? (
+                <>
+                  <SpinnerIcon size={18} />
+                  <span>Saving…</span>
+                </>
+              ) : (
+                <>
+                  <span>{settingPassword ? "Save password" : "Log in"}</span>
+                  <ArrowRightIcon size={18} />
+                </>
+              )}
             </button>
           </form>
         )}
@@ -815,7 +1080,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         {step === "recovery-sent" && (
           <div className={styles.completeState}>
             <span className={styles.completeIcon}><CheckIcon size={26} /></span>
-            <p className={styles.sentTo} style={{ margin: "0 0 24px" }}>
+            <p className={styles.authSubtitle} style={{ marginBottom: "20px" }}>
               We sent a password reset link to your email.
             </p>
             <button className={styles.authPrimary} type="button" onClick={() => { setRecovery(false); setStep("identifier"); }}>
@@ -827,6 +1092,11 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         {step === "complete" && (
           <div className={styles.completeState}>
             <span className={styles.completeIcon}><CheckIcon size={26} /></span>
+            <p className={styles.authSubtitle} style={{ marginBottom: 0 }}>
+              {existingAccountDetected || welcomeName
+                ? `Welcome back${welcomeName ? `, ${welcomeName}` : ""}. Taking you straight to your dashboard…`
+                : "Welcome to Funda. Taking you straight to your dashboard…"}
+            </p>
           </div>
         )}
       </div>

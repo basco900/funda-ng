@@ -245,3 +245,39 @@ export function SystemThemeIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+export function SpinnerIcon({ size = 18, className, style, ...props }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      className={className}
+      style={{
+        display: "inline-block",
+        verticalAlign: "middle",
+        flexShrink: 0,
+        animation: "fundaSpin 0.75s linear infinite",
+        ...style,
+      }}
+      {...props}
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeOpacity="0.22"
+      />
+      <path
+        d="M12 3a9 9 0 0 1 9 9"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}

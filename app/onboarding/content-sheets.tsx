@@ -423,6 +423,35 @@ function ContactSheetContent() {
         Have questions about a meter token, pending data delivery, or business integration? Reach out directly.
       </p>
 
+      {/* Live Chat Banner */}
+      <div style={{ marginBottom: "18px" }}>
+        <a
+          href="/support/chat"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "14px 18px",
+            borderRadius: "14px",
+            background: "linear-gradient(135deg, #660033 0%, #4a0025 100%)",
+            color: "#ffffff",
+            textDecoration: "none",
+            boxShadow: "0 4px 14px rgba(102, 0, 51, 0.25)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontSize: "20px" }}>💬</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "14px" }}>Start Live Support Chat</div>
+              <div style={{ fontSize: "12px", opacity: 0.85 }}>Real-time two-way Telegram relay • Fast answers</div>
+            </div>
+          </div>
+          <span style={{ fontSize: "12px", fontWeight: 600, background: "rgba(255,255,255,0.2)", padding: "4px 10px", borderRadius: "8px" }}>
+            Open →
+          </span>
+        </a>
+      </div>
+
       {/* Contact Channels with 1-click copy */}
       <div className={styles.channelGrid}>
         <div className={styles.channelCard}>

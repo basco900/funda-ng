@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -128,6 +128,9 @@ function FloatingGlassDock({ onNavigate }: { onNavigate: (target: SheetType) => 
         <button type="button" className={styles.dockBtn} onClick={() => onNavigate("services")}>
           Services
         </button>
+        <Link href="/blog" className={styles.dockBtn} style={{ textDecoration: "none" }}>
+          Blog
+        </Link>
         <button type="button" className={styles.dockBtn} onClick={() => onNavigate("policies")}>
           Security
         </button>
@@ -150,18 +153,20 @@ function FloatingGlassDock({ onNavigate }: { onNavigate: (target: SheetType) => 
 
 export default function FundaExperience({ stories }: FundaExperienceProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const reducedMotion = useReducedMotion();
   useParallaxTilt(!reducedMotion);
   const { resolved: resolvedTheme, setTheme, toggleTheme } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [authOverride, setAuthOverride] = useState<AuthPreviewMode | null>(null);
 
-  const authMode: AuthPreviewMode | null = pathname === "/login"
+  const authMode: AuthPreviewMode | null = authOverride ?? (pathname === "/login"
     ? "login"
     : pathname === "/register"
       ? "register"
-      : null;
+      : null);
 
   const activeSheet: SheetType | null =
     pathname === "/about" ? "about"
@@ -245,12 +250,13 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
   };
 
   const openAuth = (mode: AuthPreviewMode) => {
-    openedAuthHere.current = true;
+    setAuthOverride(mode);
     setMenuOpen(false);
     window.history.pushState(null, "", `/${mode}`);
   };
 
   const closeAuth = () => {
+    setAuthOverride(null);
     if (openedAuthHere.current) {
       window.history.back();
       openedAuthHere.current = false;
@@ -313,7 +319,6 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
               className={styles.themeToggleButton}
               onClick={toggleTheme}
               aria-label={resolvedTheme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-              title={resolvedTheme === "light" ? "Switch to dark mode" : "Switch to light mode"}
             >
               {resolvedTheme === "light" ? <MoonIcon size={18} /> : <SunIcon size={18} />}
             </button>
@@ -380,7 +385,6 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
                   className={styles.slideArrowBtn}
                   onClick={() => moveBy(-1)}
                   aria-label="Previous slide"
-                  title="Previous slide (Left Arrow)"
                 >
                   ←
                 </button>
@@ -389,7 +393,6 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
                   className={styles.slideArrowBtn}
                   onClick={() => moveBy(1)}
                   aria-label="Next slide"
-                  title="Next slide (Right Arrow)"
                 >
                   →
                 </button>
@@ -448,57 +451,56 @@ export default function FundaExperience({ stories }: FundaExperienceProps) {
           <nav className={styles.menuList}>
             <button type="button" className={styles.menuItem} data-category="about" onClick={() => navigateToSheet("about")}>
               <div className={styles.menuItemLeft}>
-                <span className={styles.menuIconBox}><AboutInfoIcon size={19} /></span>
-                <div className={styles.menuTextGroup}>
-                  <span className={styles.menuTitle}>About Funda</span>
-                  <span className={styles.menuDesc}>Our story, mission & tech</span>
-                </div>
+                <span className={styles.menuIconBox}><AboutInfoIcon size={16} /></span>
+                <span className={styles.menuTitle}>About Funda</span>
               </div>
-              <ChevronRightIcon size={16} className={styles.menuChevron} />
+              <ChevronRightIcon size={14} className={styles.menuChevron} />
             </button>
 
             <button type="button" className={styles.menuItem} data-category="services" onClick={() => navigateToSheet("services")}>
               <div className={styles.menuItemLeft}>
-                <span className={styles.menuIconBox}><ServicesGridIcon size={19} /></span>
-                <div className={styles.menuTextGroup}>
-                  <span className={styles.menuTitle}>Services</span>
-                  <span className={styles.menuDesc}>Data, airtime & electricity</span>
-                </div>
+                <span className={styles.menuIconBox}><ServicesGridIcon size={16} /></span>
+                <span className={styles.menuTitle}>Services</span>
               </div>
-              <ChevronRightIcon size={16} className={styles.menuChevron} />
+              <ChevronRightIcon size={14} className={styles.menuChevron} />
             </button>
+
+            <Link href="/blog" className={styles.menuItem} data-category="blog" onClick={() => setMenuOpen(false)} style={{ textDecoration: "none" }}>
+              <div className={styles.menuItemLeft}>
+                <span className={styles.menuIconBox}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                    <path d="M6 6h10" />
+                    <path d="M6 10h10" />
+                  </svg>
+                </span>
+                <span className={styles.menuTitle}>Blog & Insights</span>
+              </div>
+              <ChevronRightIcon size={14} className={styles.menuChevron} />
+            </Link>
 
             <button type="button" className={styles.menuItem} data-category="contact" onClick={() => navigateToSheet("contact")}>
               <div className={styles.menuItemLeft}>
-                <span className={styles.menuIconBox}><ContactChatIcon size={19} /></span>
-                <div className={styles.menuTextGroup}>
-                  <span className={styles.menuTitle}>Contact & Support</span>
-                  <span className={styles.menuDesc}>WhatsApp & 24/7 help line</span>
-                </div>
+                <span className={styles.menuIconBox}><ContactChatIcon size={16} /></span>
+                <span className={styles.menuTitle}>Contact & Support</span>
               </div>
-              <ChevronRightIcon size={16} className={styles.menuChevron} />
+              <ChevronRightIcon size={14} className={styles.menuChevron} />
             </button>
 
             <button type="button" className={styles.menuItem} data-category="policies" onClick={() => navigateToSheet("policies")}>
               <div className={styles.menuItemLeft}>
-                <span className={styles.menuIconBox}><PoliciesShieldIcon size={19} /></span>
-                <div className={styles.menuTextGroup}>
-                  <span className={styles.menuTitle}>Policies & Security</span>
-                  <span className={styles.menuDesc}>Privacy, terms & refund policy</span>
-                </div>
+                <span className={styles.menuIconBox}><PoliciesShieldIcon size={16} /></span>
+                <span className={styles.menuTitle}>Policies & Security</span>
               </div>
-              <ChevronRightIcon size={16} className={styles.menuChevron} />
+              <ChevronRightIcon size={14} className={styles.menuChevron} />
             </button>
 
             <button type="button" className={styles.menuItem} data-category="faq" onClick={() => navigateToSheet("faq")}>
               <div className={styles.menuItemLeft}>
-                <span className={styles.menuIconBox}><FaqHelpIcon size={19} /></span>
-                <div className={styles.menuTextGroup}>
-                  <span className={styles.menuTitle}>FAQ</span>
-                  <span className={styles.menuDesc}>Answers to common questions</span>
-                </div>
+                <span className={styles.menuIconBox}><FaqHelpIcon size={16} /></span>
+                <span className={styles.menuTitle}>FAQ</span>
               </div>
-              <ChevronRightIcon size={16} className={styles.menuChevron} />
+              <ChevronRightIcon size={14} className={styles.menuChevron} />
             </button>
           </nav>
 

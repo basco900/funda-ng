@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "../../../lib/admin/auth";
 import AdminLoginForm from "./login-form";
@@ -6,8 +7,8 @@ import styles from "../admin.module.css";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Admin access · Funda",
-  description: "Secure access to the Funda operations control centre.",
+  title: "Admin login · Funda",
+  robots: { index: false, follow: false },
 };
 
 export default async function AdminLoginPage() {
@@ -16,35 +17,31 @@ export default async function AdminLoginPage() {
 
   return (
     <main className={styles.loginPage}>
-      <section className={styles.loginStory} aria-label="Funda Admin introduction">
-        <div className={styles.loginBrand}>funda<span>.</span></div>
-        <div className={styles.loginStoryCopy}>
-          <span className={styles.loginKicker}>Operations, without the noise.</span>
-          <h1>The room where Funda stays sharp.</h1>
-          <p>
-            Customers, money, providers and platform health—one calm view of everything that matters.
-          </p>
-        </div>
-        <div className={styles.loginSignalGrid} aria-hidden="true">
-          <div><span>Success rate</span><strong>Live</strong></div>
-          <div><span>Provider health</span><strong>Watched</strong></div>
-          <div><span>Audit trail</span><strong>Always on</strong></div>
-        </div>
-      </section>
-
-      <section className={styles.loginPanel}>
-        <div className={styles.loginPanelInner}>
-          <div className={styles.secureMark} aria-hidden="true">⌁</div>
-          <span className={styles.loginEyebrow}>Restricted access</span>
-          <h2>Welcome to Admin.</h2>
-          <p className={styles.loginIntro}>Use the Funda account approved for administrative access.</p>
-          <AdminLoginForm />
-          <div className={styles.loginSecurityNote}>
-            <span aria-hidden="true">●</span>
-            Protected by server-side access checks and an immutable audit trail.
+      <div className={styles.authFrame}>
+        <aside className={styles.authBrandPanel} aria-label="Funda administration">
+          <Link className={styles.authWordmark} href="/" aria-label="Funda home">
+            funda<span>.</span>
+          </Link>
+          <div className={styles.authBrandMessage}>
+            <h2>Keep every payment moving.</h2>
+            <p>Customers, money and providers in one focused place.</p>
           </div>
-        </div>
-      </section>
+          <div className={styles.authArt} aria-hidden="true">
+            <span className={`${styles.authOrbit} ${styles.authOrbitOne}`} />
+            <span className={`${styles.authOrbit} ${styles.authOrbitTwo}`} />
+          </div>
+        </aside>
+
+        <section className={styles.authFormPanel} aria-label="Admin login">
+          <div className={styles.authFormInner}>
+            <div className={styles.loginHeading}>
+              <h1>Admin login</h1>
+              <p>Continue to your Funda workspace.</p>
+            </div>
+            <AdminLoginForm />
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

@@ -18,9 +18,10 @@ insert into public.provider_registry (
   'SMEPLUG_SECRET_KEY', 'https://documenter.getpostman.com/view/2351511/SzS5umB5?version=latest', 'https://smeplug.com/',
   'Verified public integration contract: bearer authentication; data catalogue, purchase, balance, transaction requery and transaction webhook support.'
 ), (
-  'GladTidings', 'gladtidings', 'standby', array['data', 'airtime', 'electricity', 'cable'], 50, 'live', null,
-  null, null, null, null, null, null, 'https://gladtidingsapihub.com/',
-  'Publicly listed as an automated data, airtime, cable and electricity provider. API endpoint and authentication contract are awaiting the provider’s authenticated documentation.'
+  'MaskawaSub', 'maskawasub', 'operational', array['data', 'airtime', 'electricity', 'cable', 'education'], 15, 'live', 'https://maskawasub.com/api',
+  '/datashare/', '/topup/', null, '/user/',
+  'MASKAWASUB_API_KEY', 'https://maskawasub.com/api/', 'https://maskawasub.com/',
+  'Verified telecom and utilities provider: Token authentication; automated airtime, SME data, electricity bill payments, cable TV and recharge pin generators.'
 )
 on conflict (slug) do update set
   name = excluded.name,

@@ -94,7 +94,7 @@ No system is literally impenetrable. This design reduces blast radius through le
 - The worker now runs private report exports (`CSV` and `JSON`), provider re-queries, and campaign delivery. It never delivers a message merely because a campaign exists; each message has a durable `message_delivery`, `notification_outbox`, and delivery-attempt trail.
 - Email delivery uses Resend only with both `RESEND_API_KEY` and `FUNDA_EMAIL_FROM`. SMS delivery uses Termii only with `TERMII_API_KEY` and `TERMII_SENDER_ID`. Missing contact information and unconfigured channels are suppressed and audited as delivery failures; they do not result in a fake success.
 - Exports are placed in a private `admin-exports` Supabase Storage bucket. A signed link lasts 60 seconds, exports expire after seven days, and non-super-admins can download only exports they created.
-- Provider requery delegates only to existing configured VTpass, SMEPlug, GladTidings, or Pairgate adapters. It records a redacted provider attempt and uses the guarded transaction transition function; it cannot overwrite terminal transactions.
+- Provider requery delegates only to existing configured VTpass, SMEPlug, MaskawaSub, or Pairgate adapters. It records a redacted provider attempt and uses the guarded transaction transition function; it cannot overwrite terminal transactions.
 - Admin session invalidation sets a server-enforced cutoff on the admin identity. Existing sessions are denied on their next protected request until a fresh Supabase sign-in updates `last_sign_in_at`. This avoids unsupported direct writes to Supabase Auth session tables.
 
 # Phase 4 customer commerce

@@ -235,7 +235,7 @@ export async function saveProvider(input: unknown): Promise<AdminActionResult<{ 
 }
 
 const providerNetworks: NetworkId[] = ["mtn", "airtel", "glo", "9mobile"];
-const supportedCatalogueVendors = new Set<VendorId>(["smeplug", "gladtidings", "vtpass", "pairgate", "absvendor", "maskawasub"]);
+const supportedCatalogueVendors = new Set<VendorId>(["smeplug", "vtpass", "pairgate", "absvendor", "maskawasub"]);
 
 import {
   dataAmountMbFromName,
@@ -595,5 +595,674 @@ export async function invalidateAdminSessions(input: unknown): Promise<AdminActi
     await recordAdminAudit(session, { action: "admin_sessions.invalidated", entityType: "admin_user", entityId: values.adminUserId, oldValue: { sessionInvalidBefore: target.session_invalid_before }, newValue: { sessionInvalidBefore: invalidBefore, targetEmail: target.email }, reason: values.reason });
     refresh("/admin/settings/admins", "/admin/settings/security");
     return { ok: true, message: "Active sessions will be blocked; the admin must sign in again." };
+  } catch (error) { return failure(error); }
+}
+
+export async function resolvePaymentReview(input: unknown): Promise<AdminActionResult<{ balance: number }>> {
+  const schema = z.object({ reviewId: uuid, customer: z.string().trim().min(3).max(320), reason });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("wallet.adjust");
+    const adminUserId = await materializeAdminSession(session);
+    const client = createAdminClient();
+    let userId = uuid.safeParse(values.customer).success ? values.customer : null;
+    if (!userId) {
+      const { data: found } = await client.rpc("admin_find_user_id_by_email", { p_email: values.customer });
+      userId = typeof found === "string" ? found : null;
+    }
+    if (!userId) throw new Error("No customer matches that email or ID.");
+    const { data: oldValue } = await client.from("payment_review_queue").select("id,reason,amount,charge_id,status,suggested_user_id").eq("id", values.reviewId).single();
+    const { data, error } = await client.rpc("admin_resolve_payment_review", {
+      p_review_id: values.reviewId,
+      p_user_id: userId,
+      p_admin_user_id: adminUserId,
+      p_note: values.reason,
+    });
+    if (error || !data?.[0]) throw new Error(error?.message || "The payment could not be credited.");
+    const result = { balance: Number(data[0].balance) };
+    await recordAdminAudit(session, { action: "payment_review.credited", entityType: "payment_review", entityId: values.reviewId, oldValue, newValue: { userId, ...result }, reason: values.reason });
+    refresh("/admin/money/payment-reviews", "/admin/money/ledger", "/admin/money/funding");
+    return { ok: true, message: "Payment credited to the customer's wallet.", data: result };
+  } catch (error) { return failure(error); }
+}
+
+export async function dismissPaymentReview(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({ reviewId: uuid, reason });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("wallet.adjust");
+    const adminUserId = await materializeAdminSession(session);
+    const client = createAdminClient();
+    const { error } = await client.rpc("admin_dismiss_payment_review", { p_review_id: values.reviewId, p_admin_user_id: adminUserId, p_note: values.reason });
+    if (error) throw new Error(error.message);
+    await recordAdminAudit(session, { action: "payment_review.dismissed", entityType: "payment_review", entityId: values.reviewId, reason: values.reason });
+    refresh("/admin/money/payment-reviews");
+    return { ok: true, message: "Review item dismissed. No wallet was credited." };
+  } catch (error) { return failure(error); }
+}
+
+export async function saveAirtimeRoute(input: unknown): Promise<AdminActionResult<{ id: string }>> {
+  const schema = z.object({
+    id: uuid.optional(),
+    network: z.enum(["all", "mtn", "airtel", "glo", "9mobile"]),
+    mode: z.enum(["all", "vtu", "epin"]),
+    minAmount: z.coerce.number().min(50).max(500000),
+    maxAmount: z.coerce.number().min(50).max(500000),
+    primaryProvider: z.string().trim().min(2),
+    fallbackProvider: z.string().trim().nullable().optional(),
+    discountPercentage: z.coerce.number().min(0).max(100).default(0),
+    cashbackPercentage: z.coerce.number().min(0).max(100).default(0),
+    priority: z.coerce.number().int().min(0).default(0),
+    isActive: z.boolean().default(true),
+  });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("providers.manage");
+    const client = createAdminClient();
+
+    const record = {
+      ...(values.id ? { id: values.id } : {}),
+      network: values.network,
+      mode: values.mode,
+      min_amount: values.minAmount,
+      max_amount: values.maxAmount,
+      primary_provider: values.primaryProvider,
+      fallback_provider: values.fallbackProvider || null,
+      discount_percentage: values.discountPercentage,
+      cashback_percentage: values.cashbackPercentage,
+      priority: values.priority,
+      is_active: values.isActive,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await client
+      .from("airtime_provider_routes")
+      .upsert(record)
+      .select("id")
+      .single();
+
+    if (error || !data) throw new Error(error?.message || "Could not save airtime route.");
+
+    await recordAdminAudit(session, {
+      action: values.id ? "airtime_route.updated" : "airtime_route.created",
+      entityType: "airtime_route",
+      entityId: String(data.id),
+      newValue: record,
+    });
+
+    refresh("/admin/products/airtime");
+    return { ok: true, message: "Airtime route rule saved.", data: { id: String(data.id) } };
+  } catch (error) { return failure(error); }
+}
+
+export async function deleteAirtimeRoute(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({ id: uuid });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("providers.manage");
+    const client = createAdminClient();
+
+    const { error } = await client
+      .from("airtime_provider_routes")
+      .delete()
+      .eq("id", values.id);
+
+    if (error) throw new Error(error.message);
+
+    await recordAdminAudit(session, {
+      action: "airtime_route.deleted",
+      entityType: "airtime_route",
+      entityId: values.id,
+    });
+
+    refresh("/admin/products/airtime");
+    return { ok: true, message: "Airtime route rule removed." };
+  } catch (error) { return failure(error); }
+}
+
+export async function saveElectricityDiscoConfig(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({
+    discoCode: z.string().trim().toLowerCase(),
+    primaryProvider: z.string().trim().min(2),
+    fallbackProvider: z.string().trim().nullable().optional(),
+    supportsPrepaid: z.boolean(),
+    supportsPostpaid: z.boolean(),
+    convenienceFee: z.coerce.number().min(0),
+    cashbackPercentage: z.coerce.number().min(0).max(100),
+    minPurchaseAmount: z.coerce.number().min(100),
+    maxPurchaseAmount: z.coerce.number().min(1000),
+    isActive: z.boolean(),
+    maintenanceNotice: z.string().trim().nullable().optional(),
+  });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("providers.manage");
+    const client = createAdminClient();
+
+    const update = {
+      primary_provider: values.primaryProvider,
+      fallback_provider: values.fallbackProvider || null,
+      supports_prepaid: values.supportsPrepaid,
+      supports_postpaid: values.supportsPostpaid,
+      convenience_fee: values.convenienceFee,
+      cashback_percentage: values.cashbackPercentage,
+      min_purchase_amount: values.minPurchaseAmount,
+      max_purchase_amount: values.maxPurchaseAmount,
+      is_active: values.isActive,
+      maintenance_notice: values.maintenanceNotice || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await client
+      .from("electricity_disco_configs")
+      .update(update)
+      .eq("disco_code", values.discoCode);
+
+    if (error) throw new Error(error.message);
+
+    await recordAdminAudit(session, {
+      action: "electricity_disco.updated",
+      entityType: "electricity_disco",
+      entityId: values.discoCode,
+      newValue: update,
+    });
+
+    refresh("/admin/products/electricity");
+    return { ok: true, message: `Configuration updated for ${values.discoCode.toUpperCase()}.` };
+  } catch (error) { return failure(error); }
+}
+
+export async function bulkUpdateElectricityDiscos(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({
+    primaryProvider: z.string().trim().min(2).optional(),
+    fallbackProvider: z.string().trim().nullable().optional(),
+    convenienceFee: z.coerce.number().min(0).optional(),
+    cashbackPercentage: z.coerce.number().min(0).max(100).optional(),
+    isActive: z.boolean().optional(),
+  });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("providers.manage");
+    const client = createAdminClient();
+
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (values.primaryProvider !== undefined) update.primary_provider = values.primaryProvider;
+    if (values.fallbackProvider !== undefined) update.fallback_provider = values.fallbackProvider || null;
+    if (values.convenienceFee !== undefined) update.convenience_fee = values.convenienceFee;
+    if (values.cashbackPercentage !== undefined) update.cashback_percentage = values.cashbackPercentage;
+    if (values.isActive !== undefined) update.is_active = values.isActive;
+
+    const { error } = await client
+      .from("electricity_disco_configs")
+      .update(update)
+      .neq("disco_code", "");
+
+    if (error) throw new Error(error.message);
+
+    await recordAdminAudit(session, {
+      action: "electricity_discos.bulk_updated",
+      entityType: "electricity_disco",
+      entityId: "all",
+      newValue: update,
+    });
+
+    refresh("/admin/products/electricity");
+    return { ok: true, message: "Applied configuration changes to all Electricity Discos." };
+  } catch (error) { return failure(error); }
+}
+
+export async function saveDiscountCoupon(input: unknown): Promise<AdminActionResult<{ id: string }>> {
+  const schema = z.object({
+    id: uuid.optional(),
+    code: z.string().trim().toUpperCase().min(3).max(30),
+    discountType: z.enum(["percentage", "fixed"]),
+    discountValue: z.coerce.number().positive(),
+    minPurchaseAmount: z.coerce.number().min(0).default(0),
+    maxDiscountAmount: z.coerce.number().positive().nullable().optional(),
+    serviceType: z.enum(["all", "airtime", "data", "electricity", "cable_tv"]).default("all"),
+    maxUses: z.coerce.number().int().min(0).default(0),
+    startsAt: z.string().nullable().optional(),
+    expiresAt: z.string().nullable().optional(),
+    isActive: z.boolean().default(true),
+  });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("campaigns.manage");
+    const client = createAdminClient();
+
+    const record = {
+      ...(values.id ? { id: values.id } : {}),
+      code: values.code,
+      discount_type: values.discountType,
+      discount_value: values.discountValue,
+      min_purchase_amount: values.minPurchaseAmount,
+      max_discount_amount: values.maxDiscountAmount || null,
+      service_type: values.serviceType,
+      max_uses: values.maxUses,
+      starts_at: values.startsAt || null,
+      expires_at: values.expiresAt || null,
+      is_active: values.isActive,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await client
+      .from("discount_coupons")
+      .upsert(record, { onConflict: "code" })
+      .select("id")
+      .single();
+
+    if (error || !data) throw new Error(error?.message || "Could not save coupon.");
+
+    await recordAdminAudit(session, {
+      action: values.id ? "discount_coupon.updated" : "discount_coupon.created",
+      entityType: "discount_coupon",
+      entityId: String(data.id),
+      newValue: record,
+    });
+
+    refresh("/admin/growth/coupons");
+    return { ok: true, message: `Coupon code ${values.code} saved successfully.`, data: { id: String(data.id) } };
+  } catch (error) { return failure(error); }
+}
+
+export async function deleteDiscountCoupon(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({ id: uuid });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("campaigns.manage");
+    const client = createAdminClient();
+
+    const { error } = await client
+      .from("discount_coupons")
+      .delete()
+      .eq("id", values.id);
+
+    if (error) throw new Error(error.message);
+
+    await recordAdminAudit(session, {
+      action: "discount_coupon.deleted",
+      entityType: "discount_coupon",
+      entityId: values.id,
+    });
+
+    refresh("/admin/growth/coupons");
+    return { ok: true, message: "Coupon deleted." };
+  } catch (error) { return failure(error); }
+}
+
+export async function adminRefundTransaction(input: unknown): Promise<AdminActionResult<{ balance: number }>> {
+  const schema = z.object({
+    transactionId: uuid,
+    reason: z.string().trim().min(4).max(500),
+  });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("transactions.refund");
+    const adminUserId = await materializeAdminSession(session);
+    const client = createAdminClient();
+
+    const { data: tx, error: txError } = await client
+      .from("service_transactions")
+      .select("id, user_id, amount, status, service_type, internal_reference")
+      .eq("id", values.transactionId)
+      .single();
+
+    if (txError || !tx) throw new Error("Transaction not found.");
+
+    if (tx.status === "failed") {
+      throw new Error("This transaction has already been refunded.");
+    }
+
+    const settlement = await client.rpc("customer_settle_service_purchase", {
+      p_user_id: tx.user_id,
+      p_transaction_id: tx.id,
+      p_status: "failed",
+      p_summary: `Admin Chargeback / Refund: ${values.reason}`,
+      p_provider_reference: null,
+      p_metadata: { refundedBy: adminUserId, reason: values.reason },
+    });
+
+    if (settlement.error) {
+      throw new Error(settlement.error.message || "Could not process refund.");
+    }
+
+    const settled = settlement.data?.[0] as { balance?: number } | undefined;
+
+    await recordAdminAudit(session, {
+      action: "transaction.admin_refunded",
+      entityType: "service_transaction",
+      entityId: tx.id,
+      newValue: { amount: tx.amount, reason: values.reason, adminUserId },
+    });
+
+    refresh("/admin/transactions", "/admin/money/refunds", "/admin/products/airtime", "/admin/products/electricity", "/admin/products/tv");
+    return { ok: true, message: `₦${Number(tx.amount).toLocaleString("en-NG")} refunded to customer wallet.`, data: { balance: Number(settled?.balance ?? 0) } };
+  } catch (error) { return failure(error); }
+}
+
+export async function saveCableTvConfig(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({
+    operatorCode: z.enum(["dstv", "gotv", "startimes", "showmax"]),
+    operatorName: z.string().trim().min(2),
+    primaryProvider: z.string().trim().min(2),
+    fallbackProvider: z.string().trim().min(2).nullable().optional(),
+    convenienceFee: z.coerce.number().min(0).default(0),
+    cashbackPercentage: z.coerce.number().min(0).max(100).default(0),
+    isActive: z.boolean().default(true),
+    maintenanceNotice: z.string().trim().max(500).nullable().optional(),
+  });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("products.edit");
+    const client = createAdminClient();
+
+    const record = {
+      operator_code: values.operatorCode,
+      operator_name: values.operatorName,
+      primary_provider: values.primaryProvider,
+      fallback_provider: values.fallbackProvider || null,
+      convenience_fee: values.convenienceFee,
+      cashback_percentage: values.cashbackPercentage,
+      is_active: values.isActive,
+      maintenance_notice: values.maintenanceNotice || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await client
+      .from("cable_tv_configs")
+      .upsert(record, { onConflict: "operator_code" });
+
+    if (error) throw new Error(error.message);
+
+    await recordAdminAudit(session, {
+      action: "cable_tv_config.saved",
+      entityType: "cable_tv_config",
+      entityId: values.operatorCode,
+      newValue: record,
+    });
+
+    refresh("/admin/products/tv");
+    return { ok: true, message: `${values.operatorName} configuration saved.` };
+  } catch (error) { return failure(error); }
+}
+
+export async function bulkUpdateCableTvConfigs(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({
+    primaryProvider: z.string().trim().min(2).optional(),
+    fallbackProvider: z.string().trim().min(2).nullable().optional(),
+    convenienceFee: z.coerce.number().min(0).optional(),
+    cashbackPercentage: z.coerce.number().min(0).max(100).optional(),
+    isActive: z.boolean().optional(),
+  });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("products.edit");
+    const client = createAdminClient();
+
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (values.primaryProvider !== undefined) update.primary_provider = values.primaryProvider;
+    if (values.fallbackProvider !== undefined) update.fallback_provider = values.fallbackProvider || null;
+    if (values.convenienceFee !== undefined) update.convenience_fee = values.convenienceFee;
+    if (values.cashbackPercentage !== undefined) update.cashback_percentage = values.cashbackPercentage;
+    if (values.isActive !== undefined) update.is_active = values.isActive;
+
+    const { error } = await client
+      .from("cable_tv_configs")
+      .update(update)
+      .neq("operator_code", "");
+
+    if (error) throw new Error(error.message);
+
+    await recordAdminAudit(session, {
+      action: "cable_tv_configs.bulk_updated",
+      entityType: "cable_tv_config",
+      entityId: "all",
+      newValue: update,
+    });
+
+    refresh("/admin/products/tv");
+    return { ok: true, message: "Applied configuration changes to all TV Operators." };
+  } catch (error) { return failure(error); }
+}
+
+export async function saveCableTvPackage(input: unknown): Promise<AdminActionResult<{ id: string }>> {
+  const schema = z.object({
+    id: uuid.optional(),
+    operatorCode: z.enum(["dstv", "gotv", "startimes", "showmax"]),
+    packageCode: z.string().trim().min(1).max(50),
+    name: z.string().trim().min(2).max(100),
+    price: z.coerce.number().positive(),
+    durationMonths: z.coerce.number().int().min(0).default(1),
+    sortOrder: z.coerce.number().int().default(0),
+    isActive: z.boolean().default(true),
+  });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("products.edit");
+    const client = createAdminClient();
+
+    const record = {
+      ...(values.id ? { id: values.id } : {}),
+      operator_code: values.operatorCode,
+      package_code: values.packageCode,
+      name: values.name,
+      price: values.price,
+      duration_months: values.durationMonths,
+      sort_order: values.sortOrder,
+      is_active: values.isActive,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await client
+      .from("cable_tv_packages")
+      .upsert(record, { onConflict: "operator_code,package_code" })
+      .select("id")
+      .single();
+
+    if (error || !data) throw new Error(error?.message || "Could not save package.");
+
+    await recordAdminAudit(session, {
+      action: values.id ? "cable_tv_package.updated" : "cable_tv_package.created",
+      entityType: "cable_tv_package",
+      entityId: String(data.id),
+      newValue: record,
+    });
+
+    refresh("/admin/products/tv");
+    return { ok: true, message: `Package ${values.name} saved successfully.`, data: { id: String(data.id) } };
+  } catch (error) { return failure(error); }
+}
+
+export async function deleteCableTvPackage(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({ id: uuid });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("products.edit");
+    const client = createAdminClient();
+
+    const { error } = await client
+      .from("cable_tv_packages")
+      .delete()
+      .eq("id", values.id);
+
+    if (error) throw new Error(error.message);
+
+    await recordAdminAudit(session, {
+      action: "cable_tv_package.deleted",
+      entityType: "cable_tv_package",
+      entityId: values.id,
+    });
+
+    refresh("/admin/products/tv");
+    return { ok: true, message: "Package removed from catalogue." };
+  } catch (error) { return failure(error); }
+}
+
+export async function saveEducationConfig(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({
+    examBody: z.enum(["waec", "neco", "jamb", "nabteb", "nbais"]),
+    primaryProvider: z.string().trim().min(2),
+    fallbackProvider: z.string().trim().nullable().optional(),
+    convenienceFee: z.coerce.number().min(0),
+    cashbackPercentage: z.coerce.number().min(0).max(100),
+    isActive: z.boolean(),
+    requiresProfileCode: z.boolean().default(false),
+    instructions: z.string().trim().nullable().optional(),
+    portalUrl: z.string().trim().nullable().optional(),
+    maintenanceNotice: z.string().trim().nullable().optional(),
+  });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("providers.manage");
+    const client = createAdminClient();
+
+    const update = {
+      primary_provider: values.primaryProvider,
+      fallback_provider: values.fallbackProvider || null,
+      convenience_fee: values.convenienceFee,
+      cashback_percentage: values.cashbackPercentage,
+      is_active: values.isActive,
+      requires_profile_code: values.requiresProfileCode,
+      instructions: values.instructions || null,
+      portal_url: values.portalUrl || null,
+      maintenance_notice: values.maintenanceNotice || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await client
+      .from("education_configs")
+      .update(update)
+      .eq("exam_body", values.examBody);
+
+    if (error) throw new Error(error.message);
+
+    await recordAdminAudit(session, {
+      action: "education_config.updated",
+      entityType: "education_config",
+      entityId: values.examBody,
+      newValue: update,
+    });
+
+    refresh("/admin/products/education");
+    return { ok: true, message: `${values.examBody.toUpperCase()} routing configuration updated.` };
+  } catch (error) { return failure(error); }
+}
+
+export async function bulkUpdateEducationConfigs(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({
+    primaryProvider: z.string().trim().min(2),
+    fallbackProvider: z.string().trim().nullable().optional(),
+    cashbackPercentage: z.coerce.number().min(0).max(100).optional(),
+    convenienceFee: z.coerce.number().min(0).optional(),
+    isActive: z.boolean().optional(),
+  });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("providers.manage");
+    const client = createAdminClient();
+
+    const update: Record<string, unknown> = {
+      primary_provider: values.primaryProvider,
+      fallback_provider: values.fallbackProvider || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (typeof values.cashbackPercentage === "number") update.cashback_percentage = values.cashbackPercentage;
+    if (typeof values.convenienceFee === "number") update.convenience_fee = values.convenienceFee;
+    if (typeof values.isActive === "boolean") update.is_active = values.isActive;
+
+    const { error } = await client
+      .from("education_configs")
+      .update(update)
+      .neq("exam_body", "");
+
+    if (error) throw new Error(error.message);
+
+    await recordAdminAudit(session, {
+      action: "education_configs.bulk_updated",
+      entityType: "education_configs",
+      entityId: "all",
+      newValue: update,
+    });
+
+    refresh("/admin/products/education");
+    return { ok: true, message: "All exam bodies updated with new API routing." };
+  } catch (error) { return failure(error); }
+}
+
+export async function saveEducationPackage(input: unknown): Promise<AdminActionResult<{ id: string }>> {
+  const schema = z.object({
+    id: uuid.optional(),
+    examBody: z.enum(["waec", "neco", "jamb", "nabteb", "nbais"]),
+    packageCode: z.string().trim().min(1).max(50),
+    name: z.string().trim().min(2).max(100),
+    description: z.string().trim().nullable().optional(),
+    serviceType: z.enum(["result_checker", "registration", "utme", "de", "screening"]).default("result_checker"),
+    price: z.coerce.number().positive(),
+    costPrice: z.coerce.number().min(0).default(0),
+    sortOrder: z.coerce.number().int().default(0),
+    isActive: z.boolean().default(true),
+  });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("products.edit");
+    const client = createAdminClient();
+
+    const record = {
+      ...(values.id ? { id: values.id } : {}),
+      exam_body: values.examBody,
+      package_code: values.packageCode,
+      name: values.name,
+      description: values.description || null,
+      service_type: values.serviceType,
+      price: values.price,
+      cost_price: values.costPrice,
+      sort_order: values.sortOrder,
+      is_active: values.isActive,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await client
+      .from("education_packages")
+      .upsert(record, { onConflict: "exam_body,package_code" })
+      .select("id")
+      .single();
+
+    if (error || !data) throw new Error(error?.message || "Could not save package.");
+
+    await recordAdminAudit(session, {
+      action: values.id ? "education_package.updated" : "education_package.created",
+      entityType: "education_package",
+      entityId: String(data.id),
+      newValue: record,
+    });
+
+    refresh("/admin/products/education");
+    return { ok: true, message: `Package ${values.name} saved successfully.`, data: { id: String(data.id) } };
+  } catch (error) { return failure(error); }
+}
+
+export async function deleteEducationPackage(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({ id: uuid });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("products.edit");
+    const client = createAdminClient();
+
+    const { error } = await client
+      .from("education_packages")
+      .delete()
+      .eq("id", values.id);
+
+    if (error) throw new Error(error.message);
+
+    await recordAdminAudit(session, {
+      action: "education_package.deleted",
+      entityType: "education_package",
+      entityId: values.id,
+    });
+
+    refresh("/admin/products/education");
+    return { ok: true, message: "Package removed from catalogue." };
   } catch (error) { return failure(error); }
 }

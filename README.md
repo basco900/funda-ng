@@ -60,7 +60,7 @@ The mobile-first test console is available at `http://localhost:3000/test`.
 2. Add Flutterwave sandbox credentials and a webhook secret hash.
 3. Add VTpass sandbox API, public, and secret keys.
 4. Add the SMEPlug private key when you are ready to call its live-only API.
-5. Add the GladTidings API token to enable its data and airtime routes.
+5. Add the MaskawaSub API token to enable its routes.
 6. Add the Pairgate API key. Keep `PAIRGATE_TEST_MODE=true` until test purchases pass.
 7. Start the app with `npm run dev`.
 

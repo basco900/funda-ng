@@ -24,6 +24,10 @@ export const adminNavigation: AdminNavGroup[] = [
     items: [
       { label: "Providers", href: "/admin/products/providers", icon: "provider", description: "Supplier APIs, catalogues and health" },
       { label: "Data Bundles", href: "/admin/products/data-bundles", icon: "wifi", description: "Curated plans, pricing and placement" },
+      { label: "Airtime & PINs", href: "/admin/products/airtime", icon: "phone", description: "Amount range rules, fallback APIs & e-PINs" },
+      { label: "Electricity", href: "/admin/products/electricity", icon: "zap", description: "12 Discos, active API switcher & meter verification" },
+      { label: "Cable TV", href: "/admin/products/tv", icon: "tv", description: "DStv, GOtv, StarTimes & Showmax routing, packages & smartcards" },
+      { label: "Education", href: "/admin/products/education", icon: "education", description: "WAEC, NECO, JAMB & NABTEB routing, prices & verification" },
     ],
   },
   {
@@ -41,6 +45,7 @@ export const adminNavigation: AdminNavGroup[] = [
     items: [
       { label: "Transactions", href: "/admin/transactions", icon: "transactions", description: "Every money movement" },
       { label: "Wallet Funding", href: "/admin/money/funding", icon: "funding", description: "Deposit activity" },
+      { label: "Payment Reviews", href: "/admin/money/payment-reviews", icon: "alert", description: "Received money held before crediting" },
       { label: "Refunds", href: "/admin/money/refunds", icon: "refund", description: "Refund requests" },
       { label: "Reconciliation", href: "/admin/money/reconciliation", icon: "reconcile", description: "Match internal and provider records" },
       { label: "Ledger", href: "/admin/money/ledger", icon: "ledger", description: "Immutable financial trail" },
@@ -53,7 +58,7 @@ export const adminNavigation: AdminNavGroup[] = [
       { label: "Failed", href: "/admin/operations/failed", icon: "alert", description: "Failed transaction queue" },
       { label: "Pending", href: "/admin/operations/pending", icon: "clock", description: "Ageing transaction queue" },
       { label: "Disputes", href: "/admin/operations/disputes", icon: "dispute", description: "Customer claims" },
-      { label: "Support", href: "/admin/operations/support", icon: "support", description: "Tickets and assignments" },
+      { label: "Live Chat & Support", href: "/admin/support", icon: "support", description: "Real-time web & Telegram conversations", badge: "Live" },
       { label: "Incidents", href: "/admin/operations/incidents", icon: "incident", description: "Provider disruptions" },
       { label: "Manual Operations", href: "/admin/operations/manual", icon: "tools", description: "Controlled interventions" },
     ],
@@ -61,6 +66,7 @@ export const adminNavigation: AdminNavGroup[] = [
   {
     label: "Growth",
     items: [
+      { label: "Blog & Content", href: "/admin/blog", icon: "megaphone", description: "Publish, edit & AI-generate blog posts" },
       { label: "Campaigns", href: "/admin/growth/campaigns", icon: "campaign", description: "Promotional campaigns" },
       { label: "Coupons", href: "/admin/growth/coupons", icon: "coupon", description: "Codes and redemptions" },
       { label: "Notifications", href: "/admin/growth/notifications", icon: "bell", description: "Push, email and SMS" },
@@ -121,11 +127,13 @@ export function permissionForAdminPath(pathname: string) {
   if (pathname.startsWith("/admin/users") || pathname.startsWith("/admin/customers/segments") || pathname.startsWith("/admin/customers/referrals")) return "users.view";
   if (pathname.startsWith("/admin/customers/kyc")) return "kyc.review";
   if (pathname.startsWith("/admin/customers/wallets") || pathname.startsWith("/admin/money/ledger")) return "wallet.view";
+  if (pathname.startsWith("/admin/money/payment-reviews")) return "wallet.adjust";
   if (pathname.startsWith("/admin/transactions") || pathname.startsWith("/admin/money/funding") || pathname.startsWith("/admin/operations/failed") || pathname.startsWith("/admin/operations/pending") || pathname.startsWith("/admin/operations/live")) return "transactions.view";
   if (pathname.startsWith("/admin/money/refunds")) return "transactions.refund";
   if (pathname.startsWith("/admin/money/reconciliation") || pathname.startsWith("/admin/money/revenue")) return "reconciliation.manage";
   if (pathname.startsWith("/admin/products/providers")) return "providers.manage";
-  if (pathname.startsWith("/admin/products/data-bundles")) return "products.view";
+  if (pathname.startsWith("/admin/products/")) return "products.view";
+  if (pathname.startsWith("/admin/growth/")) return "campaigns.manage";
   if (pathname.startsWith("/admin/operations/disputes") || pathname.startsWith("/admin/operations/support")) return "support.manage";
   if (pathname.startsWith("/admin/operations/incidents")) return "providers.manage";
   if (pathname.startsWith("/admin/operations/manual")) return "approvals.view";

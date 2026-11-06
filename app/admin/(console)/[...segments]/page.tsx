@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import { requireAdminPermission } from "../../../../lib/admin/auth";
 import { findAdminNavItem, permissionForAdminPath } from "../../../../lib/admin/navigation";
 import { loadAdminWorkspace } from "../../../../lib/admin/repository";
-import styles from "../../admin.module.css";
+import { AdminPageHeader } from "../../../../components/admin/page-pattern";
 import AdminIcon from "../admin-icon";
 import ExportAction from "../export-action";
+import WorkspaceTable from "./workspace-table";
 
 const moduleCapabilities: Record<string, string[]> = {
   Customers: ["Powerful customer search", "Saved audience views", "Controlled account actions", "Internal notes and history"],
@@ -39,60 +40,57 @@ export default async function AdminWorkspacePage({ params }: { params: Promise<{
   const groupName = groupFor(segments[0] ?? "platform");
   const capabilities = moduleCapabilities[groupName] ?? moduleCapabilities.Platform;
 
+  const headerStats = data.metrics.map((metric) => ({
+    label: metric.label,
+    value: metric.value,
+  }));
+
   return (
-    <div className={styles.workspacePage}>
-      <section className={styles.pageHeading}>
-        <div>
-          <span className={styles.pageEyebrow}>{groupName}</span>
-          <h1>{item.label}</h1>
-          <p>{item.description}. Built for fast, controlled operational work.</p>
-        </div>
-        <div className={styles.pageHeadingActions}>
-          <ExportAction source={data.source} />
-          <Link className={styles.primaryButton} href={`${pathname}?create=1`}><span>＋</span>Create New</Link>
-        </div>
-      </section>
+    <div className="w-full space-y-6 pb-16 font-sans text-slate-900">
+      {/* Top Header: Jobly Africa AdminPageHeader with vertical stat dividers */}
+      <AdminPageHeader title={item.label} stats={headerStats} />
 
-      <section className={styles.workspaceMetrics}>
-        {data.metrics.map((metric) => <article key={metric.label}><span>{metric.label}</span><strong>{metric.value}</strong><small>{metric.detail}</small></article>)}
-      </section>
-
-      <section className={styles.workspacePanel}>
-        <div className={styles.workspaceToolbar}>
-          <label><AdminIcon name="search" /><input name="q" placeholder={`Search ${item.label.toLowerCase()}…`} /></label>
-          <div><button type="button">Status <AdminIcon name="chevronDown" /></button><button type="button">Date <AdminIcon name="chevronDown" /></button><button type="button"><AdminIcon name="sliders" />Filters</button></div>
-        </div>
-
-        {data.columns.length ? (
-          <div className={styles.workspaceTableWrap}>
-            <table className={styles.workspaceTable}>
-              <thead><tr>{data.columns.map((column) => <th key={column.key} data-align={column.align}>{column.label}</th>)}<th aria-label="Actions" /></tr></thead>
-              <tbody>{data.rows.length ? data.rows.map((row, rowIndex) => (
-                <tr key={`${data.source}:${rowIndex}`}>{data.columns.map((column) => {
-                  const value = row[column.key];
-                  const statusCell = column.key === "status" || column.key === "risk" || column.key === "severity" || column.key === "priority";
-                  return <td key={column.key} data-align={column.align}>{statusCell ? <span className={styles.statusPill} data-status={String(value).toLowerCase()}>{value}</span> : column.key === "reference" || column.key === "request" ? <code>{value}</code> : String(value ?? "—")}</td>;
-                })}<td><button type="button" aria-label="Open row actions">•••</button></td></tr>
-              )) : <tr><td colSpan={data.columns.length + 1}><div className={styles.tableEmpty}><AdminIcon name={item.icon} /><strong>Nothing here yet</strong><span>New records will land in this operational view automatically.</span></div></td></tr>}</tbody>
-            </table>
+      {data.columns.length ? (
+        <WorkspaceTable
+          title={item.label}
+          icon={item.icon}
+          columns={data.columns}
+          rows={data.rows}
+          actions={
+            <>
+              <ExportAction source={data.source} />
+              <Link
+                href={`${pathname}?create=1`}
+                className="inline-flex h-9 items-center gap-1.5 rounded-[6px] bg-primary px-3.5 text-[12px] font-semibold text-white shadow-xs transition-colors hover:bg-primary/90"
+              >
+                <AdminIcon name="plus" className="h-3.5 w-3.5" />
+                Add New
+              </Link>
+            </>
+          }
+        />
+      ) : (
+        <section className="overflow-hidden rounded-[8px] border border-slate-200/70 bg-white p-8 text-center shadow-xs sm:p-12">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[10px] bg-primary/10 text-primary">
+            <AdminIcon name={item.icon} className="h-7 w-7" />
           </div>
-        ) : (
-          <div className={styles.moduleFoundation}>
-            <div className={styles.moduleFoundationIntro}>
-              <span className={styles.moduleLargeIcon}><AdminIcon name={item.icon} /></span>
-              <span className={styles.sectionEyebrow}>Control Plane Ready</span>
-              <h2>{item.label} Is Ready for Operations.</h2>
-              <p>This workspace is secured, navigable and audit-aware. Apply the latest Supabase migration to activate its live records.</p>
-              <Link href="/admin/platform/config">Review Configuration <span>→</span></Link>
-            </div>
-            <div className={styles.capabilityGrid}>
-              {capabilities.map((capability, index) => <div key={capability}><span>0{index + 1}</span><strong>{capability}</strong><small>Designed into this module</small></div>)}
-            </div>
+          <span className="mb-2 inline-block rounded-full border border-amber-200/60 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+            Setup Required
+          </span>
+          <h3 className="text-lg font-bold text-slate-900">{item.label} Module</h3>
+          <p className="mx-auto mb-6 mt-1 max-w-sm text-[12.5px] text-slate-500">
+            Run database migrations or connect active service tables to view live records.
+          </p>
+          <div className="mx-auto grid max-w-2xl grid-cols-1 gap-3 text-left sm:grid-cols-2 md:grid-cols-4">
+            {capabilities.map((cap, i) => (
+              <div key={cap} className="rounded-[8px] border border-slate-200/70 bg-zinc-50/60 p-3">
+                <span className="block text-[10px] font-bold text-primary">0{i + 1}</span>
+                <strong className="mt-0.5 block text-[12px] font-semibold text-slate-800">{cap}</strong>
+              </div>
+            ))}
           </div>
-        )}
-
-        <footer className={styles.workspaceFooter}><span>{data.rows.length} visible records</span><div><button type="button" disabled>←</button><span>Page 1 of 1</span><button type="button" disabled>→</button></div></footer>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

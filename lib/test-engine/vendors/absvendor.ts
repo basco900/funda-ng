@@ -86,10 +86,11 @@ export const absvendor: VtuVendor = {
     const isSandbox = process.env.ABS_VENDOR_SANDBOX === "true";
     const pin = process.env.ABS_VENDOR_PIN || "1234";
 
+    const network = input.network || "mtn";
     const payload = await call("/api/partner/v1/data.php", {
       method: "POST",
       body: JSON.stringify({
-        network: networkIds[input.network] || input.network.toUpperCase(),
+        network: networkIds[network] || network.toUpperCase(),
         plan: input.planId,
         mobile_number: cleanPhone,
         pin,

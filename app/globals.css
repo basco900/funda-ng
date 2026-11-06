@@ -2,87 +2,132 @@
 
 :root,
 [data-theme="light"] {
-  --background: #f4f7f5;
-  --foreground: #0a0c0e;
+  --background: #fbfbfa;
+  --foreground: #0b0b0c;
   --surface: #ffffff;
-  --surface-subtle: #e9efeb;
+  --surface-subtle: #f4f4f2;
   --surface-elevated: #ffffff;
   --border: rgba(0, 0, 0, 0.07);
   --border-subtle: rgba(0, 0, 0, 0.04);
   --border-strong: rgba(0, 0, 0, 0.12);
-  --border-focus: rgba(24, 116, 90, 0.4);
-  --text-primary: #0a0c0e;
-  --text-secondary: #526064;
-  --text-muted: #7e8c90;
-  --accent: #18745a;
-  --accent-hover: #125c49;
-  --accent-bright: #2f8f6c;
-  --accent-light: #dcebe5;
-  --accent-subtle: rgba(24, 116, 90, 0.1);
-  --accent-glow: rgba(24, 116, 90, 0.25);
-  --brand-primary: #18745a;
-  --brand-primary-hover: #125c49;
-  --brand-primary-bright: #2f8f6c;
-  --brand-primary-soft: #dcebe5;
-  --success: #18745a;
+  --border-focus: rgba(102, 0, 51, 0.4);
+  --text-primary: #0b0b0c;
+  --text-secondary: #1f1f22;
+  --text-muted: #6f6e6b;
+  --accent: #660033;
+  --accent-hover: #4d0026;
+  --accent-bright: #833059;
+  --accent-light: #ecdfe5;
+  --accent-subtle: rgba(102, 0, 51, 0.1);
+  --accent-glow: rgba(102, 0, 51, 0.25);
+  --brand-primary: #660033;
+  --brand-primary-hover: #4d0026;
+  --brand-primary-bright: #833059;
+  --brand-primary-soft: #ecdfe5;
+  --success: #16a34a;
   --warning: #d97706;
   --danger: #e5484d;
   --info: #0891b2;
-  --button-black-bg: #0a0c0e;
+  --button-black-bg: #660033;
   --button-black-text: #ffffff;
-  --card-dark-bg: #0a0c0e;
+  --card-dark-bg: #3d2229;
   --card-dark-text: #ffffff;
   --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.03);
   --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -2px rgba(0, 0, 0, 0.03);
   --shadow-lg: 0 16px 36px -8px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
-  --selection-bg: #18745a;
+  --selection-bg: #660033;
   --selection-color: #ffffff;
-  --font-geist-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --ash: #c9cdd9;
+  --ash-soft: #e0e3eb;
+  --ash-ink: #0b0b0c;
+  --gold: #b8893a;
+  --gold-bright: #c9a25a;
+  --gold-soft: #f3e6cc;
+  --font-sans: var(--font-dm-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-geist-mono: var(--font-mono);
+  --primary: #660033;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f1f4;
+  --secondary-foreground: #25283a;
+  --muted: #f4f1f4;
+  --muted-foreground: #707383;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --ring: #660033;
+  --input: #e7e3eb;
 }
 
 [data-theme="dark"] {
-  --background: #07090e;
-  --foreground: #f6f7f9;
-  --surface: rgba(16, 22, 34, 0.85);
-  --surface-subtle: #131824;
-  --surface-elevated: #1a2233;
+  --background: #0a0a0a;
+  --foreground: #f7f1ec;
+  --surface: rgba(20, 20, 20, 0.85);
+  --surface-subtle: #141414;
+  --surface-elevated: #1c1c1c;
   --border: rgba(255, 255, 255, 0.08);
   --border-subtle: rgba(255, 255, 255, 0.04);
   --border-strong: rgba(255, 255, 255, 0.16);
-  --border-focus: rgba(24, 116, 90, 0.45);
+  --border-focus: rgba(102, 0, 51, 0.45);
   --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  --text-muted: #5a6880;
-  --accent: #18745a;
-  --accent-hover: #125c49;
-  --accent-bright: #5ab18e;
-  --accent-light: rgba(24, 116, 90, 0.15);
-  --accent-subtle: rgba(24, 116, 90, 0.12);
-  --accent-glow: rgba(24, 116, 90, 0.35);
-  --brand-primary: #18745a;
-  --brand-primary-hover: #125c49;
-  --brand-primary-bright: #5ab18e;
-  --brand-primary-soft: rgba(24, 116, 90, 0.15);
-  --success: #5ab18e;
+  --text-secondary: #aba3a6;
+  --text-muted: #7a7376;
+  --accent: #8c1a4f;
+  --accent-hover: #660033;
+  --accent-bright: #c2457e;
+  --accent-light: rgba(140, 26, 79, 0.22);
+  --accent-subtle: rgba(102, 0, 51, 0.12);
+  --accent-glow: rgba(102, 0, 51, 0.35);
+  --brand-primary: #8c1a4f;
+  --brand-primary-hover: #660033;
+  --brand-primary-bright: #c2457e;
+  --brand-primary-soft: rgba(140, 26, 79, 0.22);
+  --success: #4ade80;
   --warning: #f59e0b;
   --danger: #fb7185;
   --info: #22d3ee;
-  --button-black-bg: #ffffff;
-  --button-black-text: #07090e;
-  --card-dark-bg: #0f1422;
+  --button-black-bg: #8c1a4f;
+  --button-black-text: #ffffff;
+  --card-dark-bg: #161616;
   --card-dark-text: #ffffff;
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.6);
-  --selection-bg: #18745a;
+  --selection-bg: #8c1a4f;
   --selection-color: #ffffff;
+  --ash: #4a4446;
+  --ash-soft: #222222;
+  --ash-ink: #f7f1ec;
+  --gold: #d9b46a;
+  --gold-bright: #e6c785;
+  --gold-soft: rgba(217, 180, 106, 0.14);
+  --primary: #8c1a4f;
+  --primary-foreground: #ffffff;
+  --secondary: #1f1f22;
+  --secondary-foreground: #f7f1ec;
+  --muted: #1c1c1c;
+  --muted-foreground: #a3a29f;
+  --destructive: #fb7185;
+  --destructive-foreground: #ffffff;
+  --ring: #8c1a4f;
+  --input: rgba(255, 255, 255, 0.14);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-satoshi);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-jetbrains-mono);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 }
 
 *,
@@ -100,27 +145,201 @@ body {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-satoshi), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
+/* -------------------------------------------------------------------------- */
+/* DESIGN RULES: DM SANS (Editorial & Flow) + JETBRAINS MONO (Data & Micro)   */
+/* -------------------------------------------------------------------------- */
+
+/* Utility font classes */
+.font-mono {
+  font-family: var(--font-mono) !important;
 }
 
-button {
-  cursor: pointer;
+.font-sans {
+  font-family: var(--font-sans) !important;
 }
 
-button:disabled {
-  cursor: not-allowed;
+/* Rule 1: Numerical Data, Financial Amounts, Percentages & Latency */
+.tabular-nums,
+[data-font="mono"],
+.font-tabular {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+/* Rule 2: Technical Tokens, USSD Codes, Meter Numbers & Ticket IDs */
+code,
+kbd,
+samp,
+pre,
+.code-token,
+.ticket-pill,
+.meter-num {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1;
+}
+
+/* Rule 3: Microcopy, Section Trackers & Helper Tags */
+.section-tag,
+.helper-tag,
+.micro-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+/* Minimal scrollbars: thin, transparent track */
+:root {
+  --scrollbar-thumb: rgba(0, 0, 0, 0.16);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] {
+  --scrollbar-thumb: rgba(255, 255, 255, 0.16);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
+}
+
+/* Thin native scrollbars (arrows kept) with a soft thumb; the ::-webkit rules cover older Safari. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  background: var(--scrollbar-thumb);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
 }
 
 ::selection {
   background: var(--selection-bg);
   color: var(--selection-color);
+}
+
+
+@keyframes fundaSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Admin design tokens (used by app/admin/admin.module.css). Defined globally so they
+   apply regardless of the admin shell's markup. Prefixed to avoid clashing with the app. */
+:root {
+  --j-paper: #f7f6fb;
+  --j-surface: #ffffff;
+  --j-ink: #18181b;
+  --j-text: #0f172a;
+  --j-heading: #020617;
+  --j-slate600: #475569;
+  --j-slate700: #334155;
+  --j-slate800: #1e293b;
+  --j-muted: #64748b;
+  --j-faint: #94a3b8;
+  --j-zinc400: #a1a1aa;
+  --j-zinc500: #71717a;
+  --j-zinc600: #52525b;
+  --j-zinc700: #3f3f46;
+  --j-line: rgba(226, 232, 240, 0.7);
+  --j-line-row: rgba(226, 232, 240, 0.65);
+  --j-line-input: #e2e8f0;
+  --j-line-zinc: rgba(244, 244, 245, 0.8);
+  --j-line-zinc200: #e4e4e7;
+  --j-hover: #fafafa;
+  --j-row-hover: rgba(248, 250, 252, 0.55);
+  --j-head: #fafafa;
+  --j-chip: #f1f5f9;
+  --j-primary: #660033;
+  --j-primary-hover: #4d0026;
+  --j-primary-ink: #660033;
+  --j-primary-tint: rgba(102, 0, 51, 0.08);
+  --j-primary-tint-soft: rgba(102, 0, 51, 0.06);
+  --t-ink: #1f2133;
+  --t-muted: #8b8ea3;
+  --t-line: #eae8f0;
+  --t-line-row: #efedf3;
+  --t-card-line: #e6e4ec;
+}
+
+[data-theme="dark"] {
+  --j-paper: #0f0d10;
+  --j-surface: #0b0b0d;
+  --j-ink: #f4f4f5;
+  --j-text: #f1f5f9;
+  --j-heading: #ffffff;
+  --j-slate600: #94a3b8;
+  --j-slate700: #cbd5e1;
+  --j-slate800: #e2e8f0;
+  --j-muted: #94a3b8;
+  --j-faint: #64748b;
+  --j-zinc400: #71717a;
+  --j-zinc500: #a1a1aa;
+  --j-zinc600: #a1a1aa;
+  --j-zinc700: #d4d4d8;
+  --j-line: rgba(255, 255, 255, 0.1);
+  --j-line-row: rgba(255, 255, 255, 0.07);
+  --j-line-input: rgba(255, 255, 255, 0.1);
+  --j-line-zinc: rgba(255, 255, 255, 0.06);
+  --j-line-zinc200: rgba(255, 255, 255, 0.1);
+  --j-hover: rgba(255, 255, 255, 0.04);
+  --j-row-hover: rgba(255, 255, 255, 0.025);
+  --j-head: rgba(255, 255, 255, 0.02);
+  --j-chip: rgba(255, 255, 255, 0.06);
+  --j-primary: #8c1a4f;
+  --j-primary-hover: #a3245e;
+  --j-primary-ink: #e0709f;
+  --j-primary-tint: rgba(224, 112, 159, 0.12);
+  --j-primary-tint-soft: rgba(224, 112, 159, 0.08);
+  --t-ink: #f1f1f5;
+  --t-muted: #8f91a8;
+  --t-line: rgba(255, 255, 255, 0.08);
+  --t-line-row: rgba(255, 255, 255, 0.06);
+  --t-card-line: rgba(255, 255, 255, 0.08);
 }

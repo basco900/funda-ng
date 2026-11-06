@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { createAdminClient } from "../../lib/supabase/admin";
 import { createClient } from "../../lib/supabase/server";
 
 export type AccountActionResult = { ok: true; message: string } | { ok: false; message: string };
@@ -73,6 +74,14 @@ export async function updateAccountProfile(input: unknown): Promise<AccountActio
   if (error) return { ok: false, message: "We could not save your profile. Apply the account-center migration, then try again." };
 
   await supabase.auth.updateUser({ data: { ...user.user_metadata, full_name: value.fullName, display_name: value.displayName } });
+  try {
+    await createAdminClient().from("user_notifications").insert({
+      user_id: user.id,
+      title: "Profile Updated",
+      body: `Your Funda profile details (${value.fullName}) were saved.`,
+      kind: "system",
+    });
+  } catch {}
   revalidatePath("/dashboard");
   return { ok: true, message: "Profile updated." };
 }
@@ -97,6 +106,14 @@ export async function updateAccountSettings(input: unknown): Promise<AccountActi
   }, { onConflict: "user_id" });
 
   if (error) return { ok: false, message: "We could not save your settings. Apply the account-center migration, then try again." };
+  try {
+    await createAdminClient().from("user_notifications").insert({
+      user_id: user.id,
+      title: "Preferences Updated",
+      body: "Your notification and alert preferences were saved.",
+      kind: "system",
+    });
+  } catch {}
   revalidatePath("/dashboard");
   return { ok: true, message: "Settings saved." };
 }
@@ -120,6 +137,15 @@ export async function changeAccountPassword(input: unknown): Promise<AccountActi
         : "We could not change your password. Check your current password and try again.",
     };
   }
+  try {
+    await createAdminClient().from("user_notifications").insert({
+      user_id: user.id,
+      title: "Password Changed",
+      body: "Your Funda account password was updated successfully.",
+      kind: "security",
+    });
+  } catch {}
+  revalidatePath("/dashboard");
   return { ok: true, message: "Password changed successfully." };
 }
 

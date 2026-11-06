@@ -31,8 +31,8 @@ export function onboardingStepFor(user: User, databaseName?: string | null): Onb
   return "complete";
 }
 
-export function postAuthPathFor(user: User, databaseName?: string | null) {
-  return onboardingStepFor(user, databaseName) === "complete" ? "/dashboard" : "/register?resume=1";
+export function postAuthPathFor(_user?: User, _databaseName?: string | null) {
+  return "/dashboard";
 }
 
 export function completedOnboardingData(

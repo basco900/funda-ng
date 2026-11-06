@@ -7,6 +7,7 @@ import { recordSystemHealth } from "./telemetry";
 import { deliverNotification } from "./delivery";
 import { createAdminExport } from "./exports";
 import { requeryProviderTransaction } from "./providers";
+import { reconcilePendingCheckouts, sweepPendingConnectedAccounts } from "../payments/bachs";
 
 type Job = { id: string; job_type: string; payload: Record<string, unknown> };
 
@@ -65,8 +66,26 @@ async function runJob(job: Job) {
   if (job.job_type === "provider.requery") return requeryProviderTransaction(String(job.payload.transactionId));
   if (job.job_type === "webhook.replay") return requeryProviderTransaction(String(job.payload.transactionId));
   if (job.job_type === "notification.deliver") return deliverNotification(String(job.payload.outboxId));
+  if (job.job_type === "payments.reconcile_checkouts") return reconcilePendingCheckouts();
+  if (job.job_type === "payments.sweep_connected_accounts") return sweepPendingConnectedAccounts();
   if (job.job_type === "report.export") return createAdminExport(String(job.payload.exportId));
   throw new Error(`Unknown admin job type: ${job.job_type}`);
+}
+
+// Recurring money-safety jobs. Each worker run enqueues them once per time bucket, so
+// whatever schedule calls /api/admin/jobs/run (Coolify scheduled task) drives them.
+const recurringJobs: Array<{ jobType: string; everyMinutes: number }> = [
+  { jobType: "transactions.sweep_pending", everyMinutes: 10 },
+  { jobType: "payments.reconcile_checkouts", everyMinutes: 10 },
+  { jobType: "payments.sweep_connected_accounts", everyMinutes: 5 },
+];
+
+export async function enqueueRecurringJobs() {
+  const now = Date.now();
+  for (const { jobType, everyMinutes } of recurringJobs) {
+    const bucket = Math.floor(now / (everyMinutes * 60_000));
+    await enqueueAdminJob(jobType, {}, `${jobType}:${bucket}`);
+  }
 }
 
 export async function runAdminJobs(workerId = `funda-worker-${randomUUID().slice(0, 8)}`, limit = 20) {

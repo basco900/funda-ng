@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { LockIcon } from "../../onboarding/icons";
+import { LockIcon, SpinnerIcon } from "../../onboarding/icons";
 import { validFullName, validPassword } from "../../../lib/auth/identifiers";
 import {
   completedOnboardingData,
@@ -44,7 +44,7 @@ export default function ResetPasswordForm() {
 
     setBusy(false);
     if (updateError) return setError("Unable to update password. Please try again.");
-    router.replace(validFullName(fullName) ? "/dashboard" : "/register?resume=1");
+    router.replace("/dashboard");
   };
 
   return (
@@ -69,7 +69,16 @@ export default function ResetPasswordForm() {
             />
           </div>
           {error && <small role="alert">{error}</small>}
-          <button disabled={busy} type="submit">{busy ? "Saving…" : "Save password"}</button>
+          <button disabled={busy} type="submit" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            {busy ? (
+              <>
+                <SpinnerIcon size={18} />
+                <span>Saving…</span>
+              </>
+            ) : (
+              "Save password"
+            )}
+          </button>
         </form>
       </section>
     </main>

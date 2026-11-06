@@ -6,13 +6,13 @@ import type { VendorId } from "../test-engine/types";
 import { createAdminClient } from "../supabase/admin";
 import { recordProviderApiCall } from "./telemetry";
 
-const providerIds = new Set<VendorId>(["vtpass", "smeplug", "gladtidings", "pairgate"]);
+const providerIds = new Set<VendorId>(["vtpass", "smeplug", "pairgate", "maskawasub", "absvendor"]);
 
 export async function requeryProviderTransaction(transactionId: string) {
   const client = createAdminClient();
   const { data: transaction, error } = await client
     .from("service_transactions")
-    .select("id,internal_reference,provider_reference,status,provider_id,provider:provider_registry(slug)")
+    .select("id,user_id,internal_reference,provider_reference,status,provider_id,provider:provider_registry(slug)")
     .eq("id", transactionId)
     .single();
   if (error || !transaction) throw new Error("Service transaction was not found.");
@@ -38,14 +38,16 @@ export async function requeryProviderTransaction(transactionId: string) {
       outcome: result.status === "successful" ? "successful" : result.status === "failed" ? "failed" : "processing",
       provider_reference: result.providerReference ?? null,
     });
-    await client.rpc("admin_transition_service_transaction", {
+    // Settle through the customer RPC so a failed outcome refunds the wallet (and success pays cashback).
+    const { error: settleError } = await client.rpc("customer_settle_service_purchase", {
+      p_user_id: transaction.user_id,
       p_transaction_id: transaction.id,
-      p_to_status: nextStatus,
+      p_status: nextStatus,
       p_summary: `Provider requery: ${result.message}`.slice(0, 1000),
-      p_actor_type: "system",
-      p_actor_id: `worker:${providerSlug}`,
-      p_metadata: { providerReference: result.providerReference ?? null, requeryReference: reference },
+      p_provider_reference: result.providerReference ?? null,
+      p_metadata: { provider: providerSlug, actor: `worker:${providerSlug}`, requeryReference: reference },
     });
+    if (settleError) throw new Error(`Requery settlement failed: ${settleError.message}`);
     await recordProviderApiCall({ requestId, provider: providerSlug, transactionReference: transaction.internal_reference, method: "POST", endpoint: `${providerSlug}/requery`, response: result.raw, latencyMs: Date.now() - started, outcome: "successful" });
     return { skipped: false, status: nextStatus, provider: providerSlug };
   } catch (cause) {

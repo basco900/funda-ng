@@ -1,4 +1,4 @@
-import type { DataPlan, NetworkId, PurchaseInput, PurchaseResult, VtuVendor } from "../types";
+import type { DataPlan, NetworkId, PurchaseInput, PurchaseResult, RechargePinItem, VtuVendor } from "../types";
 import { ProviderRequestError, normalizePhone, providerMessage } from "../utils";
 
 function configuration() {
@@ -29,6 +29,32 @@ async function call(path: string, init?: RequestInit) {
   }
   return payload;
 }
+
+const MASKAWA_DISCO_IDS: Record<string, number> = {
+  ikedc: 1,
+  ikeja: 1,
+  ekedc: 2,
+  eko: 2,
+  aedc: 3,
+  abuja: 3,
+  kedco: 4,
+  kano: 4,
+  eedc: 5,
+  enugu: 5,
+  phed: 6,
+  port_harcourt: 6,
+  portharcourt: 6,
+  ibedc: 7,
+  ibadan: 7,
+  kaedco: 8,
+  kaduna: 8,
+  jed: 9,
+  jos: 9,
+  bedc: 10,
+  benin: 10,
+  yedc: 11,
+  yola: 11,
+};
 
 const networkIds: Record<NetworkId, number> = {
   mtn: 1,
@@ -100,6 +126,118 @@ export const maskawasub: VtuVendor = {
   async purchase(input: PurchaseInput): Promise<PurchaseResult> {
     const destination = normalizePhone(input.phone);
     const cleanPhone = destination.startsWith("234") ? `0${destination.slice(3)}` : destination;
+    const network = input.network || "mtn";
+    const netId = networkIds[network] || 1;
+
+    if (input.type === "electricity") {
+      const discoKey = (input.disco || "ikedc").toLowerCase();
+      const discoId = MASKAWA_DISCO_IDS[discoKey] || 1;
+      const payload = await call("/billpayment/", {
+        method: "POST",
+        body: JSON.stringify({
+          disco_name: discoId,
+          amount: input.amount,
+          meter_number: input.meterNumber,
+          MeterType: input.meterType === "postpaid" ? "Postpaid" : "Prepaid",
+          Customer_Phone: cleanPhone || "08012345678",
+        }),
+      });
+
+      const token = payload.token || payload.Token || payload.mainToken || payload.purchased_code;
+      const units = payload.units || payload.Units;
+      return {
+        status: "successful",
+        reference: input.reference,
+        providerReference: String(payload.id || payload.ident || payload.reference || input.reference),
+        message: payload.message || "Electricity token generated via Maskawasub.",
+        token: token ? String(token) : undefined,
+        units: units ? String(units) : undefined,
+        raw: payload,
+      };
+    }
+
+    if (input.type === "airtime" && input.mode === "epin") {
+      const quantity = Math.max(1, Math.min(20, Number(input.quantity || 1)));
+      const unitValue = Math.round(input.amount / quantity);
+      const payload = await call("/rechargepin/", {
+        method: "POST",
+        body: JSON.stringify({
+          network: netId,
+          network_amount: unitValue,
+          quantity,
+          name_on_card: (input.cardName || "Funda").slice(0, 20),
+        }),
+      });
+
+      const statusStr = String(payload.Status || payload.status || "").toLowerCase();
+      const isSuccess = statusStr === "successful" || statusStr === "success" || payload.status === true;
+      const isFailed = statusStr === "failed" || statusStr === "error" || payload.status === false;
+
+      if (isFailed && !isSuccess) {
+        const msg = payload.msg || payload.message || payload.error || "Maskawasub recharge PIN generation failed.";
+        throw new ProviderRequestError(msg, true);
+      }
+
+      const rawPins = Array.isArray(payload.data_pin)
+        ? payload.data_pin
+        : Array.isArray(payload.pins)
+        ? payload.pins
+        : payload.pin
+        ? [{ pin: payload.pin, serial: payload.serial }]
+        : [];
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pins: RechargePinItem[] = rawPins.map((item: any) => {
+        const pinCode = String(item?.pin ?? item?.fields?.pin ?? item?.code ?? "").trim();
+        const serial = item?.serial ?? item?.fields?.serial ?? item?.pk ? String(item?.serial ?? item?.fields?.serial ?? item?.pk) : undefined;
+        return {
+          pin: pinCode,
+          serial,
+          amount: unitValue,
+          network,
+          dialCode: `*311*${pinCode.replace(/\s+/g, "")}#`,
+        };
+      }).filter((p: RechargePinItem) => Boolean(p.pin));
+
+      return {
+        status: isSuccess ? "successful" : "pending",
+        reference: input.reference,
+        providerReference: String(payload.id || payload.ident || payload.reference || input.reference),
+        message: payload.message || payload.msg || `${quantity}x ₦${unitValue} ${network.toUpperCase()} recharge PIN generated via Maskawasub.`,
+        pins,
+        raw: payload,
+      };
+    }
+
+    if (input.type === "airtime") {
+      const payload = await call("/topup/", {
+        method: "POST",
+        body: JSON.stringify({
+          network: netId,
+          amount: input.amount,
+          mobile_number: cleanPhone,
+          Ported_number: true,
+          airtime_type: "VTU",
+        }),
+      });
+
+      const statusStr = String(payload.Status || payload.status || "").toLowerCase();
+      const isSuccess = statusStr === "successful" || statusStr === "success" || payload.status === true;
+      const isFailed = statusStr === "failed" || statusStr === "error" || payload.status === false;
+
+      if (isFailed && !isSuccess) {
+        const msg = payload.msg || payload.message || payload.error || "Maskawasub airtime purchase failed.";
+        throw new ProviderRequestError(msg, true);
+      }
+
+      return {
+        status: isSuccess ? "successful" : "pending",
+        reference: input.reference,
+        providerReference: String(payload.id || payload.ident || payload.reference || input.reference),
+        message: payload.message || payload.msg || `₦${input.amount.toLocaleString("en-NG")} ${network.toUpperCase()} airtime delivered via Maskawasub.`,
+        raw: payload,
+      };
+    }
 
     // Convert plan ID to number if numeric
     const planIdStr = String(input.planId || "");
@@ -109,7 +247,7 @@ export const maskawasub: VtuVendor = {
     const payload = await call("/data/", {
       method: "POST",
       body: JSON.stringify({
-        network: networkIds[input.network] || 1,
+        network: netId,
         mobile_number: cleanPhone,
         plan: planValue,
         Ported_number: true,

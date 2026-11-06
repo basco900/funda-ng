@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { AdminPageHeader } from "@/components/admin/page-pattern";
 import { saveProvider } from "../../actions";
 import AdminIcon from "../../admin-icon";
 import AdminSelect from "../../admin-select";
@@ -105,30 +106,39 @@ export default function ProviderWorkspace({
   }
 
   return (
-    <div className={styles.productWorkspace}>
-      <header className={styles.pageHeading}>
-        <div>
-          <span className={styles.pageEyebrow}>PRODUCTS / SUPPLY</span>
-          <h1>Providers</h1>
-          <p>Connect suppliers safely, then review their raw catalogue before a plan reaches customers.</p>
-        </div>
-        <div className={styles.pageHeadingActions}>
-          <button className={styles.primaryButton} onClick={() => setEditing(blank)}>
-            <AdminIcon name="plug" />
-            <span>Add Provider</span>
-          </button>
-        </div>
-      </header>
+    <div className={styles.workspacePage}>
+      <AdminPageHeader
+        title="Providers"
+        actions={
+          <>
+            <button type="button" className={styles.primaryButton} onClick={() => setEditing(blank)}>
+              <AdminIcon name="plus" />
+              Add provider
+            </button>
+          </>
+        }
+        stats={[
+          { icon: "provider", tone: "slate", value: providers.length, label: "Providers", note: "connected suppliers" },
+          { icon: "check", tone: "emerald", value: providers.filter((p) => p.environment === "live").length, label: "Live", note: "production keys" },
+          { icon: "pulse", tone: "amber", value: providers.filter((p) => p.status === "operational").length, label: "Operational", note: "passing health checks" },
+          { icon: "catalogue", tone: "primary", value: [...counts.values()].reduce((sum, n) => sum + n, 0), label: "Offers", note: "raw catalogue items" },
+        ]}
+      />
 
       {notice && <p className={styles.productNotice}>{notice}</p>}
 
       {/* Unified Provider Master Table */}
       <section className={`${styles.workspacePanel} ${styles.providerRegistry}`}>
-        <div className={styles.workspaceToolbar}>
-          <div className={styles.sectionHeadingRow}>
-            <h2>Connected Suppliers</h2>
+        <div className={styles.directoryHeader}>
+          <div className={styles.directoryTop}>
+            <div>
+              <div className={styles.directoryTitle}>
+                <h2>Provider directory</h2>
+                <span className={styles.countPill}>{providers.length}</span>
+              </div>
+              <p className={styles.directorySub}>Environment, status, priority and catalogue.</p>
+            </div>
           </div>
-          <span className={styles.countPill}>{providers.length} registered</span>
         </div>
 
         <div className={styles.workspaceTableWrap}>
@@ -136,12 +146,12 @@ export default function ProviderWorkspace({
             <thead>
               <tr>
                 <th>Provider</th>
-                <th>Environment</th>
                 <th>Status</th>
-                <th>Priority</th>
-                <th>Supplied Products</th>
-                <th>Raw Offers</th>
-                <th data-align="right">Actions</th>
+                <th>Environment</th>
+                <th>Products</th>
+                <th>Offers</th>
+                <th data-align="center">Priority</th>
+                <th data-align="right">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -151,16 +161,11 @@ export default function ProviderWorkspace({
                     <td>
                       <div className={styles.tableEntity}>
                         <span className={styles.providerLogo}>{provider.name.slice(0, 2).toUpperCase()}</span>
-                        <div>
+                        <div className={styles.cellTitle}>
                           <strong>{provider.name}</strong>
                           <small>@{provider.slug}</small>
                         </div>
                       </div>
-                    </td>
-                    <td>
-                      <span className={styles.environmentPill} data-env={provider.environment}>
-                        {provider.environment}
-                      </span>
                     </td>
                     <td>
                       <span className={styles.statusPill} data-status={provider.status}>
@@ -168,26 +173,26 @@ export default function ProviderWorkspace({
                       </span>
                     </td>
                     <td>
-                      {provider.priority}
-                    </td>
-                    <td>
-                      <div className={styles.capabilityPills}>
-                        {provider.capabilities.map((cap) => (
-                          <span key={cap} className={styles.subtleChip}>{cap}</span>
-                        ))}
+                      <div className={styles.cellValue}>
+                        <strong>{provider.environment === "live" ? "Live" : "Sandbox"}</strong>
+                        <small>{provider.environment === "live" ? "Production keys" : "Test keys"}</small>
                       </div>
                     </td>
+                    <td className={styles.cellMuted}>{provider.capabilities.join(", ") || "—"}</td>
                     <td>
-                      <strong>{counts.get(provider.id) ?? 0}</strong> <small className={styles.unlinkedText}>offers</small>
+                      <div className={styles.cellValue}>
+                        <strong>{counts.get(provider.id) ?? 0}</strong>
+                        <small>offers</small>
+                      </div>
                     </td>
+                    <td data-align="center" className={styles.cellPlain}>{provider.priority}</td>
                     <td data-align="right">
-                      <div className={styles.rowActionGroup}>
-                        <button type="button" className={styles.ghostButton} onClick={() => setEditing(provider)}>
-                          Configure
+                      <div className={styles.rowActions}>
+                        <button type="button" className={styles.iconAction} aria-label="Configure" data-tip="Configure" onClick={() => setEditing(provider)}>
+                          <AdminIcon name="pencil" />
                         </button>
-                        <Link href={`/admin/products/providers/${provider.id}`} className={styles.secondaryButton}>
-                          <span>View Profile</span>
-                          <AdminIcon name="chevron" />
+                        <Link href={`/admin/products/providers/${provider.id}`} className={styles.iconAction} aria-label="View profile" data-tip="View profile">
+                          <AdminIcon name="arrowUpRight" />
                         </Link>
                       </div>
                     </td>
