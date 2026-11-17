@@ -2,6 +2,10 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseUrl } from "./config";
 
+export function isSupabaseAdminConfigured() {
+  return Boolean(supabaseUrl && process.env.SUPABASE_SECRET_KEY);
+}
+
 export function createAdminClient() {
   const secret = process.env.SUPABASE_SECRET_KEY;
   if (!supabaseUrl || !secret) throw new Error("Supabase server credentials are not configured.");

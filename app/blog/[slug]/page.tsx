@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, isSupabaseAdminConfigured } from "@/lib/supabase/admin";
 import BlogNavHeader from "@/components/blog/blog-nav-header";
 import BlogFooter from "@/components/blog/blog-footer";
 import MarkdownRenderer from "@/components/blog/markdown-renderer";
@@ -17,6 +17,9 @@ type PageProps = {
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  if (!isSupabaseAdminConfigured()) {
+    return { title: "Article Not Found · Funda Blog" };
+  }
   const { slug } = await params;
   const client = createAdminClient();
 
@@ -68,6 +71,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function BlogPostPage({ params }: PageProps) {
+  if (!isSupabaseAdminConfigured()) {
+    notFound();
+  }
   const { slug } = await params;
   const client = createAdminClient();
 

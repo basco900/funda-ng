@@ -170,7 +170,7 @@
   gap: 9px;
   max-width: min(92vw, 480px);
   padding: 8px 14px 8px 11px;
-  border-radius: 999px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.9);
   color: #0f172a;
   font-size: 12.5px;
@@ -1251,7 +1251,7 @@
 .txTogglePill {
   height: 28px;
   padding: 0 11px;
-  border-radius: 999px;
+  border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.08);
   background: #ffffff;
   color: var(--funda-text-secondary);

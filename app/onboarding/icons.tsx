@@ -57,6 +57,15 @@ export function ArrowRightIcon(props: IconProps) {
   );
 }
 
+export function IosSwitchArrowIcon({ size = 14, ...props }: IconProps) {
+  return (
+    <IconBase size={size} strokeWidth="1.85" {...props}>
+      <path d="M4.5 8.5h14M14.5 4.5c1.5 1.6 2.8 2.8 4.5 4-1.7 1.2-3 2.4-4.5 4" />
+      <path d="M19.5 15.5h-14M9.5 11.5c-1.5 1.6-2.8 2.8-4.5 4 1.7 1.2 3 2.4 4.5 4" />
+    </IconBase>
+  );
+}
+
 export function ArrowUpRightIcon(props: IconProps) {
   return (
     <IconBase {...props}>

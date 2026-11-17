@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, isSupabaseAdminConfigured } from "@/lib/supabase/admin";
 import BlogNavHeader from "@/components/blog/blog-nav-header";
 import BlogFooter from "@/components/blog/blog-footer";
 import BlogHomeClient, { type PublicBlogPost, type PublicCategory } from "../../blog-home-client";
@@ -13,6 +13,9 @@ type PageProps = {
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  if (!isSupabaseAdminConfigured()) {
+    return { title: "Category Not Found · Funda Blog" };
+  }
   const { category: categorySlug } = await params;
   const client = createAdminClient();
 
@@ -40,6 +43,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function BlogCategoryPage({ params }: PageProps) {
+  if (!isSupabaseAdminConfigured()) {
+    notFound();
+  }
   const { category: categorySlug } = await params;
   const client = createAdminClient();
 

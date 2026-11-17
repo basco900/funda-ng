@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, isSupabaseAdminConfigured } from "@/lib/supabase/admin";
 import { sendTelegramNotification } from "@/lib/telegram/bot";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +11,10 @@ export async function GET(request: NextRequest) {
 
   if (!threadId) {
     return NextResponse.json({ error: "Missing threadId" }, { status: 400 });
+  }
+
+  if (!isSupabaseAdminConfigured()) {
+    return NextResponse.json({ messages: [] });
   }
 
   const supabase = createAdminClient();

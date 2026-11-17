@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, isSupabaseAdminConfigured } from "@/lib/supabase/admin";
 import BlogNavHeader from "@/components/blog/blog-nav-header";
 import BlogFooter from "@/components/blog/blog-footer";
 import BlogHomeClient, { type PublicBlogPost, type PublicCategory } from "./blog-home-client";
@@ -26,25 +26,30 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogPage() {
-  const supabase = createAdminClient();
+  let posts: PublicBlogPost[] = [];
+  let categories: PublicCategory[] = [];
 
-  const [postsRes, categoriesRes] = await Promise.all([
-    supabase
-      .from("blog_posts")
-      .select(
-        "id, title, slug, excerpt, category_slug, tags, author_name, author_avatar, author_role, reading_time_minutes, views_count, likes_count, is_featured, featured_image, published_at"
-      )
-      .eq("status", "published")
-      .order("is_featured", { ascending: false })
-      .order("published_at", { ascending: false }),
-    supabase
-      .from("blog_categories")
-      .select("id, name, slug, description, icon, color")
-      .order("name", { ascending: true }),
-  ]);
+  if (isSupabaseAdminConfigured()) {
+    const supabase = createAdminClient();
 
-  const posts = (postsRes.data || []) as PublicBlogPost[];
-  const categories = (categoriesRes.data || []) as PublicCategory[];
+    const [postsRes, categoriesRes] = await Promise.all([
+      supabase
+        .from("blog_posts")
+        .select(
+          "id, title, slug, excerpt, category_slug, tags, author_name, author_avatar, author_role, reading_time_minutes, views_count, likes_count, is_featured, featured_image, published_at"
+        )
+        .eq("status", "published")
+        .order("is_featured", { ascending: false })
+        .order("published_at", { ascending: false }),
+      supabase
+        .from("blog_categories")
+        .select("id, name, slug, description, icon, color")
+        .order("name", { ascending: true }),
+    ]);
+
+    posts = (postsRes.data || []) as PublicBlogPost[];
+    categories = (categoriesRes.data || []) as PublicCategory[];
+  }
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--background)" }}>

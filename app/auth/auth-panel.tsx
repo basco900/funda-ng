@@ -3,7 +3,7 @@
 import { forwardRef, useEffect, useRef, useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import { ArrowRightIcon, BackIcon, CheckIcon, CloseIcon, LockIcon, MailIcon, PhoneIcon, SpinnerIcon, UserIcon } from "../onboarding/icons";
+import { ArrowRightIcon, BackIcon, CheckIcon, CloseIcon, IosSwitchArrowIcon, LockIcon, MailIcon, PhoneIcon, SpinnerIcon, UserIcon } from "../onboarding/icons";
 import { parseIdentifier, validFullName, validPassword, type IdentifierType } from "../../lib/auth/identifiers";
 import {
   completedOnboardingData,
@@ -683,7 +683,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
 
         {step === "identifier" && !recovery && mode === "login" && (
           <div className={styles.loginForm}>
-            <div className={styles.authTabs} role="tablist" aria-label="Login method">
+            <div className={styles.authTabs} role="tablist" aria-label="Login method" data-method={loginMethod}>
               <button
                 type="button"
                 role="tab"
@@ -693,6 +693,14 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
                 onClick={() => chooseMethod("password")}
               >
                 Login with password
+              </button>
+              <button
+                type="button"
+                className={styles.authTabSwap}
+                aria-label={loginMethod === "password" ? "Switch to login code" : "Switch to password"}
+                onClick={() => chooseMethod(loginMethod === "password" ? "code" : "password")}
+              >
+                <IosSwitchArrowIcon size={13} />
               </button>
               <button
                 type="button"

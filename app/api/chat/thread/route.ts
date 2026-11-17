@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, isSupabaseAdminConfigured } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +10,10 @@ export async function GET(request: NextRequest) {
 
   if (!guestId) {
     return NextResponse.json({ error: "Missing guestId" }, { status: 400 });
+  }
+
+  if (!isSupabaseAdminConfigured()) {
+    return NextResponse.json({ thread: null });
   }
 
   const supabase = createAdminClient();

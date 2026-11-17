@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, isSupabaseAdminConfigured } from "@/lib/supabase/admin";
 import BlogNavHeader from "@/components/blog/blog-nav-header";
 import BlogFooter from "@/components/blog/blog-footer";
 
@@ -24,18 +24,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function BlogTagPage({ params }: PageProps) {
   const { tag: rawTag } = await params;
   const decodedTag = decodeURIComponent(rawTag).toLowerCase();
-  const client = createAdminClient();
-
-  const [postsRes, catsRes] = await Promise.all([
-    client
-      .from("blog_posts")
-      .select(
-        "id, title, slug, excerpt, category_slug, tags, author_name, author_avatar, reading_time_minutes, views_count, likes_count, featured_image, published_at"
-      )
-      .eq("status", "published")
-      .order("published_at", { ascending: false }),
-    client.from("blog_categories").select("slug, name"),
-  ]);
+  const [postsRes, catsRes] = isSupabaseAdminConfigured()
+    ? await (async () => {
+        const client = createAdminClient();
+        return Promise.all([
+          client
+            .from("blog_posts")
+            .select(
+              "id, title, slug, excerpt, category_slug, tags, author_name, author_avatar, reading_time_minutes, views_count, likes_count, featured_image, published_at"
+            )
+            .eq("status", "published")
+            .order("published_at", { ascending: false }),
+          client.from("blog_categories").select("slug, name"),
+        ]);
+      })()
+    : [{ data: [] }, { data: [] }];
 
   const allPosts = postsRes.data || [];
   const categories = catsRes.data || [];

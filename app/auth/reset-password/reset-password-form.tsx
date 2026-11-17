@@ -10,6 +10,7 @@ import {
   profileNameFor,
 } from "../../../lib/auth/onboarding";
 import { createClient } from "../../../lib/supabase/client";
+import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import styles from "./reset-password.module.css";
 
 export default function ResetPasswordForm() {
@@ -21,6 +22,7 @@ export default function ResetPasswordForm() {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!validPassword(password)) return setError("Password must be at least 6 characters.");
+    if (!isSupabaseConfigured()) return setError("Authentication is temporarily unavailable. Please try again shortly.");
 
     setBusy(true);
     setError("");
