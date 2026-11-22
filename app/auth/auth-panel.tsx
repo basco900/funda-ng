@@ -3,7 +3,7 @@
 import { forwardRef, useEffect, useRef, useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import { AlertCircleIcon, ArrowRightIcon, BackIcon, CheckIcon, CloseIcon, IosSwitchArrowIcon, LockIcon, MailIcon, PhoneIcon, SpinnerIcon, UserIcon } from "../onboarding/icons";
+import { AlertCircleIcon, ArrowRightIcon, BackIcon, CheckIcon, CloseIcon, EyeIcon, EyeOffIcon, IosSwitchArrowIcon, LockIcon, MailIcon, PhoneIcon, SpinnerIcon, UserIcon } from "../onboarding/icons";
 import { parseIdentifier, validFullName, validPassword, type IdentifierType } from "../../lib/auth/identifiers";
 import {
   completedOnboardingData,
@@ -26,16 +26,40 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 /** Text input with a leading icon. The placeholder replaces the visible label; aria-label keeps it accessible. */
 const IconField = forwardRef<
   HTMLInputElement,
-  InputHTMLAttributes<HTMLInputElement> & { icon: ReactNode; action?: ReactNode }
->(function IconField({ icon, action, className, ...props }, ref) {
+  InputHTMLAttributes<HTMLInputElement> & { icon: ReactNode; action?: ReactNode; actionKind?: "button" | "toggle" }
+>(function IconField({ icon, action, actionKind = "button", className, ...props }, ref) {
+  const actionClass = action ? (actionKind === "toggle" ? ` ${styles.iconFieldWithToggle}` : ` ${styles.iconFieldWithAction}`) : "";
   return (
-    <div className={`${styles.iconField}${action ? ` ${styles.iconFieldWithAction}` : ""}`}>
+    <div className={`${styles.iconField}${actionClass}`}>
       <span className={styles.iconFieldIcon} aria-hidden="true">{icon}</span>
       <input ref={ref} {...props} className={`${styles.textField}${className ? ` ${className}` : ""}`} />
       {action && <div className={styles.iconFieldAction}>{action}</div>}
     </div>
   );
 });
+
+function PasswordField(props: Omit<InputHTMLAttributes<HTMLInputElement>, "type">) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <IconField
+      icon={<LockIcon size={18} />}
+      type={visible ? "text" : "password"}
+      actionKind="toggle"
+      action={
+        <button
+          type="button"
+          className={styles.passwordEyeBtn}
+          onClick={() => setVisible((prev) => !prev)}
+          aria-label={visible ? "Hide password" : "Show password"}
+          aria-pressed={visible}
+        >
+          {visible ? <EyeOffIcon size={17} /> : <EyeIcon size={17} />}
+        </button>
+      }
+      {...props}
+    />
+  );
+}
 
 function AuthErrorBanner({ message, onDismiss }: { message: string; onDismiss?: () => void }) {
   return (
@@ -246,6 +270,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
   const [identifierType, setIdentifierType] = useState<IdentifierType | null>(null);
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [hasPassword, setHasPassword] = useState(false);
   const [creatingPassword, setCreatingPassword] = useState(false);
@@ -345,12 +370,16 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
     setBusy(true);
     setError("");
     try {
-      const result = identifierType === "email"
-        ? await auth().verifyOtp({ email: identifier, token: submittedCode, type: "email" })
-        : await auth().verifyOtp({ phone: identifier, token: submittedCode, type: "sms" });
+      const result = recovery
+        ? await auth().verifyOtp({ email: (recoveryEmail || identifier).trim().toLowerCase(), token: submittedCode, type: "recovery" })
+        : identifierType === "email"
+          ? await auth().verifyOtp({ email: identifier, token: submittedCode, type: "email" })
+          : await auth().verifyOtp({ phone: identifier, token: submittedCode, type: "sms" });
 
       if (result.error) return fail("Invalid or expired code. Please try again.");
       if (recovery) {
+        setPassword("");
+        setConfirmPassword("");
         setStep("password");
       } else if (result.data.user) {
         await continueAuthenticatedUser(result.data.user);
@@ -503,9 +532,8 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
     await sendCode(result.type, result.value, true);
   };
 
-  const submitForgotPassword = async (event: FormEvent) => {
-    event.preventDefault();
-    const email = (recoveryEmail || identifier).trim().toLowerCase();
+  const sendRecoveryCode = async (targetEmail?: string) => {
+    const email = (targetEmail ?? (recoveryEmail || identifier)).trim().toLowerCase();
     if (!email) return fail("Please enter your email address.");
     if (!EMAIL_PATTERN.test(email)) return fail("Please enter a valid email address.");
     if (!isSupabaseConfigured()) return fail("Authentication is temporarily unavailable. Please try again shortly.");
@@ -522,15 +550,27 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
           return fail("Too many attempts. Please wait a minute and try again.");
         }
         if ((resetError.status && resetError.status >= 500) || detail.includes("smtp") || detail.includes("unexpected")) {
-          return fail("Unable to send reset link right now. Please try again shortly.");
+          return fail("Unable to send reset code right now. Please try again shortly.");
         }
       }
-      setStep("recovery-sent");
+      setRecoveryEmail(email);
+      setIdentifier(email);
+      setIdentifierType("email");
+      setCode("");
+      setPassword("");
+      setConfirmPassword("");
+      setCodeCountdown(60);
+      setStep("code");
     } catch {
-      fail("Unable to send reset link right now. Please try again shortly.");
+      fail("Unable to send reset code right now. Please try again shortly.");
     } finally {
       setBusy(false);
     }
+  };
+
+  const submitForgotPassword = async (event: FormEvent) => {
+    event.preventDefault();
+    await sendRecoveryCode();
   };
 
   const saveProfile = async (event: FormEvent) => {
@@ -538,6 +578,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
     const name = fullName.trim();
     if (!validFullName(name)) return fail("Please enter your first and last name.");
     if (!validPassword(password)) return fail("Password must be at least 6 characters.");
+    if (password !== confirmPassword) return fail("Passwords do not match.");
 
     setBusy(true);
     setError("");
@@ -570,6 +611,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
   const savePassword = async (event: FormEvent) => {
     event.preventDefault();
     if (!validPassword(password)) return fail("Password must be at least 6 characters.");
+    if (settingPassword && password !== confirmPassword) return fail("Passwords do not match.");
     setBusy(true);
     setError("");
     try {
@@ -632,8 +674,14 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
   const back = () => {
     setError("");
     if (recovery) {
-      setRecovery(false);
-      setStep("identifier");
+      if (step === "password") {
+        setStep("code");
+      } else if (step === "code" || step === "recovery-sent") {
+        setStep("identifier");
+      } else {
+        setRecovery(false);
+        setStep("identifier");
+      }
     } else if (step === "existing" || step === "code") {
       setStep("identifier");
       setExistingAccountDetected(false);
@@ -661,9 +709,9 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
       return mode === "login" ? "Welcome back." : "Let’s get you in.";
     }
     if (step === "existing") return "Account already exists.";
-    if (step === "code") return "Check your inbox.";
+    if (step === "code") return recovery ? "Enter reset code." : "Check your inbox.";
     if (step === "profile") return "The essentials.";
-    if (step === "password") return "Create a password.";
+    if (step === "password") return recovery ? "New password." : "Create password.";
     if (step === "recovery-sent") return "Check your email.";
     if (step === "complete") {
       return "You’re in.";
@@ -704,7 +752,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
                 </>
               ) : (
                 <>
-                  <span>Send reset link</span>
+                  <span>Send reset code</span>
                   <ArrowRightIcon size={18} />
                 </>
               )}
@@ -772,9 +820,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
                     placeholder="Email or phone number"
                     aria-label="Email or phone number"
                   />
-                  <IconField
-                    icon={<LockIcon size={18} />}
-                    type="password"
+                  <PasswordField
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setError(""); }}
                     autoComplete="current-password"
@@ -998,7 +1044,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         {step === "code" && (
           <form className={styles.compactForm} onSubmit={verifyCode} noValidate>
             <p className={styles.authSubtitle}>
-              Code sent to <strong>{identifier}</strong>
+              Code sent to <strong>{recovery ? (recoveryEmail || identifier) : identifier}</strong>
             </p>
 
             <div className={styles.fieldStack}>
@@ -1031,7 +1077,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
                 className={styles.authQuietLink}
                 disabled={busy || codeCountdown > 0}
                 type="button"
-                onClick={() => void sendCode()}
+                onClick={() => void (recovery ? sendRecoveryCode() : sendCode())}
               >
                 {codeCountdown > 0 ? `Resend code in ${codeCountdown}s` : "Didn’t get it? Resend code"}
               </button>
@@ -1041,10 +1087,6 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
 
         {step === "profile" && (
           <form className={styles.compactForm} onSubmit={saveProfile} noValidate>
-            <p className={styles.authSubtitle}>
-              Enter your name and set a password.
-            </p>
-
             <div className={styles.fieldStack}>
               <IconField
                 icon={<UserIcon size={18} />}
@@ -1055,15 +1097,22 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
                 aria-label="Full name"
               />
 
-              <IconField
-                icon={<LockIcon size={18} />}
-                type="password"
+              <PasswordField
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(""); }}
                 autoComplete="new-password"
                 minLength={6}
-                placeholder="Choose a password (6+ characters)"
+                placeholder="Password (6+ characters)"
                 aria-label="Password"
+              />
+
+              <PasswordField
+                value={confirmPassword}
+                onChange={(e) => { setConfirmPassword(e.target.value); setError(""); }}
+                autoComplete="new-password"
+                minLength={6}
+                placeholder="Confirm password"
+                aria-label="Confirm password"
               />
             </div>
 
@@ -1087,21 +1136,26 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
 
         {step === "password" && (
           <form className={styles.compactForm} onSubmit={savePassword} noValidate>
-            <p className={styles.authSubtitle}>
-              {settingPassword ? "Set a secure password for your account." : "Enter your account password."}
-            </p>
-
             <div className={styles.fieldStack}>
-              <IconField
-                icon={<LockIcon size={18} />}
-                type="password"
+              <PasswordField
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(""); }}
                 autoComplete={settingPassword ? "new-password" : "current-password"}
                 minLength={settingPassword ? 6 : undefined}
-                placeholder={settingPassword ? "Password (6+ characters)" : "Password"}
-                aria-label="Password"
+                placeholder={settingPassword ? "New password (6+ characters)" : "Password"}
+                aria-label="New password"
               />
+
+              {settingPassword && (
+                <PasswordField
+                  value={confirmPassword}
+                  onChange={(e) => { setConfirmPassword(e.target.value); setError(""); }}
+                  autoComplete="new-password"
+                  minLength={6}
+                  placeholder="Confirm password"
+                  aria-label="Confirm password"
+                />
+              )}
             </div>
 
             {error && <AuthErrorBanner message={error} onDismiss={() => setError("")} />}

@@ -4,15 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light" />
-    <title>Reset your Funda password</title>
+    <title>Your Funda reset code</title>
   </head>
-  <body style="margin:0;padding:0;background-color:#fbfbfa;color:#0b0b0c;font-family:-apple-system,BlinkMacSystemFont,'DM Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#fbfbfa;padding:40px 16px;">
+  <body bgcolor="#fbfbfa" style="margin:0;padding:0;background-color:#fbfbfa;color:#0b0b0c;font-family:-apple-system,BlinkMacSystemFont,'DM Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#fbfbfa" style="background-color:#fbfbfa;padding:44px 16px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:460px;background-color:#ffffff;border:1px solid #eceae8;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.04);">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="max-width:440px;background-color:#ffffff;border:1px solid #eceae8;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.04);">
             <tr>
-              <td style="padding:32px 28px;">
+              <td style="padding:36px 32px 32px;">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                   <tr>
                     <td style="font-size:22px;font-weight:700;letter-spacing:-0.04em;color:#0b0b0c;line-height:1;">
@@ -20,26 +20,35 @@
                     </td>
                   </tr>
                   <tr>
-                    <td style="padding-top:28px;font-size:22px;font-weight:700;letter-spacing:-0.03em;color:#0b0b0c;line-height:1.25;">
-                      Reset your password
+                    <td style="padding-top:26px;font-size:21px;font-weight:700;letter-spacing:-0.03em;color:#0b0b0c;line-height:1.25;">
+                      Password reset code
                     </td>
                   </tr>
                   <tr>
-                    <td style="padding-top:24px;">
-                      <a
-                        href="{{ .ConfirmationURL }}"
-                        style="display:inline-block;background-color:#660033;color:#ffffff;font-size:14px;font-weight:600;line-height:1;text-decoration:none;padding:15px 24px;border-radius:12px;letter-spacing:-0.01em;"
-                      >
+                    <td style="padding-top:18px;">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#fcf9fb" style="background-color:#fcf9fb;border:1px solid #ead8e1;border-radius:12px;">
+                        <tr>
+                          <td align="center" style="padding:22px 16px;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:9px;color:#660033;line-height:1.2;">
+                            {{ .Token }}
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding-top:24px;font-size:12.5px;line-height:1.5;color:#6f6e6b;">
+                      Prefer a link?
+                      <a href="{{ .ConfirmationURL }}" style="color:#660033;font-weight:600;text-decoration:underline;text-underline-offset:3px;">
                         Reset password &rarr;
                       </a>
                     </td>
                   </tr>
                   <tr>
-                    <td style="padding-top:28px;border-top:1px solid #f2f0ee;"></td>
+                    <td style="padding-top:22px;border-bottom:1px solid #f2f0ee;font-size:0;line-height:0;">&nbsp;</td>
                   </tr>
                   <tr>
-                    <td style="padding-top:16px;font-size:12px;line-height:1.5;color:#6f6e6b;">
-                      Didn&rsquo;t request this? You can safely ignore this email.
+                    <td style="padding-top:16px;font-size:12px;line-height:1.5;color:#8a8884;">
+                      Expires shortly. Ignore this email if you didn&rsquo;t request it.
                     </td>
                   </tr>
                 </table>

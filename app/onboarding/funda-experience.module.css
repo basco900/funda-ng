@@ -2831,7 +2831,7 @@
   }
 
   .desktopRail .authTopbar {
-    padding: 22px 26px 10px;
+    padding: 22px 26px 12px;
   }
 
   .desktopRail .authWordmark {
@@ -2875,7 +2875,7 @@
 
   .desktopRail .authBody {
     justify-content: flex-start;
-    padding: 14px 36px 34px;
+    padding: 12px 36px 30px;
   }
 
   .desktopRail .authBody > form,
@@ -3390,6 +3390,44 @@
   padding-right: 120px !important;
 }
 
+.iconFieldWithToggle input,
+.desktopRail .iconFieldWithToggle input {
+  padding-right: 44px !important;
+}
+
+.passwordEyeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: rgba(102, 0, 51, 0.55);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, transform 120ms ease;
+}
+
+.passwordEyeBtn:hover {
+  background: rgba(102, 0, 51, 0.08);
+  color: var(--brand-primary, #660033);
+}
+
+.passwordEyeBtn:active {
+  transform: scale(0.94);
+}
+
+:global([data-theme="dark"]) .passwordEyeBtn {
+  color: rgba(201, 138, 169, 0.7);
+}
+
+:global([data-theme="dark"]) .passwordEyeBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
 .iconFieldAction {
   position: absolute;
   right: 6px;
@@ -3487,8 +3525,8 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding-top: 4px;
-  padding-bottom: 8px;
+  padding-top: 2px;
+  padding-bottom: 2px;
 }
 
 .compactForm h2 {
@@ -3520,11 +3558,50 @@
   margin-top: 18px;
 }
 
+.authBody form > p.authSubtitle,
+.authBody > div > p.authSubtitle,
+.desktopRail .authBody form > p.authSubtitle,
+.desktopRail .authBody > div > p.authSubtitle,
+.authBody .completeState > p.authSubtitle,
+.desktopRail .authBody .completeState > p.authSubtitle,
+.authSubtitle {
+  max-width: 40ch;
+  margin: 0 auto 22px;
+  font-size: 14px;
+  font-weight: 450;
+  color: #525866;
+  line-height: 1.5;
+  text-align: center;
+  font-family: inherit;
+}
+
+.authSubtitle strong {
+  color: #0a0b0e;
+  font-weight: 600;
+  font-family: inherit !important;
+  word-break: break-word;
+}
+
+:global([data-theme="dark"]) .authBody form > p.authSubtitle,
+:global([data-theme="dark"]) .authBody > div > p.authSubtitle,
+:global([data-theme="dark"]) .desktopRail .authBody form > p.authSubtitle,
+:global([data-theme="dark"]) .desktopRail .authBody > div > p.authSubtitle,
+:global([data-theme="dark"]) .authBody .completeState > p.authSubtitle,
+:global([data-theme="dark"]) .desktopRail .authBody .completeState > p.authSubtitle,
+:global([data-theme="dark"]) .authSubtitle {
+  color: #94a3b8;
+}
+
+:global([data-theme="dark"]) .authSubtitle strong {
+  color: #f8fafc;
+}
+
 .sentTo {
-  margin: -6px 0 22px;
+  margin: 0 0 22px;
   font-size: 14px;
   color: #525866;
   line-height: 1.45;
+  text-align: center;
   font-family: inherit;
 }
 
@@ -3546,17 +3623,17 @@
 .otpGrid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   margin: 0;
 }
 
 .otpInput {
   width: 100%;
-  height: 48px;
+  height: 54px;
   text-align: center !important;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 21px;
+  font-weight: 650;
   font-family: inherit;
   border-radius: 12px;
   border: 0.75px solid var(--brand-primary, #660033);
@@ -3566,6 +3643,17 @@
   transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
   padding: 0 !important;
   box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .otpGrid {
+    gap: 8px;
+  }
+
+  .otpInput {
+    height: 48px;
+    font-size: 19px;
+  }
 }
 
 .otpInput:hover {
