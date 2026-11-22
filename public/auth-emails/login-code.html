@@ -2,23 +2,53 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Your Funda code</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Your Funda login code</title>
   </head>
-  <body style="margin:0;background:#0d0f10;color:#f6f7f3;font-family:Arial,sans-serif">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#0d0f10;padding:32px 16px">
-      <tr><td align="center">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;border:1px solid #2b2e2e;border-radius:28px;background:#171919;padding:36px">
-          <tr><td style="font-size:24px;font-weight:700;letter-spacing:-1px">funda.</td></tr>
-          <tr><td style="padding-top:54px;color:#9da29f;font-size:12px;letter-spacing:1.5px;text-transform:uppercase">One quick check</td></tr>
-          <tr><td style="padding-top:12px;font-size:38px;font-weight:700;line-height:1.05;letter-spacing:-1.8px">Here’s your code.</td></tr>
-          <tr><td style="padding-top:14px;color:#aeb3b0;font-size:16px;line-height:1.6">Pop this into Funda and you’re good to go.</td></tr>
-          <tr><td style="padding:28px 0 22px">
-            <div style="border-radius:18px;background:#f6f7f3;color:#111313;padding:22px;text-align:center;font-family:monospace;font-size:34px;font-weight:700;letter-spacing:9px">{{ .Token }}</div>
-          </td></tr>
-          <tr><td style="padding-top:12px;color:#747a76;font-size:12px;line-height:1.6">This code expires shortly. Didn’t ask for it? Ignore this email. Never share the code with anyone—even someone claiming to be from Funda.</td></tr>
-        </table>
-      </td></tr>
+  <body style="margin:0;padding:0;background-color:#fbfbfa;color:#0b0b0c;font-family:-apple-system,BlinkMacSystemFont,'DM Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#fbfbfa;padding:40px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:460px;background-color:#ffffff;border:1px solid #eceae8;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.04);">
+            <tr>
+              <td style="padding:32px 28px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td style="font-size:22px;font-weight:700;letter-spacing:-0.04em;color:#0b0b0c;line-height:1;">
+                      funda<span style="color:#660033;">.</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding-top:28px;font-size:22px;font-weight:700;letter-spacing:-0.03em;color:#0b0b0c;line-height:1.25;">
+                      Your login code
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding-top:20px;">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#fcf9fb;border:1px solid #e6d0dc;border-radius:12px;">
+                        <tr>
+                          <td align="center" style="padding:20px 16px;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:30px;font-weight:700;letter-spacing:8px;color:#660033;line-height:1.2;">
+                            {{ .Token }}
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding-top:28px;border-top:1px solid #f2f0ee;"></td>
+                  </tr>
+                  <tr>
+                    <td style="padding-top:16px;font-size:12px;line-height:1.5;color:#6f6e6b;">
+                      Expires shortly. Never share this code with anyone.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
     </table>
   </body>
 </html>

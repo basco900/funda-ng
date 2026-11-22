@@ -90,73 +90,98 @@ export async function dispatchPurchaseReceipt(data: PurchaseReceiptData) {
       if (email) {
         const fromEmail = process.env.FUNDA_EMAIL_FROM?.trim() || "Funda Receipts <onboarding@resend.dev>";
         const isSuccess = data.status === "successful";
-        const statusColor = isSuccess ? "#10b981" : data.status === "failed" ? "#ef4444" : "#f59e0b";
-        const statusText = isSuccess ? "Successful" : data.status === "failed" ? "Failed / Refunded" : "Processing";
+        const isFailed = data.status === "failed";
+        const statusBg = isSuccess ? "#ecfdf5" : isFailed ? "#fef2f2" : "#fffbeb";
+        const statusTextColor = isSuccess ? "#15803d" : isFailed ? "#b91c1c" : "#b45309";
+        const statusText = isSuccess ? "Successful" : isFailed ? "Failed" : "Processing";
+        const escapeHtml = (value: string) =>
+          value.replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch] || ch);
+        const safeProduct = escapeHtml(data.productName);
+        const safeDestination = escapeHtml(data.destination);
+        const safeReference = escapeHtml(data.reference);
+        const safeProviderRef = data.providerReference ? escapeHtml(data.providerReference) : "";
+        const formattedTime = new Date().toLocaleString("en-NG", { timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short" });
 
-        const html = `
-<!DOCTYPE html>
-<html>
+        const html = `<!doctype html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Payment Receipt - Funda</title>
+  <meta name="color-scheme" content="light">
+  <title>Receipt · Funda</title>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 32px 16px;">
-  <div style="max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.04);">
-    <!-- Header -->
-    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 32px 24px; text-align: center; color: #ffffff;">
-      <div style="display: inline-block; width: 44px; height: 44px; border-radius: 50%; background: ${statusColor}; color: white; line-height: 44px; font-size: 22px; margin-bottom: 12px;">
-        ${isSuccess ? "✓" : "!"}
-      </div>
-      <h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em;">Payment Receipt</h1>
-      <p style="margin: 6px 0 0; font-size: 14px; color: #94a3b8;">${statusText} Transaction</p>
-    </div>
-
-    <!-- Amount Hero -->
-    <div style="padding: 24px; text-align: center; border-bottom: 1px solid #f1f5f9; background: #fafafa;">
-      <span style="font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Amount Paid</span>
-      <div style="font-size: 32px; font-weight: 800; color: #0f172a; margin-top: 4px;">₦${data.amount.toLocaleString("en-NG")}</div>
-      ${data.cashback && data.cashback > 0 ? `<div style="display: inline-block; margin-top: 8px; padding: 4px 12px; background: #ecfdf5; border-radius: 999px; font-size: 12px; font-weight: 600; color: #059669;">+₦${data.cashback} Cashback Credited</div>` : ""}
-    </div>
-
-    <!-- Receipt Breakdown -->
-    <div style="padding: 24px;">
-      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-        <tr style="border-bottom: 1px solid #f1f5f9;">
-          <td style="padding: 12px 0; color: #64748b;">Product</td>
-          <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #0f172a;">${data.productName}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #f1f5f9;">
-          <td style="padding: 12px 0; color: #64748b;">Recipient</td>
-          <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #0f172a;">${data.destination}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #f1f5f9;">
-          <td style="padding: 12px 0; color: #64748b;">Reference</td>
-          <td style="padding: 12px 0; text-align: right; font-family: monospace; font-size: 13px; color: #0f172a;">${data.reference}</td>
-        </tr>
-        ${data.providerReference ? `
-        <tr style="border-bottom: 1px solid #f1f5f9;">
-          <td style="padding: 12px 0; color: #64748b;">Provider Ref</td>
-          <td style="padding: 12px 0; text-align: right; font-family: monospace; font-size: 13px; color: #64748b;">${data.providerReference}</td>
-        </tr>` : ""}
-        <tr style="border-bottom: 1px solid #f1f5f9;">
-          <td style="padding: 12px 0; color: #64748b;">Payment Method</td>
-          <td style="padding: 12px 0; text-align: right; font-weight: 600; color: #0f172a;">Funda Wallet</td>
-        </tr>
-        <tr>
-          <td style="padding: 12px 0; color: #64748b;">Date & Time</td>
-          <td style="padding: 12px 0; text-align: right; color: #0f172a;">${new Date().toLocaleString("en-NG", { timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short" })}</td>
-        </tr>
-      </table>
-    </div>
-
-    <!-- Footer -->
-    <div style="background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
-      <p style="margin: 0; font-size: 12px; color: #94a3b8;">
-        Thank you for choosing Funda. Need help? Reach out at support@funda.ng
-      </p>
-    </div>
-  </div>
+<body style="margin:0;padding:0;background-color:#fbfbfa;color:#0b0b0c;font-family:-apple-system,BlinkMacSystemFont,'DM Sans','Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#fbfbfa;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:480px;background-color:#ffffff;border:1px solid #eceae8;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.04);">
+          <tr>
+            <td style="padding:28px 28px 20px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="font-size:22px;font-weight:700;letter-spacing:-0.04em;color:#0b0b0c;line-height:1;">
+                    funda<span style="color:#660033;">.</span>
+                  </td>
+                  <td align="right">
+                    <span style="display:inline-block;padding:5px 10px;border-radius:8px;background-color:${statusBg};color:${statusTextColor};font-size:12px;font-weight:600;line-height:1;">
+                      ${statusText}
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 28px 20px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#fbfbfa;border:1px solid #f0efed;border-radius:12px;">
+                <tr>
+                  <td style="padding:22px 20px;">
+                    <div style="font-size:32px;font-weight:700;letter-spacing:-0.03em;color:#0b0b0c;line-height:1.1;">&#8358;${data.amount.toLocaleString("en-NG")}</div>
+                    ${data.cashback && data.cashback > 0 ? `<div style="display:inline-block;margin-top:10px;padding:4px 10px;border-radius:8px;background-color:#f8eff4;color:#660033;font-size:12px;font-weight:600;">+&#8358;${data.cashback} cashback</div>` : ""}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 28px 24px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="font-size:13.5px;line-height:1.45;">
+                <tr>
+                  <td style="padding:11px 0;color:#6f6e6b;border-bottom:1px solid #f3f2f0;">Product</td>
+                  <td align="right" style="padding:11px 0;font-weight:600;color:#0b0b0c;border-bottom:1px solid #f3f2f0;">${safeProduct}</td>
+                </tr>
+                <tr>
+                  <td style="padding:11px 0;color:#6f6e6b;border-bottom:1px solid #f3f2f0;">Recipient</td>
+                  <td align="right" style="padding:11px 0;font-weight:600;color:#0b0b0c;border-bottom:1px solid #f3f2f0;">${safeDestination}</td>
+                </tr>
+                <tr>
+                  <td style="padding:11px 0;color:#6f6e6b;border-bottom:1px solid #f3f2f0;">Reference</td>
+                  <td align="right" style="padding:11px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#0b0b0c;border-bottom:1px solid #f3f2f0;">${safeReference}</td>
+                </tr>
+                ${safeProviderRef ? `<tr>
+                  <td style="padding:11px 0;color:#6f6e6b;border-bottom:1px solid #f3f2f0;">Provider ref</td>
+                  <td align="right" style="padding:11px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#6f6e6b;border-bottom:1px solid #f3f2f0;">${safeProviderRef}</td>
+                </tr>` : ""}
+                <tr>
+                  <td style="padding:11px 0;color:#6f6e6b;border-bottom:1px solid #f3f2f0;">Payment</td>
+                  <td align="right" style="padding:11px 0;font-weight:600;color:#0b0b0c;border-bottom:1px solid #f3f2f0;">Funda Wallet</td>
+                </tr>
+                <tr>
+                  <td style="padding:11px 0;color:#6f6e6b;">Date</td>
+                  <td align="right" style="padding:11px 0;color:#0b0b0c;">${formattedTime}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 28px 24px;border-top:1px solid #f2f0ee;font-size:12px;color:#6f6e6b;">
+              funda.ng &middot; support@funda.ng
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
 

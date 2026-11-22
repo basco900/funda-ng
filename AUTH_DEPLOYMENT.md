@@ -14,6 +14,7 @@ The application uses Supabase Auth for identity and password storage. Passwords 
 
 ## Coolify / GoTrue essentials
 
+- `API_EXTERNAL_URL=https://supabase.funda.ng` (required so GoTrue confirmation/recovery emails link to your public domain instead of `http://supabase-kong:8000`)
 - `GOTRUE_SITE_URL=https://funda.ng`
 - `GOTRUE_URI_ALLOW_LIST=https://funda.ng/**,https://www.funda.ng/**`
 - Enable email and phone providers.
