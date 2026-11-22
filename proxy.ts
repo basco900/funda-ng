@@ -1,8 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { supabasePublishableKey, supabaseUrl } from "./lib/supabase/config";
+import { getSupabaseConfig } from "./lib/supabase/config";
 
 export async function proxy(request: NextRequest) {
+  const { url: supabaseUrl, publishableKey: supabasePublishableKey } = getSupabaseConfig();
   if (!supabaseUrl || !supabasePublishableKey) return NextResponse.next();
 
   let response = NextResponse.next({ request });

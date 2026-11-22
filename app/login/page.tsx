@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { isSupabaseConfigured } from "../../lib/supabase/config";
+import SupabaseRuntimeConfig from "../../components/supabase-runtime-config";
+import { getSupabaseConfig, isSupabaseConfigured } from "../../lib/supabase/config";
 import { createClient } from "../../lib/supabase/server";
 import FundaExperience from "../onboarding/funda-experience";
 import { stories } from "../onboarding/stories";
@@ -21,5 +22,11 @@ export default async function LoginPage() {
     }
   }
 
-  return <FundaExperience stories={stories} />;
+  const supabaseConfig = getSupabaseConfig();
+  return (
+    <>
+      <SupabaseRuntimeConfig url={supabaseConfig.url} publishableKey={supabaseConfig.publishableKey} />
+      <FundaExperience stories={stories} />
+    </>
+  );
 }

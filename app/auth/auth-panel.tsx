@@ -3,7 +3,7 @@
 import { forwardRef, useEffect, useRef, useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import { ArrowRightIcon, BackIcon, CheckIcon, CloseIcon, IosSwitchArrowIcon, LockIcon, MailIcon, PhoneIcon, SpinnerIcon, UserIcon } from "../onboarding/icons";
+import { AlertCircleIcon, ArrowRightIcon, BackIcon, CheckIcon, CloseIcon, IosSwitchArrowIcon, LockIcon, MailIcon, PhoneIcon, SpinnerIcon, UserIcon } from "../onboarding/icons";
 import { parseIdentifier, validFullName, validPassword, type IdentifierType } from "../../lib/auth/identifiers";
 import {
   completedOnboardingData,
@@ -36,6 +36,27 @@ const IconField = forwardRef<
     </div>
   );
 });
+
+function AuthErrorBanner({ message, onDismiss }: { message: string; onDismiss?: () => void }) {
+  return (
+    <div className={styles.fieldError} role="alert" aria-live="polite">
+      <span className={styles.fieldErrorIcon} aria-hidden="true">
+        <AlertCircleIcon size={15} />
+      </span>
+      <span className={styles.fieldErrorText}>{message}</span>
+      {onDismiss && (
+        <button
+          type="button"
+          className={styles.fieldErrorDismiss}
+          onClick={onDismiss}
+          aria-label="Dismiss error"
+        >
+          <CloseIcon size={12} />
+        </button>
+      )}
+    </div>
+  );
+}
 
 /** Live guess of what the user is typing, used to swap the identifier icon. */
 function detectIdentifier(raw: string): IdentifierType | null {
@@ -207,6 +228,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
   const previewStep = searchParams?.get("previewStep") as Step | null;
   const previewIdent = searchParams?.get("previewIdentifier");
   const queryIdent = searchParams?.get("identifier");
+  const authErrorParam = searchParams?.get("auth_error");
   const previewExisting = searchParams?.get("previewExisting") === "true";
 
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -229,7 +251,12 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
   const [creatingPassword, setCreatingPassword] = useState(false);
   const [recovery, setRecovery] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => {
+    if (authErrorParam === "expired" || authErrorParam === "link") {
+      return "That link is invalid or has expired. Please request a new one.";
+    }
+    return "";
+  });
   const [existingAccountDetected, setExistingAccountDetected] = useState<boolean>(() => previewExisting);
   const [welcomeName, setWelcomeName] = useState("");
   const [loginCode, setLoginCode] = useState("");
@@ -481,18 +508,28 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
     const email = (recoveryEmail || identifier).trim().toLowerCase();
     if (!email) return fail("Please enter your email address.");
     if (!EMAIL_PATTERN.test(email)) return fail("Please enter a valid email address.");
+    if (!isSupabaseConfigured()) return fail("Authentication is temporarily unavailable. Please try again shortly.");
 
     setBusy(true);
     setError("");
     try {
-      await auth().resetPasswordForEmail(email, {
+      const { error: resetError } = await auth().resetPasswordForEmail(email, {
         redirectTo: `${location.origin}/auth/callback?next=/auth/reset-password`,
       });
+      if (resetError) {
+        const detail = `${resetError.code ?? ""} ${resetError.message}`.toLowerCase();
+        if (resetError.status === 429 || detail.includes("rate limit") || detail.includes("security purposes")) {
+          return fail("Too many attempts. Please wait a minute and try again.");
+        }
+        if ((resetError.status && resetError.status >= 500) || detail.includes("smtp") || detail.includes("unexpected")) {
+          return fail("Unable to send reset link right now. Please try again shortly.");
+        }
+      }
+      setStep("recovery-sent");
     } catch {
-      // Non-revealing: never disclose whether the account exists.
+      fail("Unable to send reset link right now. Please try again shortly.");
     } finally {
       setBusy(false);
-      setStep("recovery-sent");
     }
   };
 
@@ -657,7 +694,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
               />
             </div>
 
-            {error && <p className={styles.fieldError} role="alert">{error}</p>}
+            {error && <AuthErrorBanner message={error} onDismiss={() => setError("")} />}
 
             <button className={styles.authPrimary} disabled={busy} type="submit">
               {busy ? (
@@ -747,7 +784,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
                 </div>
 
                 <div className={styles.authTabBottom}>
-                  {error && loginMethod === "password" && <p className={styles.fieldError} role="alert">{error}</p>}
+                  {error && loginMethod === "password" && <AuthErrorBanner message={error} onDismiss={() => setError("")} />}
 
                   <button className={styles.authPrimary} disabled={busy} type="submit">
                     {busy ? (
@@ -829,7 +866,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
                 </div>
 
                 <div className={styles.authTabBottom}>
-                  {error && loginMethod === "code" && <p className={styles.fieldError} role="alert">{error}</p>}
+                  {error && loginMethod === "code" && <AuthErrorBanner message={error} onDismiss={() => setError("")} />}
 
                   <button className={styles.authPrimary} disabled={busy} type="submit">
                     {busy ? (
@@ -879,7 +916,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
               />
             </div>
 
-            {error && <p className={styles.fieldError} role="alert">{error}</p>}
+            {error && <AuthErrorBanner message={error} onDismiss={() => setError("")} />}
 
             <button className={styles.authPrimary} disabled={busy} type="submit">
               {busy ? (
@@ -973,7 +1010,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
               />
             </div>
 
-            {error && <p className={styles.fieldError} role="alert">{error}</p>}
+            {error && <AuthErrorBanner message={error} onDismiss={() => setError("")} />}
 
             <button className={styles.authPrimary} disabled={busy || code.length !== 6} type="submit">
               {busy ? (
@@ -1030,7 +1067,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
               />
             </div>
 
-            {error && <p className={styles.fieldError} role="alert">{error}</p>}
+            {error && <AuthErrorBanner message={error} onDismiss={() => setError("")} />}
 
             <button className={styles.authPrimary} disabled={busy} type="submit">
               {busy ? (
@@ -1067,7 +1104,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
               />
             </div>
 
-            {error && <p className={styles.fieldError} role="alert">{error}</p>}
+            {error && <AuthErrorBanner message={error} onDismiss={() => setError("")} />}
 
             <button className={styles.authPrimary} disabled={busy} type="submit">
               {busy ? (
@@ -1088,7 +1125,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
         {step === "recovery-sent" && (
           <div className={styles.completeState}>
             <span className={styles.completeIcon}><CheckIcon size={26} /></span>
-            <p className={styles.authSubtitle} style={{ marginBottom: "20px" }}>
+            <p className={styles.authSubtitle}>
               We sent a password reset link to your email.
             </p>
             <button className={styles.authPrimary} type="button" onClick={() => { setRecovery(false); setStep("identifier"); }}>

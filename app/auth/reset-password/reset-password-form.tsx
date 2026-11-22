@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { LockIcon, SpinnerIcon } from "../../onboarding/icons";
+import { AlertCircleIcon, CloseIcon, LockIcon, SpinnerIcon } from "../../onboarding/icons";
 import { validFullName, validPassword } from "../../../lib/auth/identifiers";
 import {
   completedOnboardingData,
@@ -70,7 +70,22 @@ export default function ResetPasswordForm() {
               aria-label="New password"
             />
           </div>
-          {error && <small role="alert">{error}</small>}
+          {error && (
+            <div className={styles.errorBanner} role="alert" aria-live="polite">
+              <span className={styles.errorBannerIcon} aria-hidden="true">
+                <AlertCircleIcon size={15} />
+              </span>
+              <span className={styles.errorBannerText}>{error}</span>
+              <button
+                type="button"
+                className={styles.errorBannerDismiss}
+                onClick={() => setError("")}
+                aria-label="Dismiss error"
+              >
+                <CloseIcon size={12} />
+              </button>
+            </div>
+          )}
           <button disabled={busy} type="submit" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
             {busy ? (
               <>

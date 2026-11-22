@@ -740,22 +740,22 @@
   align-items: center;
   height: 48px;
   overflow: hidden;
-  border: 1px solid rgba(102, 0, 51, 0.22);
+  border: 0.75px solid var(--brand-primary, #660033);
   border-radius: 12px;
   background: #ffffff;
-  transition: border-color 180ms ease, box-shadow 180ms ease;
+  transition: border-color 180ms ease, border-width 180ms ease;
 }
 
 .phoneField:hover,
 .otpField:hover,
 .textField:hover {
-  border-color: rgba(102, 0, 51, 0.38);
+  border-color: var(--brand-primary-hover, #4d0026);
 }
 
 .phoneField:focus-within,
 .otpField:focus,
 .textField:focus {
-  border-color: var(--brand-primary, #660033);
+  border: 1px solid var(--brand-primary, #660033);
   box-shadow: none;
   outline: none;
 }
@@ -771,9 +771,9 @@
   place-items: center;
   align-self: stretch;
   padding: 0 13px;
-  border-right: 1px solid rgba(102, 0, 51, 0.14);
+  border-right: 0.75px solid rgba(102, 0, 51, 0.2);
   background: rgba(102, 0, 51, 0.04);
-  color: #660033;
+  color: var(--brand-primary, #660033);
   font-family: var(--font-geist-mono), monospace;
   font-size: 12px;
   font-weight: 620;
@@ -801,10 +801,10 @@
 .otpField {
   width: 100%;
   height: 48px;
-  border: 1px solid rgba(102, 0, 51, 0.22);
+  border: 0.75px solid var(--brand-primary, #660033);
   border-radius: 12px;
   background: #ffffff;
-  transition: border-color 180ms ease, box-shadow 180ms ease;
+  transition: border-color 180ms ease, border-width 180ms ease;
 }
 
 .textField {
@@ -822,10 +822,88 @@
 }
 
 .fieldError {
-  margin: 7px 2px 0 !important;
-  color: #aa4b31 !important;
-  font-size: 10px !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 16px !important;
+  padding: 2px 2px;
+  border: none;
+  background: transparent;
+  color: #b91c1c !important;
+  font-size: 13px !important;
+  font-weight: 500;
   line-height: 1.4 !important;
+  text-align: left;
+  box-sizing: border-box;
+  animation: errorBannerIn 220ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.fieldErrorIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #dc2626;
+}
+
+.fieldErrorText {
+  flex: 1;
+  min-width: 0;
+}
+
+.fieldErrorDismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(185, 28, 28, 0.65);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, transform 120ms ease;
+}
+
+.fieldErrorDismiss:hover {
+  background: rgba(220, 38, 38, 0.08);
+  color: #b91c1c;
+}
+
+.fieldErrorDismiss:active {
+  transform: scale(0.92);
+}
+
+:global([data-theme="dark"]) .fieldError {
+  background: transparent;
+  color: #fecdd3 !important;
+}
+
+:global([data-theme="dark"]) .fieldErrorIcon {
+  color: #fb7185;
+}
+
+:global([data-theme="dark"]) .fieldErrorDismiss {
+  color: rgba(254, 205, 211, 0.68);
+}
+
+:global([data-theme="dark"]) .fieldErrorDismiss:hover {
+  background: rgba(251, 113, 133, 0.14);
+  color: #ffffff;
+}
+
+@keyframes errorBannerIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .authPrimary {
@@ -2363,8 +2441,8 @@
 }
 
 .fieldError {
-  font-size: 12px !important;
-  line-height: 1.45 !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
 }
 
 .authPrimary {
@@ -2835,24 +2913,24 @@
   .desktopRail .otpField,
   .desktopRail .phoneField,
   .desktopRail input {
-    border: 1px solid rgba(102, 0, 51, 0.22) !important;
+    border: 0.75px solid var(--brand-primary, #660033) !important;
     background: #ffffff !important;
     color: var(--warm-white) !important;
-    box-shadow: 0 1px 3px rgba(102, 0, 51, 0.03);
+    box-shadow: none;
   }
 
   .desktopRail .textField:hover,
   .desktopRail .otpField:hover,
   .desktopRail .phoneField:hover,
   .desktopRail input:hover {
-    border-color: rgba(102, 0, 51, 0.38) !important;
+    border-color: var(--brand-primary-hover, #4d0026) !important;
   }
 
   :global([data-theme="dark"]) .desktopRail .textField,
   :global([data-theme="dark"]) .desktopRail .otpField,
   :global([data-theme="dark"]) .desktopRail .phoneField,
   :global([data-theme="dark"]) .desktopRail input {
-    border-color: rgba(140, 26, 79, 0.35) !important;
+    border: 0.75px solid var(--brand-primary, #8c1a4f) !important;
     background: rgba(255, 255, 255, 0.055) !important;
     color: #ffffff !important;
   }
@@ -2865,7 +2943,7 @@
   .desktopRail .textField:focus,
   .desktopRail .otpField:focus,
   .desktopRail input:focus {
-    border-color: var(--brand-primary, #660033) !important;
+    border: 1px solid var(--brand-primary, #660033) !important;
     box-shadow: none !important;
     outline: none !important;
   }
@@ -2873,7 +2951,7 @@
   :global([data-theme="dark"]) .desktopRail .textField:focus,
   :global([data-theme="dark"]) .desktopRail .otpField:focus,
   :global([data-theme="dark"]) .desktopRail input:focus {
-    border-color: var(--brand-primary, #8c1a4f) !important;
+    border: 1px solid var(--brand-primary-bright, #c2457e) !important;
     box-shadow: none !important;
     outline: none !important;
   }
@@ -2907,7 +2985,11 @@
   }
 
   .desktopRail .fieldError {
-    color: var(--accent) !important;
+    color: #b91c1c !important;
+  }
+
+  :global([data-theme="dark"]) .desktopRail .fieldError {
+    color: #fecdd3 !important;
   }
 }
 
@@ -2958,13 +3040,13 @@
   .mobileAuth .authPrimary {
     min-height: 52px;
     border-radius: 12px;
-    background: #0c0d12;
+    background: var(--brand-primary, #660033);
     color: #ffffff;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 14px rgba(102, 0, 51, 0.2);
   }
 
   .mobileAuth .authPrimary:hover {
-    background: var(--accent);
+    background: var(--brand-primary-hover, #4d0026);
   }
 
   :global([data-theme="dark"]) .mobileBackdrop {
@@ -2979,12 +3061,12 @@
   }
 
   :global([data-theme="dark"]) .mobileAuth .authPrimary {
-    background: #ffffff;
-    color: #090c13;
+    background: var(--brand-primary, #8c1a4f);
+    color: #ffffff;
   }
 
   :global([data-theme="dark"]) .mobileAuth .authPrimary:hover {
-    background: #eef2f7;
+    background: #a3245e;
   }
 
   :global([data-theme="dark"]) .mobileAuth .authWordmark,
@@ -3002,9 +3084,18 @@
   :global([data-theme="dark"]) .mobileAuth .otpField,
   :global([data-theme="dark"]) .mobileAuth .phoneField,
   :global([data-theme="dark"]) .mobileAuth input {
-    border-color: rgba(140, 26, 79, 0.35) !important;
+    border: 0.75px solid var(--brand-primary, #8c1a4f) !important;
     background: rgba(255, 255, 255, 0.07) !important;
     color: #ffffff !important;
+  }
+
+  :global([data-theme="dark"]) .mobileAuth .textField:focus,
+  :global([data-theme="dark"]) .mobileAuth .otpField:focus,
+  :global([data-theme="dark"]) .mobileAuth .phoneField:focus-within,
+  :global([data-theme="dark"]) .mobileAuth input:focus {
+    border: 1px solid var(--brand-primary-bright, #c2457e) !important;
+    box-shadow: none !important;
+    outline: none !important;
   }
 }
 
@@ -3416,6 +3507,10 @@
   margin-bottom: 20px;
 }
 
+.compactForm .fieldError {
+  margin-top: -4px !important;
+}
+
 .compactForm .authPrimary {
   margin-top: 0;
   width: 100%;
@@ -3464,7 +3559,7 @@
   font-weight: 700;
   font-family: inherit;
   border-radius: 12px;
-  border: 1.5px solid rgba(102, 0, 51, 0.22);
+  border: 0.75px solid var(--brand-primary, #660033);
   background: #ffffff;
   color: #0a0b0e;
   outline: none;
@@ -3474,18 +3569,18 @@
 }
 
 .otpInput:hover {
-  border-color: rgba(102, 0, 51, 0.38);
+  border-color: var(--brand-primary-hover, #4d0026);
 }
 
 .otpInput:focus {
-  border-color: #660033 !important;
+  border: 1px solid var(--brand-primary, #660033) !important;
   background: #ffffff;
   box-shadow: none !important;
   outline: none !important;
 }
 
 .otpInput[data-filled="true"] {
-  border-color: rgba(102, 0, 51, 0.45);
+  border-color: var(--brand-primary, #660033);
   background: rgba(102, 0, 51, 0.04);
 }
 
@@ -3498,7 +3593,7 @@
 
 :global([data-theme="dark"]) .otpInput {
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(140, 26, 79, 0.35);
+  border: 0.75px solid var(--brand-primary, #8c1a4f);
   color: #f8fafc;
 }
 
@@ -3566,8 +3661,26 @@
   text-align: center;
 }
 
-.completeState p {
+.completeState p,
+.desktopRail .completeState > p,
+.authBody .completeState > p {
+  max-width: 34ch;
+  margin: 0 0 24px;
+  color: var(--text-primary) !important;
+  font-size: 16px !important;
+  font-weight: 500;
+  line-height: 1.5 !important;
   text-align: center;
+}
+
+:global([data-theme="dark"]) .completeState p,
+:global([data-theme="dark"]) .desktopRail .completeState > p,
+:global([data-theme="dark"]) .authBody .completeState > p {
+  color: #f8fafc !important;
+}
+
+.completeState .authPrimary {
+  margin-top: 0;
 }
 
 .completeIcon {

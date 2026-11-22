@@ -1,14 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { supabasePublishableKey, supabaseUrl } from "./config";
+import { getSupabaseConfig } from "./config";
 
 export async function createClient() {
-  if (!supabaseUrl || !supabasePublishableKey) {
+  const { url, publishableKey } = getSupabaseConfig();
+  if (!url || !publishableKey) {
     throw new Error("Funda authentication is not configured yet.");
   }
 
   const cookieStore = await cookies();
-  return createServerClient(supabaseUrl, supabasePublishableKey, {
+  return createServerClient(url, publishableKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll: (cookiesToSet) => {
@@ -21,4 +22,3 @@ export async function createClient() {
     },
   });
 }
-

@@ -101,6 +101,16 @@ export function AboutInfoIcon(props: IconProps) {
   );
 }
 
+export function AlertCircleIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v5" />
+      <circle cx="12" cy="16.2" r="0.75" fill="currentColor" stroke="none" />
+    </IconBase>
+  );
+}
+
 // Hugeicons Services / Grid Layout
 export function ServicesGridIcon(props: IconProps) {
   return (

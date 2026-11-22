@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import SupabaseRuntimeConfig from "../../components/supabase-runtime-config";
 import { onboardingStepFor, profileNameFor } from "../../lib/auth/onboarding";
+import { getSupabaseConfig } from "../../lib/supabase/config";
 import { createAdminClient } from "../../lib/supabase/admin";
 import { createClient } from "../../lib/supabase/server";
 import { decryptPins } from "../../lib/security/pin-vault";
@@ -210,9 +212,13 @@ export default async function DashboardPage() {
         }
       : null;
 
+  const supabaseConfig = getSupabaseConfig();
+
   return (
-    <DashboardClient
-      user={{
+    <>
+      <SupabaseRuntimeConfig url={supabaseConfig.url} publishableKey={supabaseConfig.publishableKey} />
+      <DashboardClient
+        user={{
         id: user.id,
         email: user.email,
         phone: user.phone,
@@ -242,8 +248,9 @@ export default async function DashboardPage() {
       initialWalletBalance={Number(wallet?.available_balance ?? 0)}
       initialTransactions={initialTransactions}
       initialNotifications={notificationsData ?? []}
-      initialVirtualAccount={virtualAccountData ?? null}
-      initialTemporaryAccount={initialTemporaryAccount}
-    />
+        initialVirtualAccount={virtualAccountData ?? null}
+        initialTemporaryAccount={initialTemporaryAccount}
+      />
+    </>
   );
 }
