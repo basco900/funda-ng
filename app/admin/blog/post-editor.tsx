@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import AdminIcon from "../(console)/admin-icon";
 import { AdminFeedback } from "../(console)/admin-ui";
+import AdminSelect from "../(console)/admin-select";
 import { createBlogPost, updateBlogPost } from "./actions";
 import styles from "../admin.module.css";
 
@@ -291,23 +292,7 @@ export default function PostEditor({ initialData, categories, adminName }: Props
               <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--admin-ink)", display: "block", marginBottom: "4px" }}>
                 Editorial Tone
               </label>
-              <select
-                value={aiTone}
-                onChange={(e) => setAiTone(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "9px 8px",
-                  borderRadius: "6px",
-                  border: "1px solid var(--admin-line)",
-                  background: "var(--admin-surface)",
-                  fontSize: "12px",
-                }}
-              >
-                <option value="practical_guide">Practical Guide / How-To</option>
-                <option value="informative">Informative & Analysis</option>
-                <option value="engaging_story">Engaging & Storytelling</option>
-                <option value="announcement">Product Announcement</option>
-              </select>
+              <AdminSelect value={aiTone} onValueChange={setAiTone} options={[{ value: "practical_guide", label: "Practical guide" }, { value: "informative", label: "Informative & analysis" }, { value: "engaging_story", label: "Storytelling" }, { value: "announcement", label: "Product announcement" }]} />
             </div>
 
             <div>
@@ -515,22 +500,7 @@ export default function PostEditor({ initialData, categories, adminName }: Props
               <label style={{ fontSize: "11px", fontWeight: 600, display: "block", marginBottom: "4px" }}>
                 Status
               </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as "published" | "draft")}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "6px",
-                  border: "1px solid var(--admin-line)",
-                  background: "var(--admin-surface)",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                }}
-              >
-                <option value="published">🚀 Published (Live on Site)</option>
-                <option value="draft">📝 Draft (Private)</option>
-              </select>
+              <AdminSelect value={status} onValueChange={(value) => setStatus(value as "published" | "draft")} options={[{ value: "published", label: "Published", description: "Live on site" }, { value: "draft", label: "Draft", description: "Private" }]} />
             </div>
 
             <label style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px", cursor: "pointer" }}>
@@ -570,25 +540,7 @@ export default function PostEditor({ initialData, categories, adminName }: Props
               <label style={{ fontSize: "11px", fontWeight: 600, display: "block", marginBottom: "4px" }}>
                 Primary Category *
               </label>
-              <select
-                required
-                value={categorySlug}
-                onChange={(e) => setCategorySlug(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "6px",
-                  border: "1px solid var(--admin-line)",
-                  background: "var(--admin-surface)",
-                  fontSize: "12px",
-                }}
-              >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.slug}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <AdminSelect value={categorySlug} onValueChange={setCategorySlug} placeholder="Choose a category" options={categories.map((c) => ({ value: c.slug, label: c.name }))} />
             </div>
 
             <div>

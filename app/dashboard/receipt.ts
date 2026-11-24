@@ -91,9 +91,22 @@ export function buildReceipt(tx: TransactionItem, ctx: ReceiptContext): Receipt 
     sections.push({ title: "Paid by", fields: paidBy });
 
     const service: ReceiptField[] = [];
-    push(service, "Service", SERVICE_LABELS[tx.category]);
+    push(service, "Service", tx.mode === "epin" ? "Recharge cards" : SERVICE_LABELS[tx.category]);
     push(service, "Product", tx.title);
-    push(service, RECIPIENT_LABELS[tx.category] ?? "Recipient", tx.meta);
+    if (tx.mode === "epin") {
+      push(service, "Cards", tx.quantity && tx.unitAmount ? `${tx.quantity} × ${naira(tx.unitAmount)}` : undefined);
+      push(service, "Face value", tx.faceValue ? naira(tx.faceValue) : undefined);
+      push(service, "PINs delivered", tx.pinCount !== undefined ? `${tx.pinCount} / ${tx.quantity ?? tx.pinCount}` : undefined);
+    } else push(service, RECIPIENT_LABELS[tx.category] ?? "Recipient", tx.meta);
+    if (tx.originalAmount && tx.discountAmount && tx.discountAmount > 0) {
+      if (tx.mode !== "epin") push(service, "Plan price", naira(tx.originalAmount));
+      push(
+        service,
+        "Discount",
+        `−${naira(tx.discountAmount)}${tx.couponCode ? ` (${tx.couponCode})` : ""}`,
+        { tone: "reward" },
+      );
+    }
     if (tx.token) push(service, tx.category === "education" ? "Exam PIN / Token" : "Electricity Token", tx.token, { copyable: true });
     push(service, "Cashback", tx.cashback, { tone: "reward" });
     sections.push({ title: "Service", fields: service });
@@ -107,7 +120,7 @@ export function buildReceipt(tx: TransactionItem, ctx: ReceiptContext): Receipt 
 
   const statusLabel =
     tx.status === "failed"
-      ? isCredit ? "Payment failed" : "Payment failed (refunded)"
+      ? isCredit ? "Payment failed" : tx.mode === "epin" && !tx.refunded ? "Purchase failed" : "Payment failed (refunded)"
       : tx.status === "processing"
       ? "Processing"
       : isCredit ? "Money received" : "Payment completed";

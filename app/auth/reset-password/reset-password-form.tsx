@@ -18,6 +18,7 @@ import {
   completedOnboardingData,
   incompleteOnboardingData,
   profileNameFor,
+  updatePasswordAllowSame,
 } from "../../../lib/auth/onboarding";
 import { createClient } from "../../../lib/supabase/client";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
@@ -99,7 +100,7 @@ export default function ResetPasswordForm() {
           password_enabled: true,
           login_preference: "password",
         };
-    const { error: updateError } = await client.auth.updateUser({ password, data: onboardingData });
+    const { error: updateError } = await updatePasswordAllowSame(client, password, onboardingData);
 
     setBusy(false);
     if (updateError) return setError("Unable to update password. Please try again.");

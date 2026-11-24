@@ -81,12 +81,35 @@ export async function selectProviderRoute(serviceType: string, network?: string 
 
 export async function calculateProductPrice(productId: string, customerSegment = "standard") {
   const client = createAdminClient();
-  const { data: product, error } = await client.from("service_products").select("id,provider_cost,selling_price,cashback_amount,status,service_type").eq("id", productId).single();
+  const { data: product, error } = await client
+    .from("service_products")
+    .select("id,provider_cost,selling_price,cashback_amount,status,service_type")
+    .eq("id", productId)
+    .single();
   if (error || !product || product.status !== "active") return null;
-  const now = new Date().toISOString();
-  const { data: rules } = await client.from("pricing_rules").select("rule_type,value,minimum_amount,maximum_amount,priority").eq("enabled", true).or(`product_id.eq.${productId},service_type.eq.${product.service_type}`).or(`customer_segment.eq.${customerSegment},customer_segment.is.null`).or(`starts_at.lte.${now},starts_at.is.null`).or(`ends_at.gt.${now},ends_at.is.null`).order("priority", { ascending: true });
-  let price = Number(product.selling_price);
-  for (const rule of rules ?? []) {
+
+  const nowMs = Date.now();
+  const { data: candidateRules } = await client
+    .from("pricing_rules")
+    .select("id,rule_type,value,product_id,service_type,customer_segment,minimum_amount,maximum_amount,starts_at,ends_at,priority")
+    .eq("enabled", true)
+    .order("priority", { ascending: true })
+    .limit(200);
+
+  const matchingRules = (candidateRules ?? []).filter((rule) => {
+    if (rule.product_id && rule.product_id !== productId) return false;
+    if (!rule.product_id && rule.service_type && rule.service_type !== product.service_type) return false;
+    if (!rule.product_id && !rule.service_type) return false;
+    if (rule.customer_segment && rule.customer_segment !== customerSegment) return false;
+    if (rule.starts_at && new Date(rule.starts_at).getTime() > nowMs) return false;
+    if (rule.ends_at && new Date(rule.ends_at).getTime() <= nowMs) return false;
+    return true;
+  });
+
+  const basePrice = Number(product.selling_price);
+  let price = basePrice;
+  let appliedRuleId: string | null = null;
+  for (const rule of matchingRules) {
     if (rule.minimum_amount !== null && price < Number(rule.minimum_amount)) continue;
     if (rule.maximum_amount !== null && price > Number(rule.maximum_amount)) continue;
     const value = Number(rule.value);
@@ -95,8 +118,19 @@ export async function calculateProductPrice(productId: string, customerSegment =
     if (rule.rule_type === "fixed_discount") price -= value;
     if (rule.rule_type === "percentage_discount") price *= 1 - value / 100;
     if (rule.rule_type === "override_price") price = value;
+    appliedRuleId = rule.id;
     break;
   }
   const finalPrice = Math.max(0, Math.round(price * 100) / 100);
-  return { productId, providerCost: Number(product.provider_cost), basePrice: Number(product.selling_price), price: finalPrice, cashback: Number(product.cashback_amount), margin: finalPrice - Number(product.provider_cost) - Number(product.cashback_amount) };
+  const cashback = Number(product.cashback_amount) || 0;
+  return {
+    productId,
+    providerCost: Number(product.provider_cost),
+    basePrice,
+    price: finalPrice,
+    pricingDelta: Number((finalPrice - basePrice).toFixed(2)),
+    appliedRuleId,
+    cashback,
+    margin: finalPrice - Number(product.provider_cost) - cashback,
+  };
 }

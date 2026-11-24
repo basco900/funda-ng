@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "../supabase/admin";
+import { isNigerianPhone, normalizePhone } from "../test-engine/utils";
 
 export type BeneficiaryItem = {
   id: string;
@@ -35,7 +36,7 @@ export async function listUserBeneficiaries(
   const { data, error } = await query;
   if (error || !data) return [];
 
-  return data.map((row) => ({
+  return data.filter((row) => !["airtime", "data"].includes(row.service_type) || isNigerianPhone(normalizePhone(row.recipient))).map((row) => ({
     id: row.id,
     serviceType: row.service_type as BeneficiaryItem["serviceType"],
     recipient: row.recipient,
@@ -60,6 +61,7 @@ export async function recordServiceBeneficiary(params: {
   const client = createAdminClient();
   const cleanRecipient = params.recipient.trim();
   if (!cleanRecipient || cleanRecipient.length < 8) return;
+  if (["airtime", "data"].includes(params.serviceType) && !isNigerianPhone(normalizePhone(cleanRecipient))) return;
 
   try {
     await client

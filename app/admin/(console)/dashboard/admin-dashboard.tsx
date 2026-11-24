@@ -1,21 +1,121 @@
 "use client";
 
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import type { AdminSession } from "../../../../lib/admin/auth";
-import type { AdminOverview } from "../../../../lib/admin/overview";
+import type { AdminOverview, OverviewMetric } from "../../../../lib/admin/overview";
 import { cn } from "../../../../lib/utils";
-import AdminIcon from "../admin-icon";
+import { card, button, EmptyNote, NairaAmount, ProgressRing, Ribbon, SectionTitle, StatusBadge, TextLink, Tip } from "../../../../components/admin/kit";
+import { UrlList, UrlResetButton, UrlSelect } from "../../../../components/admin/list-controls";
+import AdminIcon, { type AdminIconName } from "../admin-icon";
 
-const naira = new Intl.NumberFormat("en-NG", {
-  style: "currency",
-  currency: "NGN",
-  maximumFractionDigits: 0,
-});
+const naira = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 });
+const money = (value: number) => naira.format(value).replace("NGN", "₦");
 
-function money(value: number) {
-  return naira.format(value).replace("NGN", "₦");
-}
+const PERIOD_OPTIONS = [
+  { value: "1", label: "Today" },
+  { value: "7", label: "Last 7 days" },
+  { value: "14", label: "Last 14 days" },
+  { value: "30", label: "Last 30 days" },
+  { value: "90", label: "Last 90 days" },
+];
+
+const METRIC_OPTIONS = [
+  { value: "deposits", label: "Wallet deposits", description: "Funding inflows" },
+  { value: "orders", label: "Service sales", description: "VTU & bill spend" },
+  { value: "margin", label: "Net margin", description: "Gross service margin" },
+];
+
+const DEPOSIT_SCOPE_OPTIONS = [
+  { value: "all", label: "All channels" },
+  { value: "checkout", label: "Checkout" },
+  { value: "virtual_account", label: "Virtual account" },
+];
+
+const SERVICE_SCOPE_OPTIONS = [
+  { value: "all", label: "All services" },
+  { value: "data", label: "Data" },
+  { value: "airtime", label: "Airtime" },
+  { value: "electricity", label: "Electricity" },
+  { value: "cable", label: "Cable TV" },
+  { value: "education", label: "Education" },
+];
+
+const OUTCOME_OPTIONS = [
+  { value: "completed", label: "Succeeded" },
+  { value: "all", label: "All statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "failed", label: "Failed" },
+];
+
+const PERIOD_LABEL: Record<number, string> = {
+  1: "today",
+  7: "last 7 days",
+  14: "last 14 days",
+  30: "last 30 days",
+  90: "last 90 days",
+};
+
+const METRIC_LABEL: Record<OverviewMetric, string> = {
+  deposits: "Wallet deposits",
+  orders: "Service sales",
+  margin: "Net margin",
+};
+
+const METRIC_ICON: Record<OverviewMetric, AdminIconName> = {
+  deposits: "wallet",
+  orders: "transactions",
+  margin: "trendUp",
+};
+
+const SCOPE_LABEL: Record<string, string> = {
+  checkout: "Checkout",
+  virtual_account: "Virtual account",
+  data: "Data",
+  airtime: "Airtime",
+  electricity: "Electricity",
+  cable: "Cable TV",
+  education: "Education",
+};
+
+const OUTCOME_DOT: Record<string, string> = {
+  completed: "bg-emerald-500",
+  all: "bg-primary",
+  pending: "bg-amber-500",
+  failed: "bg-rose-500",
+};
+
+const OUTCOME_WORD: Record<string, string> = {
+  completed: "successful",
+  all: "total",
+  pending: "pending",
+  failed: "unsuccessful",
+};
+
+const OUTCOMES: Array<{ key: string; label: string }> = [
+  { key: "succeeded", label: "Succeeded" },
+  { key: "pending", label: "Pending" },
+  { key: "initializing", label: "Initiated" },
+  { key: "underpaid", label: "Underpaid" },
+  { key: "failed", label: "Failed" },
+  { key: "expired", label: "Expired" },
+];
+
+const PROVIDERS = [
+  { name: "Bachs", desc: "Wallet funding", live: true },
+  { name: "VTPass", desc: "Bills & utilities", state: "Standby" },
+  { name: "SMEPlug", desc: "Data & airtime", state: "Standby" },
+  { name: "Pairgate", desc: "VTU fallback", state: "Test Mode" },
+];
+
+const ORDER_OUTCOMES: Array<{ key: string; label: string }> = [
+  { key: "successful", label: "Successful" },
+  { key: "processing", label: "Processing" },
+  { key: "pending", label: "Pending" },
+  { key: "initiated", label: "Initiated" },
+  { key: "failed", label: "Failed" },
+  { key: "reversed", label: "Reversed" },
+  { key: "cancelled", label: "Cancelled" },
+];
 
 function timeAgo(value: string) {
   const seconds = Math.max(1, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
@@ -27,429 +127,301 @@ function timeAgo(value: string) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-function statusLabel(status: string) {
-  return status.charAt(0).toUpperCase() + status.slice(1);
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? parts[0]?.[1] ?? "")).toUpperCase() || "U";
 }
 
-export default function AdminDashboard({ admin, overview }: { admin: AdminSession; overview: AdminOverview }) {
+export default function AdminDashboard({ admin, overview, activity }: { admin: AdminSession; overview: AdminOverview; activity: string }) {
   const firstName = admin.fullName.split(/\s+/)[0] || "Admin";
-  const maxChartValue = Math.max(...overview.chart.map((point) => point.value), 1);
-  const totalStatuses = Object.values(overview.statuses).reduce((sum, count) => sum + count, 0);
-  const statusSegments = [
-    { key: "succeeded", label: "Successful", color: "bg-emerald-500", text: "text-emerald-700" },
-    { key: "pending", label: "Pending", color: "bg-amber-500", text: "text-amber-700" },
-    { key: "initializing", label: "Initiated", color: "bg-blue-500", text: "text-blue-700" },
-    { key: "failed", label: "Failed", color: "bg-rose-500", text: "text-rose-700" },
-  ];
+  const hero = overview.hero;
+  const chartMax = Math.max(1, ...hero.chart.map((point) => point.value));
+  const outcomeCatalog = hero.metric === "deposits" ? OUTCOMES : ORDER_OUTCOMES;
+  const heroOutcomes = outcomeCatalog
+    .map((item) => ({
+      ...item,
+      count: hero.statuses[item.key] ?? 0,
+      href:
+        hero.metric === "deposits"
+          ? `/admin/money/funding?status=${item.key}`
+          : `/admin/operations/transactions?status=${item.key}`,
+    }))
+    .filter((item) => item.count > 0);
+  const values = {
+    period: overview.periodDays === 7 ? "" : String(overview.periodDays),
+    view: hero.metric === "deposits" ? "" : hero.metric,
+    scope: hero.scope === "all" ? "" : hero.scope,
+    outcome: hero.outcome === "completed" ? "" : hero.outcome,
+    activity,
+  };
+  const scopeOptions = hero.metric === "deposits" ? DEPOSIT_SCOPE_OPTIONS : SERVICE_SCOPE_OPTIONS;
+  const unitNoun = hero.metric === "deposits"
+    ? hero.matchingCount === 1 ? "deposit" : "deposits"
+    : hero.matchingCount === 1 ? "order" : "orders";
+  const contextParts = [
+    METRIC_LABEL[hero.metric],
+    PERIOD_LABEL[overview.periodDays] ?? `last ${overview.periodDays} days`,
+    hero.scope !== "all" ? SCOPE_LABEL[hero.scope] : null,
+  ].filter(Boolean);
 
   return (
-    <div className="flex flex-col h-full space-y-6 pb-8 font-sans text-zinc-900">
-      {/* Header (Jobly Africa pattern) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-200/80 pb-4">
-        <div>
-          <div className="flex items-center gap-2 text-[11px] font-bold text-zinc-400 mb-1 tracking-wide">
-            <span>Admin Panel</span>
-            <span className="text-zinc-300">→</span>
-            <span className="text-zinc-900">Platform Overview</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-zinc-900">
-            Welcome back, {firstName}
-          </h1>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Period selector tabs */}
-          <div className="inline-flex rounded-[6px] border border-zinc-200 bg-white p-0.5 shadow-xs">
-            {[1, 7, 30, 90].map((days) => (
-              <Link
-                key={days}
-                href={`/admin/dashboard?period=${days}`}
-                className={cn(
-                  "rounded-[5px] px-2.5 py-1 text-[11px] font-semibold transition-colors",
-                  overview.periodDays === days
-                    ? "bg-primary text-white"
-                    : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50",
-                )}
-              >
-                {days === 1 ? "Today" : `${days}d`}
-              </Link>
-            ))}
-          </div>
-
-          <Link
-            href="/admin/analytics/reports"
-            className="flex items-center gap-1.5 h-9 px-3.5 bg-white border border-zinc-200 rounded-[6px] shadow-xs text-xs font-semibold text-zinc-700 hover:text-primary hover:border-primary/30 transition-colors"
-          >
-            <AdminIcon name="report" className="h-3.5 w-3.5 text-zinc-400" />
-            Export
-          </Link>
-
-          <Link
-            href="/admin/operations/live"
-            className="flex items-center gap-1.5 h-9 px-3.5 bg-primary text-white rounded-[6px] shadow-xs text-xs font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <AdminIcon name="pulse" className="h-3.5 w-3.5" />
-            Live Ops
-          </Link>
-        </div>
-      </div>
-
-      {!overview.connected && (
-        <div className="flex items-center justify-between rounded-[8px] border border-amber-200/80 bg-amber-50/70 p-4 text-[12.5px] text-amber-900">
-          <div className="flex items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-amber-100 text-amber-700">
-              <AdminIcon name="plug" className="h-4 w-4" />
-            </span>
-            <div>
-              <strong className="block font-semibold">Live data not connected</strong>
-              <span className="text-[11.5px] text-amber-700">Run the latest database migrations to enable real-time reporting.</span>
-            </div>
-          </div>
-          <Link
-            href="/admin/platform/health"
-            className="rounded-[6px] border border-amber-300 bg-white px-3 py-1 text-[11.5px] font-semibold text-amber-800 hover:bg-amber-50"
-          >
-            Set up →
-          </Link>
-        </div>
-      )}
-
-      {/* Grid: Platform Health + 3 Key Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left: Platform Overview Card */}
-        <div className="lg:col-span-5 rounded-[8px] border border-slate-200/70 bg-white p-5 flex flex-col justify-between shadow-xs">
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-[11px] font-bold uppercase text-zinc-500 tracking-wider">
-                Deposit Volume
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200/50">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Live Feed
-              </span>
-            </div>
-
-            <div className="mb-4">
-              <div className="text-[28px] font-semibold tracking-tight text-zinc-900">
-                {money(overview.metrics.walletDeposits)}
-              </div>
-              <p className="text-[12px] text-zinc-500 mt-0.5">
-                Total completed wallet top-ups in this period
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-[8px] border border-zinc-100/80 bg-zinc-50/80 p-4">
-            <div className="flex justify-between items-center mb-2 text-[11.5px]">
-              <span className="font-semibold text-zinc-700">Activity Trend</span>
-              <span className="text-[10.5px] font-bold text-primary">
-                {overview.statuses.succeeded ?? 0} deposits
-              </span>
-            </div>
-
-            {/* Mini Bar Chart matching Jobly Africa */}
-            <div className="h-12 w-full flex items-end gap-1.5 pt-2">
-              {(overview.chart.length
-                ? overview.chart
-                : Array.from({ length: 7 }, (_, i) => ({ label: `D${i + 1}`, value: [30, 45, 60, 40, 80, 70, 95][i] }))
-              ).map((point, index) => {
-                const heightPercent = overview.chart.length
-                  ? Math.max(12, (point.value / maxChartValue) * 100)
-                  : point.value;
-                return (
-                  <div key={index} className="flex-1 flex flex-col items-center gap-1 group">
-                    <div
-                      style={{ height: `${heightPercent}%` }}
-                      className="w-full rounded-t-[3px] bg-primary/70 group-hover:bg-primary transition-colors"
-                      title={`${point.label}: ${money(point.value)}`}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Right: 3 Metric Cards */}
-        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-[8px] border border-slate-200/70 bg-white p-5 flex flex-col justify-between shadow-xs">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                Wallet Float
-              </span>
-              <div className="text-[22px] font-semibold tracking-tight text-zinc-900 mt-2">
-                {money(overview.metrics.walletFloat)}
-              </div>
-            </div>
-            <p className="text-[11px] text-zinc-400 mt-4 border-t border-zinc-100 pt-2">
-              Across customer accounts
-            </p>
-          </div>
-
-          <div className="rounded-[8px] border border-slate-200/70 bg-white p-5 flex flex-col justify-between shadow-xs">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                Funding Success
-              </span>
-              <div className="text-[22px] font-semibold tracking-tight text-zinc-900 mt-2">
-                {overview.metrics.successRate.toFixed(1)}%
-              </div>
-            </div>
-            <p
-              className={cn(
-                "text-[11px] font-medium mt-4 border-t border-zinc-100 pt-2",
-                overview.metrics.successRate >= 95 ? "text-emerald-700" : "text-amber-700",
-              )}
-            >
-              {overview.metrics.successRate >= 95 ? "● Healthy rate" : "▲ Needs attention"}
-            </p>
-          </div>
-
-          <div className="rounded-[8px] border border-slate-200/70 bg-white p-5 flex flex-col justify-between shadow-xs">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                Registered Users
-              </span>
-              <div className="text-[22px] font-semibold tracking-tight text-zinc-900 mt-2">
-                {overview.metrics.registeredUsers.toLocaleString("en-NG")}
-              </div>
-            </div>
-            <p className="text-[11px] text-zinc-400 mt-4 border-t border-zinc-100 pt-2">
-              All-time customers
-            </p>
-          </div>
-
-          {/* Attention Alerts Strip */}
-          <div className="sm:col-span-3 rounded-[8px] border border-slate-200/70 bg-white p-4 shadow-xs">
-            <div className="flex items-center justify-between mb-3 border-b border-zinc-100 pb-2">
-              <h2 className="text-[13px] font-semibold text-zinc-900">Needs Attention</h2>
-              <Link href="/admin/operations/live" className="text-[11px] font-bold text-primary hover:underline">
-                View All →
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {overview.alerts.map((alert) => (
-                <Link
-                  key={alert.title}
-                  href={alert.href}
-                  className="flex items-center justify-between rounded-[6px] border border-zinc-100 bg-zinc-50/60 p-2.5 hover:bg-zinc-100/80 transition-colors group"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className={cn(
-                        "h-2 w-2 rounded-full shrink-0",
-                        alert.tone === "critical"
-                          ? "bg-rose-500"
-                          : alert.tone === "warning"
-                          ? "bg-amber-500"
-                          : "bg-blue-500",
-                      )}
-                    />
-                    <div className="min-w-0">
-                      <strong className="block text-[12px] font-semibold text-zinc-800 truncate">
-                        {alert.title}
-                      </strong>
-                      <small className="block text-[10.5px] text-zinc-400 truncate">
-                        {alert.detail}
-                      </small>
-                    </div>
-                  </div>
-                  <span className="text-zinc-400 group-hover:text-primary text-[12px]">→</span>
-                </Link>
-              ))}
-              <Link
-                href="/admin/money/reconciliation"
-                className="flex items-center justify-between rounded-[6px] border border-zinc-100 bg-zinc-50/60 p-2.5 hover:bg-zinc-100/80 transition-colors group"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="h-2 w-2 rounded-full bg-zinc-400 shrink-0" />
-                  <div className="min-w-0">
-                    <strong className="block text-[12px] font-semibold text-zinc-800 truncate">
-                      {money(overview.metrics.pendingValue)} awaiting final status
-                    </strong>
-                    <small className="block text-[10.5px] text-zinc-400 truncate">
-                      Unresolved items
-                    </small>
-                  </div>
-                </div>
-                <span className="text-zinc-400 group-hover:text-primary text-[12px]">→</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Lower Row: Recent Activity Table + Provider Pulse */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Activity Table Card (Jobly Africa exact table styling) */}
-        <div className="lg:col-span-8 rounded-[8px] border border-slate-200/70 bg-white overflow-hidden shadow-xs">
-          <div className="flex items-center justify-between border-b border-slate-200/70 px-5 py-3.5">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[14px] font-semibold tracking-tight text-slate-950">
-                Recent Activity
-              </h2>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9.5px] font-bold text-emerald-700 border border-emerald-200/50">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live
-              </span>
-            </div>
-            <Link
-              href="/admin/transactions"
-              className="text-[11.5px] font-semibold text-primary hover:underline"
-            >
-              All transactions →
+    <UrlList values={values}>
+      <div className="space-y-5 pb-4 sm:space-y-7 sm:pb-8">
+        <header className="flex flex-col gap-3.5 sm:flex-row sm:items-end sm:justify-between sm:gap-5">
+          <h1 className="text-[24px] font-semibold tracking-[-0.04em] text-zinc-950 sm:text-[30px]">Welcome Back, {firstName}</h1>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+            <Link href="/admin/analytics/reports" className={button.secondary}>
+              Reports
+            </Link>
+            <Link href="/admin/operations/live" className={button.primary}>
+              <AdminIcon name="pulse" />
+              Live Operations
             </Link>
           </div>
+        </header>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-slate-200/70 bg-[#fafafa]">
-                  <th className="h-9.5 px-4 text-[10px] font-bold uppercase tracking-[0.11em] text-slate-600">
-                    Customer
-                  </th>
-                  <th className="h-9.5 px-4 text-[10px] font-bold uppercase tracking-[0.11em] text-slate-600">
-                    Reference
-                  </th>
-                  <th className="h-9.5 px-4 text-[10px] font-bold uppercase tracking-[0.11em] text-slate-600">
-                    Provider
-                  </th>
-                  <th className="h-9.5 px-4 text-[10px] font-bold uppercase tracking-[0.11em] text-slate-600">
-                    Amount
-                  </th>
-                  <th className="h-9.5 px-4 text-[10px] font-bold uppercase tracking-[0.11em] text-slate-600">
-                    Status
-                  </th>
-                  <th className="h-9.5 px-4 pr-5 text-right text-[10px] font-bold uppercase tracking-[0.11em] text-slate-600">
-                    Time
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {overview.recent.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="h-40 text-center text-slate-400 text-[12.5px]">
-                      No funding activity yet in this period.
-                    </td>
-                  </tr>
-                ) : (
-                  overview.recent.slice(0, 7).map((row) => (
-                    <tr
-                      key={row.id}
-                      className="border-b border-slate-200/65 hover:bg-slate-50/55 transition-colors"
-                    >
-                      <td className="py-2.5 px-4">
-                        <div className="flex items-center gap-2">
-                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-bold">
-                            {row.customer.slice(0, 2).toUpperCase()}
-                          </span>
-                          <span className="text-[12.5px] font-bold text-slate-900 truncate max-w-[140px]">
-                            {row.customer}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-4 text-[11px] font-mono text-slate-600">
-                        {row.reference}
-                      </td>
-                      <td className="py-2.5 px-4 text-[12px] font-medium text-slate-800">
-                        {row.provider}
-                      </td>
-                      <td className="py-2.5 px-4 text-[12.5px] font-bold text-slate-900">
-                        {money(row.amount)}
-                      </td>
-                      <td className="py-2.5 px-4">
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold",
-                            row.status === "succeeded"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
-                              : row.status === "pending"
-                              ? "bg-amber-50 text-amber-700 border border-amber-200/50"
-                              : "bg-rose-50 text-rose-700 border border-rose-200/50",
-                          )}
-                        >
-                          {statusLabel(row.status)}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-4 pr-5 text-right text-[11.5px] text-slate-400">
-                        {timeAgo(row.createdAt)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Provider Pulse Card */}
-        <div className="lg:col-span-4 rounded-[8px] border border-slate-200/70 bg-white p-5 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4 border-b border-zinc-100 pb-2">
-              <h2 className="text-[14px] font-semibold text-slate-950">Provider Pulse</h2>
-              <Link href="/admin/products/providers" className="text-[11.5px] font-semibold text-primary hover:underline">
-                Manage →
-              </Link>
+        {!overview.connected ? (
+          <div className="a-in flex flex-col gap-4 rounded-[8px] bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div className="flex items-center gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-a-surface text-amber-700">
+                <AdminIcon name="plug" className="size-[18px]" />
+              </span>
+              <p className="text-[14px] font-semibold text-amber-700">Live Data Isn&apos;t Connected</p>
             </div>
+            <Link href="/admin/platform/health" className={button.secondary}>
+              System Health
+            </Link>
+          </div>
+        ) : null}
 
-            <div className="space-y-2">
-              {[
-                { name: "Bachs", desc: "Wallet Funding", state: overview.connected ? "Operational" : "Checking", tone: "good", mark: "B" },
-                { name: "VTPass", desc: "Bills & Utilities", state: "Standby", tone: "standby", mark: "V" },
-                { name: "SMEPlug", desc: "Data & Airtime", state: "Standby", tone: "standby", mark: "S" },
-                { name: "Pairgate", desc: "VTU Fallback", state: "Test Mode", tone: "standby", mark: "P" },
-              ].map((provider) => (
-                <Link
-                  key={provider.name}
-                  href="/admin/products/providers"
-                  className="flex items-center justify-between rounded-[7px] border border-zinc-100 bg-zinc-50/50 p-2.5 hover:bg-zinc-100/70 transition-colors group"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-primary/10 text-primary font-bold text-xs">
-                      {provider.mark}
-                    </span>
-                    <div>
-                      <strong className="block text-[12.5px] font-semibold text-zinc-900 group-hover:text-primary">
-                        {provider.name}
-                      </strong>
-                      <small className="block text-[10.5px] text-zinc-400">
-                        {provider.desc}
-                      </small>
+        <section className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.85fr)]">
+          <div className="min-w-0 space-y-5">
+            {/* Hero overview card: metric, duration, scope & outcome dropdowns + trend. */}
+            <div className={cn(card, "a-in relative z-10")}>
+              <div className="flex flex-col gap-2.5 border-b border-a-line/70 px-4 py-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-8 sm:py-4">
+                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+                  <UrlSelect
+                    param="view"
+                    fallback="deposits"
+                    options={METRIC_OPTIONS}
+                    leadingIcon={METRIC_ICON[hero.metric]}
+                    ariaLabel="Metric"
+                    className="w-full sm:w-auto"
+                    resetParams={{ scope: null }}
+                  />
+                  <UrlSelect
+                    param="period"
+                    fallback="7"
+                    options={PERIOD_OPTIONS}
+                    leadingIcon="calendar"
+                    ariaLabel="Duration"
+                    className="w-full sm:w-auto"
+                  />
+                  <UrlSelect
+                    param="scope"
+                    fallback="all"
+                    options={scopeOptions}
+                    leadingIcon="filter"
+                    ariaLabel={hero.metric === "deposits" ? "Channel" : "Service"}
+                    className="w-full sm:w-auto"
+                  />
+                  <UrlSelect
+                    param="outcome"
+                    fallback="completed"
+                    options={OUTCOME_OPTIONS}
+                    leadingIcon="checkCircle"
+                    ariaLabel="Outcome"
+                    className="w-full sm:w-auto"
+                    menuAlign="right"
+                  />
+                </div>
+                <UrlResetButton params={["view", "period", "scope", "outcome"]} />
+              </div>
+
+              <div className="p-4 sm:p-8">
+                <div className="flex flex-wrap items-center justify-between gap-4 sm:flex-nowrap sm:items-start">
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-medium text-zinc-500 sm:text-[13px]">{contextParts.join(" · ")}</p>
+                    <p className="mt-2 sm:mt-2.5">
+                      <NairaAmount value={hero.totalValue} />
+                    </p>
+                    <div className="mt-2.5 inline-flex items-center gap-2 rounded-[7px] border border-a-line/70 bg-a-surface-soft px-2.5 py-1.5 sm:mt-3">
+                      <span className={cn("size-1.5 shrink-0 rounded-full", OUTCOME_DOT[hero.outcome] ?? "bg-primary")} />
+                      <span data-font="sans" className="text-[13px] leading-none font-semibold text-zinc-950 tabular-nums">
+                        {hero.matchingCount.toLocaleString("en-NG")}
+                      </span>
+                      <span className="font-mono text-[11.5px] leading-none text-zinc-500">
+                        {OUTCOME_WORD[hero.outcome] ?? "matching"} {unitNoun}
+                      </span>
                     </div>
                   </div>
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                      provider.tone === "good"
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
-                        : "bg-zinc-100 text-zinc-600 border border-zinc-200/60",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "h-1.5 w-1.5 rounded-full",
-                        provider.tone === "good" ? "bg-emerald-500" : "bg-zinc-400",
-                      )}
-                    />
-                    {provider.state}
-                  </span>
-                </Link>
-              ))}
+                  <div className="flex shrink-0 items-center gap-3">
+                    <ProgressRing value={hero.successRate} size={56}>
+                      <span className="text-[12.5px] font-semibold text-zinc-900 tabular-nums">{Math.round(hero.successRate)}%</span>
+                    </ProgressRing>
+                    <span>
+                      <span className="block text-[13px] font-semibold text-zinc-900 sm:text-[13.5px]">Success rate</span>
+                      <span
+                        className={cn(
+                          "text-[11.5px] font-medium sm:text-[12px]",
+                          hero.settledCount === 0
+                            ? "text-zinc-400"
+                            : hero.successRate >= 95
+                              ? "text-emerald-700"
+                              : "text-amber-700",
+                        )}
+                      >
+                        {hero.settledCount === 0 ? "No settled yet" : hero.successRate >= 95 ? "Healthy" : "Needs a look"}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {hero.chart.length > 1 ? (
+                  <div className="mt-6 flex h-28 items-end gap-1.5 sm:mt-8 sm:h-40 sm:gap-2" role="img" aria-label={`${METRIC_LABEL[hero.metric]} volume`}>
+                    {hero.chart.map((point, index) => {
+                      const latest = index === hero.chart.length - 1;
+                      const hideOddMobile = hero.chart.length > 7 && index % 2 === 1 && !latest;
+                      return (
+                        <div key={`${point.label}-${index}`} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
+                          <span tabIndex={0} className="group relative flex w-full flex-1 items-end justify-center outline-none">
+                            <span
+                              className={cn("a-rise w-full max-w-[28px] rounded-t-[4px]", latest ? "bg-a-accent" : "bg-primary")}
+                              style={{ height: point.value ? `${Math.max(4, (point.value / chartMax) * 100)}%` : 3, opacity: point.value ? 1 : 0.15, animationDelay: `${index * 40}ms` }}
+                            />
+                            <Tip>
+                              {money(point.value)} · {point.count} {point.count === 1 ? (hero.metric === "deposits" ? "deposit" : "order") : (hero.metric === "deposits" ? "deposits" : "orders")}
+                            </Tip>
+                          </span>
+                          <span className={cn("truncate font-mono text-[10.5px] font-medium sm:text-[11px]", latest ? "text-a-accent-ink" : "text-zinc-400", hideOddMobile && "max-sm:hidden")}>{point.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+
+                {heroOutcomes.length ? (
+                  <div className="mt-5 border-t border-a-line/70 pt-4 sm:mt-7 sm:pt-5">
+                    <Ribbon segments={heroOutcomes} />
+                  </div>
+                ) : null}
+
+                <div className="mt-5 grid grid-cols-1 gap-1 border-t border-primary/10 pt-4 sm:mt-7 sm:grid-cols-3 sm:gap-2 sm:pt-5">
+                  <QuickLink href="/admin/customers/wallets" icon="wallet" title="Wallet float" detail={money(overview.metrics.walletFloat)} />
+                  <QuickLink href="/admin/users" icon="users" title="Customers" detail={`${overview.metrics.registeredUsers.toLocaleString("en-NG")} registered`} />
+                  <QuickLink href="/admin/operations/pending" icon="clock" title="Awaiting status" detail={money(overview.metrics.pendingValue)} />
+                </div>
+              </div>
             </div>
+
+            {/* Recent funding, filterable by state. */}
+            <section className={cn(card, "a-in p-4 sm:p-6")}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-[17px] font-semibold tracking-[-0.02em] text-zinc-900">Recent Funding</h2>
+                <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
+                  <div className="min-w-0 flex-1 sm:w-[155px] sm:flex-none">
+                    <UrlSelect
+                      param="activity"
+                      options={[
+                        { value: "", label: "All statuses" },
+                        ...OUTCOMES.map((outcome) => ({ value: outcome.key, label: outcome.label })),
+                        { value: "review", label: "In review" },
+                      ]}
+                      leadingIcon="filter"
+                      variant="default"
+                      ariaLabel="Funding status"
+                    />
+                  </div>
+                  <TextLink href="/admin/money/funding">All Funding</TextLink>
+                </div>
+              </div>
+              {overview.recent.length ? (
+                <div className="mt-3 divide-y divide-[color:var(--a-border)]">
+                  {overview.recent.slice(0, 8).map((row) => (
+                    <div key={row.id} className="flex items-center gap-3 py-3">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-a-primary-soft text-[12px] font-semibold text-primary">{initials(row.customer)}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14px] font-semibold text-zinc-800">{row.customer}</span>
+                        <span className="mt-0.5 block truncate text-[12px] text-zinc-500">
+                          {row.reference} · {timeAgo(row.createdAt)}
+                        </span>
+                      </span>
+                      <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
+                        <span className="text-[13.5px] font-semibold text-zinc-900 tabular-nums">{money(row.amount)}</span>
+                        <StatusBadge value={row.status} size="sm" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <EmptyNote icon="funding" title={activity ? "Nothing in This State" : "No Funding Yet"} />
+                </div>
+              )}
+            </section>
           </div>
 
-          <Link
-            href="/admin/products/providers"
-            className="mt-4 flex items-center justify-between rounded-[7px] border border-primary/20 bg-primary/[0.04] p-3 text-[12px] font-semibold text-primary hover:bg-primary/[0.08] transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <AdminIcon name="wallet" className="h-4 w-4" />
-              <span>Provider Thresholds &amp; Balances</span>
-            </div>
-            <span>→</span>
-          </Link>
-        </div>
+          <aside className="min-w-0">
+            <section className={cn(card, "a-in divide-y divide-[color:var(--a-border)]")}>
+              <div className="p-4 sm:p-6">
+                <SectionTitle
+                  title="Needs Attention"
+                  action={<TextLink href="/admin/operations/live">Live Queue</TextLink>}
+                />
+                <div className="mt-4 space-y-1">
+                  {overview.alerts.map((alert) => (
+                    <AttentionRow key={alert.title} href={alert.href} tone={alert.tone} title={alert.title} />
+                  ))}
+                  {overview.metrics.pendingValue > 0 ? (
+                    <AttentionRow href="/admin/money/reconciliation" tone="info" title={`${money(overview.metrics.pendingValue)} awaiting final status`} />
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="p-5 sm:p-6">
+                <SectionTitle title="Providers" action={<TextLink href="/admin/products/providers">Manage</TextLink>} />
+                <div className="mt-3 divide-y divide-[color:var(--a-border)]">
+                  {PROVIDERS.map((provider) => (
+                    <Link key={provider.name} href="/admin/products/providers" className="group flex items-center gap-3 py-3">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-zinc-100 text-[12px] font-semibold text-zinc-600 group-hover:bg-a-primary-soft group-hover:text-primary">{provider.name[0]}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14px] font-semibold text-zinc-800 group-hover:text-primary">{provider.name}</span>
+                        <span className="mt-0.5 block truncate text-[12px] text-zinc-500">{provider.desc}</span>
+                      </span>
+                      <StatusBadge value={provider.live ? (overview.connected ? "Operational" : "Checking") : provider.state ?? "Standby"} size="sm" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+          </aside>
+        </section>
       </div>
-    </div>
+    </UrlList>
+  );
+}
+
+function QuickLink({ href, icon, title, detail }: { href: string; icon: string; title: string; detail: string }) {
+  return (
+    <Link href={href} className="group flex min-w-0 items-center gap-3 rounded-[8px] px-3 py-2.5 transition-colors hover:bg-zinc-50">
+      <span className="grid size-9 shrink-0 place-items-center rounded-[8px] bg-a-primary-soft text-primary">
+        <AdminIcon name={icon} className="size-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[14px] font-semibold text-zinc-800">{title}</span>
+        <span className="mt-0.5 block truncate text-[12px] text-zinc-500 tabular-nums">{detail}</span>
+      </span>
+      <AdminIcon name="arrowRight" className="size-3.5 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+    </Link>
+  );
+}
+
+function AttentionRow({ href, tone, title }: { href: string; tone: "critical" | "warning" | "info"; title: string }) {
+  return (
+    <Link href={href} className="group -mx-2 flex items-center gap-2.5 rounded-[8px] px-2 py-2 transition-colors hover:bg-zinc-50">
+      <span className={cn("size-2 shrink-0 rounded-full", tone === "critical" ? "bg-rose-500" : tone === "warning" ? "bg-amber-500" : "bg-sky-500")} />
+      <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-zinc-700 group-hover:text-zinc-950">{title}</span>
+      <AdminIcon name="arrowRight" className="size-3.5 shrink-0 text-zinc-300 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+    </Link>
   );
 }

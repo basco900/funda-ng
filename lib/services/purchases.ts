@@ -22,10 +22,13 @@ import {
   recordCouponRedemption,
 } from "./routing";
 import { recordServiceBeneficiary } from "./beneficiaries";
+import { purchaseRechargeCards } from "./recharge-cards";
+import { classifyVendorError, deriveCustomerHealth, refreshProductHealth } from "./plan-health";
 
 const catalogInputSchema = z.object({
   productId: z.string().uuid(),
   destination: z.string().trim().min(8).max(100),
+  couponCode: z.string().trim().max(30).optional(),
   idempotencyKey: z.string().regex(/^[A-Za-z0-9_-]{16,160}$/),
 });
 
@@ -161,17 +164,56 @@ export async function listPurchaseProducts(userId: string, serviceType?: string,
     .limit(300);
   if (serviceType) query = query.eq("service_type", serviceType);
   if (network) query = query.eq("network", network);
-  const [{ data, error }, cashbackOn] = await Promise.all([query, cashbackEnabled()]);
+  const [{ data, error }, cashbackOn, { data: pricingRules }] = await Promise.all([
+    query,
+    cashbackEnabled(),
+    client
+      .from("pricing_rules")
+      .select("id,rule_type,value,product_id,service_type,customer_segment,minimum_amount,maximum_amount,starts_at,ends_at,priority")
+      .eq("enabled", true)
+      .order("priority", { ascending: true })
+      .limit(200),
+  ]);
   // Never show placeholder products: they cannot be purchased and their prices are not real.
   if (error) throw new Error("Products are unavailable right now.");
-  return (data ?? []).map((product) => ({
-    ...product,
-    price: Number(product.selling_price),
-    cashback: cashbackOn ? Number(product.cashback_amount) : 0,
-    category: (product.metadata as { category?: string } | null)?.category || "daily",
-    dataAmountMb: Number((product.metadata as { data_amount_mb?: number } | null)?.data_amount_mb) || 0,
-    userId,
-  }));
+
+  const nowMs = Date.now();
+  const activeRules = (pricingRules ?? []).filter((rule) => {
+    if (rule.customer_segment && rule.customer_segment !== "standard") return false;
+    if (rule.starts_at && new Date(rule.starts_at).getTime() > nowMs) return false;
+    if (rule.ends_at && new Date(rule.ends_at).getTime() <= nowMs) return false;
+    return true;
+  });
+
+  return (data ?? []).map((product) => {
+    const basePrice = Number(product.selling_price);
+    let price = basePrice;
+    for (const rule of activeRules) {
+      if (rule.product_id && rule.product_id !== product.id) continue;
+      if (!rule.product_id && rule.service_type && rule.service_type !== product.service_type) continue;
+      if (!rule.product_id && !rule.service_type) continue;
+      if (rule.minimum_amount !== null && price < Number(rule.minimum_amount)) continue;
+      if (rule.maximum_amount !== null && price > Number(rule.maximum_amount)) continue;
+      const val = Number(rule.value);
+      if (rule.rule_type === "fixed_markup") price += val;
+      if (rule.rule_type === "percentage_markup") price *= 1 + val / 100;
+      if (rule.rule_type === "fixed_discount") price -= val;
+      if (rule.rule_type === "percentage_discount") price *= 1 - val / 100;
+      if (rule.rule_type === "override_price") price = val;
+      break;
+    }
+    const finalPrice = Math.max(0, Math.round(price * 100) / 100);
+    return {
+      ...product,
+      basePrice,
+      price: finalPrice,
+      cashback: cashbackOn ? Number(product.cashback_amount) : 0,
+      category: (product.metadata as { category?: string } | null)?.category || "daily",
+      dataAmountMb: Number((product.metadata as { data_amount_mb?: number } | null)?.data_amount_mb) || 0,
+      health: deriveCustomerHealth(product),
+      userId,
+    };
+  });
 }
 
 export async function listBundleCategories(network?: string) {
@@ -187,6 +229,7 @@ export async function listBundleCategories(network?: string) {
 }
 
 async function purchaseDirectAirtimeOrEpin(userId: string, rawInput: unknown) {
+  if (rawInput && typeof rawInput === "object" && "mode" in rawInput && rawInput.mode === "epin") return purchaseRechargeCards(userId, rawInput);
   const input = airtimeInputSchema.parse(rawInput);
   const client = createAdminClient();
   const mode: AirtimeMode = input.mode;
@@ -1732,205 +1775,372 @@ export async function purchaseService(userId: string, rawInput: unknown) {
   const client = createAdminClient();
   const { data: product, error } = await client
     .from("service_products")
-    .select("id,name,service_type,network,provider_id,provider_product_code,status,provider_cost,selling_price,cashback_amount,provider:provider_registry(name,slug,status)")
+    .select("id,name,service_type,network,provider_id,provider_product_code,status,provider_cost,selling_price,cashback_amount,validity,metadata,provider:provider_registry(id,name,slug,status)")
     .eq("id", input.productId)
     .single();
   if (error || !product || product.status !== "active") throw new Error("That service is unavailable. Pick another option.");
   if (!["data", "airtime"].includes(product.service_type)) throw new Error("This service is not ready for live purchases yet.");
+  const preHealth = deriveCustomerHealth(product);
+  if (preHealth.status === "outage") {
+    throw new Error(preHealth.notice || "This bundle is temporarily unavailable from our supplier.");
+  }
   const destination = normalizePhone(input.destination);
   if (!isNigerianPhone(destination)) throw new Error("Enter a valid Nigerian phone number.");
   const price = await calculateProductPrice(product.id);
   if (!price) throw new Error("That product is no longer available.");
-  const policy = await evaluateCustomerPurchasePolicy(userId, product.service_type, price.price);
-  if (!policy.allowed) throw new Error(policy.reason);
-  const route = await selectProviderRoute(product.service_type, product.network, product.id);
-  let providerSlug = route?.slug ?? (Array.isArray(product.provider) ? product.provider[0]?.slug : (product.provider as { slug?: string } | null)?.slug);
-  const providerId = route?.providerId ?? product.provider_id;
 
-  if (providerId && !providerSlug) {
-    const { data: pReg } = await client.from("provider_registry").select("id,slug,name").eq("id", providerId).maybeSingle();
-    if (pReg?.slug) {
-      providerSlug = pReg.slug;
+  let couponDiscount = 0;
+  let validCouponCode: string | null = null;
+  if (input.couponCode?.trim()) {
+    const couponCheck = await validateCoupon(input.couponCode, product.service_type, price.price, userId);
+    if (!couponCheck.valid) {
+      throw new Error(couponCheck.message);
+    }
+    couponDiscount = couponCheck.discountAmount;
+    validCouponCode = couponCheck.code ?? input.couponCode.trim().toUpperCase();
+  }
+
+  const totalCharged = Math.max(0, Number((price.price - couponDiscount).toFixed(2)));
+  if (totalCharged <= 0) {
+    throw new Error("Net payable amount after discount must be greater than ₦0.");
+  }
+
+  const policy = await evaluateCustomerPurchasePolicy(userId, product.service_type, totalCharged);
+  if (!policy.allowed) throw new Error(policy.reason);
+
+  // Build ordered candidate offers from product_provider_offers + dynamic routing preference + legacy product fields
+  const [{ data: offerRows }, route] = await Promise.all([
+    client
+      .from("product_provider_offers")
+      .select("id,provider_id,provider_product_code,provider_cost,priority,status,provider:provider_registry(id,name,slug,status)")
+      .eq("product_id", product.id)
+      .eq("status", "active")
+      .order("priority", { ascending: true })
+      .order("provider_cost", { ascending: true }),
+    selectProviderRoute(product.service_type, product.network, product.id),
+  ]);
+
+  type CandidateOffer = {
+    providerId: string;
+    slug: VendorId;
+    providerName: string;
+    productCode: string;
+    providerCost: number;
+    priority: number;
+  };
+
+  const candidates: CandidateOffer[] = [];
+  const seenKeys = new Set<string>();
+
+  const pushCandidate = (
+    prov: { id?: string; name?: string; slug?: string; status?: string } | null | undefined,
+    code: string | null | undefined,
+    cost: number,
+    priority: number,
+  ) => {
+    if (!prov?.id || !prov.slug || !vendorIds.has(prov.slug as VendorId)) return;
+    const slug = prov.slug as VendorId;
+    if (!isVendorActive({ status: prov.status ?? "down" }, slug)) return;
+    if (product.service_type === "data" && !code) return;
+    const resolvedCode = code ?? "";
+    const dedup = `${prov.id}:${resolvedCode}`;
+    if (seenKeys.has(dedup)) return;
+    seenKeys.add(dedup);
+    candidates.push({
+      providerId: prov.id,
+      slug,
+      providerName: prov.name || slug.toUpperCase(),
+      productCode: resolvedCode,
+      providerCost: Number(cost) || price.providerCost,
+      priority,
+    });
+  };
+
+  for (const row of offerRows ?? []) {
+    const prov = Array.isArray(row.provider) ? row.provider[0] : row.provider;
+    const boost = route && row.provider_id === route.providerId ? -1000 : 0;
+    pushCandidate(prov, row.provider_product_code, Number(row.provider_cost), Number(row.priority ?? 100) + boost);
+  }
+  candidates.sort((a, b) => a.priority - b.priority);
+
+  const legacyProv = Array.isArray(product.provider) ? product.provider[0] : product.provider;
+  if (route && route.providerId && route.slug) {
+    // Only inject dynamic route fallback if product has an offer/code matching that provider
+    const matchingOffer = (offerRows ?? []).find((row) => row.provider_id === route.providerId);
+    if (matchingOffer) {
+      pushCandidate(
+        { id: route.providerId, name: route.provider, slug: route.slug, status: "operational" },
+        matchingOffer.provider_product_code,
+        Number(matchingOffer.provider_cost),
+        0,
+      );
     }
   }
-
-  if (!providerId || !providerSlug || !vendorIds.has(providerSlug as VendorId)) {
-    throw new Error("No live provider is available for this service yet. Please link a provider in Admin > Data Bundles.");
+  if (product.provider_id && legacyProv) {
+    pushCandidate(
+      { id: product.provider_id, name: legacyProv.name, slug: legacyProv.slug, status: legacyProv.status },
+      product.provider_product_code,
+      price.providerCost,
+      500,
+    );
   }
-  const vendor = getVendor(providerSlug as VendorId);
-  if (!vendor.isConfigured()) {
-    throw new Error(`${providerSlug.toUpperCase()} credentials are not configured on the server.`);
+
+  if (candidates.length === 0) {
+    throw new Error("No live provider is available for this bundle yet. Please link an active supplier offer in Admin > Data Bundles.");
   }
 
+  const primaryCandidate = candidates[0];
   const cashback = (await cashbackEnabled()) ? price.cashback : 0;
+  const baseMetadata = {
+    productName: product.name,
+    network: product.network,
+    validity: product.validity ?? null,
+    category: (product.metadata as { category?: string } | null)?.category ?? null,
+    route: route?.ruleId ?? null,
+    basePrice: price.basePrice,
+    listPrice: price.price,
+    discountAmount: couponDiscount,
+    couponCode: validCouponCode,
+    pricingRuleId: price.appliedRuleId,
+    provider: primaryCandidate.slug,
+    providerProductCode: primaryCandidate.productCode,
+    fallbackCount: Math.max(0, candidates.length - 1),
+  };
+
   const start = await client.rpc("customer_start_service_purchase_v2", {
     p_user_id: userId,
     p_idempotency_key: input.idempotencyKey,
     p_reference: reference(),
     p_service_type: product.service_type,
     p_product_id: product.id,
-    p_provider_id: providerId,
+    p_provider_id: primaryCandidate.providerId,
     p_destination: destination,
-    p_amount: price.price,
-    p_provider_cost: price.providerCost,
+    p_amount: totalCharged,
+    p_provider_cost: primaryCandidate.providerCost,
     p_cashback_amount: cashback,
-    p_metadata: { productName: product.name, route: route?.ruleId ?? null },
+    p_metadata: baseMetadata,
     ...limitParams(policy),
   });
   if (start.error || !start.data?.[0]) throw new Error(start.error?.message || "Your wallet could not be charged.");
   const created = start.data[0] as { transaction_id: string; internal_reference: string; status: string; balance: number; reused: boolean };
-  if (created.reused) return { transactionId: created.transaction_id, reference: created.internal_reference, status: created.status, balance: Number(created.balance), reused: true };
-
-  const started = Date.now();
-  try {
-    const result = await vendor.purchase({
-      type: product.service_type as "data" | "airtime",
-      network: product.network as NetworkId,
-      phone: destination,
-      amount: price.price,
-      planId: product.service_type === "data" ? product.provider_product_code : undefined,
-      reference: created.internal_reference,
-    });
-    const status = result.status === "successful" ? "successful" : result.status === "failed" ? "failed" : "pending";
-    await client.from("provider_attempts").insert({
-      transaction_id: created.transaction_id,
-      provider_id: providerId,
-      attempt_number: 1,
-      outcome: status === "successful" ? "successful" : status === "failed" ? "failed" : "processing",
-      provider_reference: result.providerReference ?? null,
-      latency_ms: Date.now() - started,
-      response_redacted: { message: result.message },
-    });
-    const settlement = await client.rpc("customer_settle_service_purchase", {
-      p_user_id: userId,
-      p_transaction_id: created.transaction_id,
-      p_status: status,
-      p_summary: result.message,
-      p_provider_reference: result.providerReference ?? null,
-      p_metadata: { provider: providerSlug },
-    });
-    if (settlement.error) throw new Error("Provider response received, but the purchase record could not be settled.");
-
-    await recordProviderApiCall({
-      requestId: randomUUID(),
-      provider: providerSlug,
-      transactionReference: created.internal_reference,
-      method: "POST",
-      endpoint: `${providerSlug}/purchase`,
-      response: result.raw,
-      latencyMs: Date.now() - started,
-      outcome: "successful",
-    });
-    if (status === "pending") await enqueueAdminJob("provider.requery", { transactionId: created.transaction_id }, `provider.requery:${created.transaction_id}`);
-
-    const settled = settlement.data?.[0] as { balance?: number; refunded?: boolean } | undefined;
-
-    if (status === "successful") {
-      void recordServiceBeneficiary({
-        userId,
-        serviceType: product.service_type as "data" | "airtime",
-        recipient: destination,
-        networkOrDisco: product.network,
-        label: `${product.network.toUpperCase()} Data`,
-      });
-    }
-
-    await dispatchPurchaseReceipt({
-      userId,
-      transactionId: created.transaction_id,
-      reference: created.internal_reference,
-      providerReference: result.providerReference ?? null,
-      productName: product.name,
-      amount: price.price,
-      cashback,
-      destination,
-      network: product.network,
-      serviceType: product.service_type,
-      status: status as "successful" | "failed" | "pending",
-      message: result.message,
-      balance: Number(settled?.balance ?? created.balance),
-    });
-
+  if (created.reused) {
     return {
       transactionId: created.transaction_id,
       reference: created.internal_reference,
-      status,
-      balance: Number(settled?.balance ?? created.balance),
-      reused: false,
-      refunded: Boolean(settled?.refunded),
-      message: result.message,
-      providerReference: result.providerReference ?? null,
+      status: created.status,
+      balance: Number(created.balance),
+      reused: true,
       productName: product.name,
-      amount: price.price,
-      cashback,
+      amount: totalCharged,
+      originalAmount: price.price,
+      discountAmount: couponDiscount,
+      couponCode: validCouponCode,
+      cashback: created.status === "successful" ? cashback : 0,
       destination,
       network: product.network,
       serviceType: product.service_type,
-      createdAt: new Date().toISOString(),
-    };
-  } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "Provider purchase failed.";
-    const definitive = cause instanceof ProviderRequestError && cause.definitive;
-    const status = definitive ? "failed" : "pending";
-    await client.from("provider_attempts").insert({
-      transaction_id: created.transaction_id,
-      provider_id: providerId,
-      attempt_number: 1,
-      outcome: definitive ? "failed" : "timeout",
-      latency_ms: Date.now() - started,
-      response_redacted: { error: message },
-    });
-    const settlement = await client.rpc("customer_settle_service_purchase", {
-      p_user_id: userId,
-      p_transaction_id: created.transaction_id,
-      p_status: status,
-      p_summary: message,
-      p_provider_reference: null,
-      p_metadata: { provider: providerSlug, error: true },
-    });
-    await recordProviderApiCall({
-      requestId: randomUUID(),
-      provider: providerSlug,
-      transactionReference: created.internal_reference,
-      method: "POST",
-      endpoint: `${providerSlug}/purchase`,
-      response: { error: message },
-      latencyMs: Date.now() - started,
-      outcome: "failed",
-    });
-    if (!definitive) await enqueueAdminJob("provider.requery", { transactionId: created.transaction_id }, `provider.requery:${created.transaction_id}`);
-
-    await dispatchPurchaseReceipt({
-      userId,
-      transactionId: created.transaction_id,
-      reference: created.internal_reference,
-      providerReference: null,
-      productName: product.name,
-      amount: price.price,
-      cashback: 0,
-      destination,
-      network: product.network,
-      serviceType: product.service_type,
-      status: status as "successful" | "failed" | "pending",
-      message,
-    });
-
-    const settled = settlement.data?.[0] as { balance?: number; refunded?: boolean } | undefined;
-    return {
-      transactionId: created.transaction_id,
-      reference: created.internal_reference,
-      status,
-      balance: Number(settled?.balance ?? created.balance),
-      reused: false,
-      refunded: Boolean(settled?.refunded),
-      message,
-      productName: product.name,
-      amount: price.price,
-      cashback: 0,
-      destination,
-      network: product.network,
-      serviceType: product.service_type,
-      createdAt: new Date().toISOString(),
     };
   }
+
+  let activeCandidate = primaryCandidate;
+  let attemptNumber = 0;
+  let result: PurchaseResult | null = null;
+  let lastError: unknown = null;
+
+  for (const candidate of candidates) {
+    activeCandidate = candidate;
+    attemptNumber += 1;
+    const vendor = getVendor(candidate.slug);
+    const started = Date.now();
+    try {
+      const vendorResult = await vendor.purchase({
+        type: product.service_type as "data" | "airtime",
+        network: product.network as NetworkId,
+        phone: destination,
+        amount: totalCharged,
+        planId: product.service_type === "data" ? candidate.productCode : undefined,
+        reference: created.internal_reference,
+      });
+      const attemptOutcome =
+        vendorResult.status === "successful"
+          ? "successful"
+          : vendorResult.status === "failed"
+          ? "failed"
+          : "processing";
+      await client.from("provider_attempts").insert({
+        transaction_id: created.transaction_id,
+        provider_id: candidate.providerId,
+        attempt_number: attemptNumber,
+        outcome: attemptOutcome,
+        provider_reference: vendorResult.providerReference ?? null,
+        latency_ms: Date.now() - started,
+        response_redacted: { message: vendorResult.message, productCode: candidate.productCode },
+      });
+      await recordProviderApiCall({
+        requestId: randomUUID(),
+        provider: candidate.slug,
+        transactionReference: created.internal_reference,
+        method: "POST",
+        endpoint: `${candidate.slug}/${product.service_type}`,
+        response: vendorResult.raw,
+        latencyMs: Date.now() - started,
+        outcome: vendorResult.status === "failed" ? "failed" : "successful",
+      });
+
+      if (vendorResult.status === "failed" && attemptNumber < candidates.length) {
+        lastError = new ProviderRequestError(vendorResult.message || "Provider rejected request.", true);
+        continue;
+      }
+
+      result = vendorResult;
+      break;
+    } catch (cause) {
+      lastError = cause;
+      const errMsg = cause instanceof Error ? cause.message : "Provider purchase failed.";
+      const definitive = cause instanceof ProviderRequestError && cause.definitive;
+      await client.from("provider_attempts").insert({
+        transaction_id: created.transaction_id,
+        provider_id: candidate.providerId,
+        attempt_number: attemptNumber,
+        outcome: definitive ? "failed" : "timeout",
+        latency_ms: Date.now() - started,
+        response_redacted: { error: errMsg, productCode: candidate.productCode },
+      });
+      await recordProviderApiCall({
+        requestId: randomUUID(),
+        provider: candidate.slug,
+        transactionReference: created.internal_reference,
+        method: "POST",
+        endpoint: `${candidate.slug}/${product.service_type}`,
+        response: { error: errMsg },
+        latencyMs: Date.now() - started,
+        outcome: "failed",
+      });
+      if (!definitive) break;
+    }
+  }
+
+  const finalStatus = result
+    ? result.status === "successful"
+      ? "successful"
+      : result.status === "failed"
+      ? "failed"
+      : "pending"
+    : lastError instanceof ProviderRequestError && lastError.definitive
+    ? "failed"
+    : "pending";
+  const finalMessage = result?.message ?? (lastError instanceof Error ? lastError.message : "Provider purchase failed.");
+  const finalProviderRef = result?.providerReference ?? null;
+
+  await client
+    .from("service_transactions")
+    .update({
+      provider_id: activeCandidate.providerId,
+      provider_cost: activeCandidate.providerCost,
+      metadata: {
+        ...baseMetadata,
+        provider: activeCandidate.slug,
+        providerProductCode: activeCandidate.productCode,
+        attemptCount: attemptNumber,
+        failoverUsed: attemptNumber > 1,
+        ...(result ? {} : { error: true }),
+      },
+    })
+    .eq("id", created.transaction_id);
+
+  const settlement = await client.rpc("customer_settle_service_purchase", {
+    p_user_id: userId,
+    p_transaction_id: created.transaction_id,
+    p_status: finalStatus,
+    p_summary: finalMessage,
+    p_provider_reference: finalProviderRef,
+    p_metadata: {
+      provider: activeCandidate.slug,
+      productCode: activeCandidate.productCode,
+      attemptCount: attemptNumber,
+      failoverUsed: attemptNumber > 1,
+      providerMessage: finalMessage,
+    },
+  });
+  if (settlement.error) {
+    throw new Error("Provider response received, but the purchase record could not be settled.");
+  }
+
+  if (finalStatus === "pending") {
+    await enqueueAdminJob("provider.requery", { transactionId: created.transaction_id }, `provider.requery:${created.transaction_id}`);
+  } else {
+    await refreshProductHealth(product.id, {
+      outcome: finalStatus,
+      error: finalStatus === "failed" ? finalMessage : null,
+    }).catch(() => {});
+  }
+
+  const settled = settlement.data?.[0] as { balance?: number; refunded?: boolean } | undefined;
+
+  if (finalStatus === "successful") {
+    if (validCouponCode) {
+      await recordCouponRedemption(validCouponCode);
+    }
+    void recordServiceBeneficiary({
+      userId,
+      serviceType: product.service_type as "data" | "airtime",
+      recipient: destination,
+      networkOrDisco: product.network,
+      label: `${product.network.toUpperCase()} ${product.service_type === "data" ? "Data" : "Airtime"}`,
+    });
+  }
+
+  const awardedCashback = finalStatus === "successful" ? cashback : 0;
+  const userMessage =
+    finalStatus === "failed"
+      ? (() => {
+          const classified = classifyVendorError(finalMessage, product.name);
+          if (classified.kind === "subscriber_ineligible") {
+            return `This plan isn't available for ${destination} (${classified.advisory}). Your wallet was refunded.`;
+          }
+          return finalMessage;
+        })()
+      : finalMessage;
+
+  await dispatchPurchaseReceipt({
+    userId,
+    transactionId: created.transaction_id,
+    reference: created.internal_reference,
+    providerReference: finalProviderRef,
+    productName: product.name,
+    amount: totalCharged,
+    originalAmount: price.price,
+    discountAmount: couponDiscount,
+    couponCode: validCouponCode,
+    cashback: awardedCashback,
+    destination,
+    network: product.network,
+    serviceType: product.service_type,
+    status: finalStatus as "successful" | "failed" | "pending",
+    message: userMessage,
+    balance: Number(settled?.balance ?? created.balance),
+  });
+
+  return {
+    transactionId: created.transaction_id,
+    reference: created.internal_reference,
+    status: finalStatus,
+    balance: Number(settled?.balance ?? created.balance),
+    reused: false,
+    refunded: Boolean(settled?.refunded),
+    message: userMessage,
+    providerReference: finalProviderRef,
+    productName: product.name,
+    amount: totalCharged,
+    originalAmount: price.price,
+    discountAmount: couponDiscount,
+    couponCode: validCouponCode,
+    cashback: awardedCashback,
+    destination,
+    network: product.network,
+    serviceType: product.service_type,
+    providerSlug: activeCandidate.slug,
+    attemptCount: attemptNumber,
+    createdAt: new Date().toISOString(),
+  };
 }

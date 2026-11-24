@@ -59,6 +59,48 @@ Coolify can call `POST /api/admin/jobs/run` every minute with `Authorization: Be
 
 ## Operational runbooks
 
+### Recharge-card purchases
+
+Apply `supabase/migrations/202611230001_recharge_card_pipeline.sql` before deploying this pipeline. The migration does not activate products or contact a provider. It adds the verified card catalogue, PIN ownership claims, guarded purchase/settlement procedures, a redacted operations view, reporting procedures, and a historical inventory job.
+
+Deployment sequence:
+
+1. Preserve the existing `FUNDA_PIN_ENCRYPTION_KEY`. Both encrypted historical batches and PIN fingerprints depend on it. Do not rotate it independently of a complete vault and ownership migration.
+2. Apply the migration on staging, deploy the application and worker together, then run the queued `recharge.backfill_claims` job. New checkout remains unavailable until all historical recharge orders have been checked. An unreadable historical vault stops this process; restore the original key before retrying. The admin's **Check historical inventory** action queues another pass.
+3. In **Products → Airtime & PINs**, add paused network/denomination offers using costs verified against the provider account. Add an explicit recharge-card range rule using Maskawasub, with no top-up fallback. Confirm the provider is configured and live, then activate the offers. Never enable a simulated provider for bearer-value purchases.
+4. Keep `POST /api/admin/jobs/run` scheduled with the existing worker secret. Purchase recovery and receipt notifications are durable jobs; purchase retries never dispatch the same order twice.
+5. Verify an authorized staging purchase, receipt retrieval, email, and provider statement reconciliation before enabling production offers. Local automated checks use an isolated PostgreSQL engine and mocked customer APIs; they do not exercise a live provider.
+
+Checkout quotes the face value, route discount, actual wallet debit, and cashback on that debit. Verified provider cost must fit below the debit less cashback. The database rechecks catalogue, route, cashback policy, wallet restrictions and limits under locks. The initial provider attempt and recovery job are persisted with the debit before contacting the provider.
+
+Delivery outcomes:
+
+| Evidence | Result | Operator action |
+| --- | --- | --- |
+| Complete, unique batch matching network, denomination and quantity | Successful; encrypted vault released only to its owner; cashback credited once | Match provider debit to the statement |
+| Timeout, missing/invalid/partial batch, or duplicate ownership | Pending; debit held; no cashback or speculative refund | Open the order from the review queue and obtain the provider's original batch |
+| Confirmed rejection without issued PINs | Failed; actual debit refunded once | Review the ledger and evidence |
+| Delivery after a final refund | Late batch quarantined; no new wallet debit | Obtain provider revocation/closure evidence and close the investigation |
+| Failure reported after verified delivery | Original delivery retained; provider conflict recorded; no automatic refund | Resolve with the provider and record closure evidence |
+
+The current recharge-card adapter has no verified safe PIN-recovery endpoint. **Check status** reads the saved order; the recovery worker marks uncertain deliveries for investigation. It must never call the provider's data-order endpoint, replay generation, or use a VTU top-up as a recharge-card fallback.
+
+Use **Recover provider PINs** on the transaction to import the original full provider batch as JSON or `PIN, serial` lines. It validates count, format, denomination, network and global ownership before settling. **Confirm non-delivery & refund** requires provider evidence and is unavailable after PINs have been issued. If issued PINs are revoked and compensation is justified, use an independently approved wallet adjustment with the order/case reference; generic status/refund tools cannot overwrite recharge delivery evidence. Closing an investigation records evidence and never moves money.
+
+Receipts expose the face value, discount, charge, credited cashback, delivery count and immutable references. PINs are retrieved through the authenticated owner endpoint when opening a receipt, rather than embedded in the initial dashboard. Payment receipt sharing and email exclude recharge PINs. **Download cards** creates a separate offline printable batch. **Get help** opens a draft containing the order reference; it does not automatically send a message.
+
+The 30-day recharge summary aggregates in PostgreSQL, excluding pending holds from delivered sales and counting open terminal conflicts in review. Its CSV/JSON export pages through the redacted operations view, freezes the report period at queue time, and includes catalogue/statement cost provenance. **Reconcile provider cost** changes actual cost and margin with a timeline event, without changing the customer's charge or rewards. Recharge discounts are already deducted from `amount` and must not be expensed again.
+
+Validation commands:
+
+```sh
+npm run test:unit
+npm run test:recharge-ui
+npm run typecheck
+```
+
+The UI suite runs development-only recharge fixtures on port 3001, intercepts every customer API request, and tests customer/admin screens on desktop and mobile. No PIN generation or real wallet mutation is authorized by those tests.
+
 ### Failed or pending transaction
 
 1. Open the transaction timeline and provider attempts.

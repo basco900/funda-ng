@@ -18,6 +18,11 @@ import {
 import { SERVICE_CATALOG, type CatalogItem } from "./service-catalog";
 import { useTheme } from "../../lib/theme";
 import { SpinnerIcon } from "../onboarding/icons";
+import { RECHARGE_DENOMINATIONS, RECHARGE_MAX_QUANTITY, rechargeDeliveryLabel, type RechargeReceipt } from "../../lib/recharge-cards";
+import { RechargePriceSummary, useRechargeAvailability, useRechargeQuote } from "./recharge-card-checkout";
+import { useRechargeReceipt, withRechargeReceipt } from "./use-recharge-receipt";
+import { rechargeCardPrintHtml } from "../../lib/recharge-card-print";
+import { useRechargeHistory } from "./use-recharge-history";
 
 export type VirtualAccountInfo = {
   id: string;
@@ -66,6 +71,7 @@ export interface DashboardClientProps {
   };
   settings: ProfileCenterSettings;
   initialWalletBalance: number;
+  initialCashbackEarned?: number;
   initialTransactions?: TransactionItem[];
   initialNotifications?: Array<{
     id: string;
@@ -197,6 +203,17 @@ export type TransactionItem = {
   senderBank?: string;
   senderAccount?: string;
   narration?: string;
+  originalAmount?: number;
+  discountAmount?: number;
+  couponCode?: string;
+  mode?: "vtu" | "epin";
+  quantity?: number;
+  unitAmount?: number;
+  faceValue?: number;
+  deliveryStatus?: string;
+  pinCount?: number;
+  refunded?: boolean;
+  cardName?: string;
 };
 
 type LiveProduct = {
@@ -204,12 +221,19 @@ type LiveProduct = {
   name: string;
   service_type: "data" | "airtime";
   network: string | null;
+  basePrice?: number;
   price: number;
   cashback: number;
   provider_product_code: string | null;
   category?: string;
   validity?: string | null;
   featured?: boolean;
+  health?: {
+    status: "healthy" | "advisory" | "degraded" | "outage" | "unverified";
+    badge: string | null;
+    notice: string | null;
+    successRate: number | null;
+  };
 };
 
 const NETWORK_PROVIDERS = [
@@ -520,76 +544,10 @@ function parseBundleDisplay(product: LiveProduct) {
   };
 }
 
-const RECENT_TRANSACTIONS: TransactionItem[] = [
-  {
-    id: "tx-1",
-    title: "MTN 15GB 30-Day SME",
-    category: "data",
-    type: "debit",
-    amount: 4500,
-    date: "Today",
-    time: "11:42 AM",
-    status: "completed",
-    meta: "0803 491 8210",
-    reference: "FND-DT-894218",
-    cashback: "+₦135 cashback",
-  },
-  {
-    id: "tx-2",
-    title: "Ikeja Electric Prepaid Token",
-    category: "electricity",
-    type: "debit",
-    amount: 10000,
-    date: "Yesterday",
-    time: "08:15 PM",
-    status: "completed",
-    meta: "Meter #4502-9912-3401",
-    reference: "FND-EL-773190",
-    token: "4910 3819 2041 9920 1847",
-  },
-  {
-    id: "tx-3",
-    title: "Wallet Top-up via Bank Transfer",
-    category: "funding",
-    type: "credit",
-    amount: 25000,
-    date: "14 Aug 2026",
-    time: "02:20 PM",
-    status: "completed",
-    meta: "Wema Bank / Moniepoint Transfer",
-    reference: "FND-FD-103982",
-  },
-  {
-    id: "tx-4",
-    title: "Airtel ₦2,000 Airtime",
-    category: "airtime",
-    type: "debit",
-    amount: 2000,
-    date: "10 Aug 2026",
-    time: "04:10 PM",
-    status: "completed",
-    meta: "0902 110 4921",
-    reference: "FND-AT-339184",
-    cashback: "+₦60 cashback",
-  },
-  {
-    id: "tx-5",
-    title: "DSTV Compact Plus Monthly",
-    category: "tv",
-    type: "debit",
-    amount: 19800,
-    date: "08 Aug 2026",
-    time: "07:30 PM",
-    status: "completed",
-    meta: "Smartcard #1049281729",
-    reference: "FND-TV-991048",
-  },
-];
-
 const RECENT_TX_LIMIT = 5;
 
 const TX_FILTERS: {
-  id: "all" | "data" | "airtime" | "electricity" | "funding";
+  id: "all" | "data" | "airtime" | "epin" | "electricity" | "funding";
   label: string;
   icon: string;
 }[] = [
@@ -597,6 +555,7 @@ const TX_FILTERS: {
   { id: "data", label: "Data", icon: "data" },
   { id: "electricity", label: "Power", icon: "bolt" },
   { id: "airtime", label: "Airtime", icon: "airtime" },
+  { id: "epin", label: "Recharge cards", icon: "ticket" },
   { id: "funding", label: "Top-up", icon: "wallet" },
 ];
 
@@ -638,33 +597,6 @@ function notificationDayLabel(createdAt: string, now: Date): string {
     year: day.getFullYear() === now.getFullYear() ? undefined : "numeric",
   });
 }
-
-const RECENT_BENEFICIARIES = [
-  {
-    id: "ben-1",
-    title: "MTN 10GB Monthly",
-    recipient: "0803 491 8210",
-    service: "data",
-    amount: "₦2,950",
-    tone: "violet",
-  },
-  {
-    id: "ben-2",
-    title: "IKEDC Home Meter",
-    recipient: "Meter #4502-9912",
-    service: "bolt",
-    amount: "₦10,000",
-    tone: "amber",
-  },
-  {
-    id: "ben-3",
-    title: "Airtel Airtime",
-    recipient: "0902 110 4921",
-    service: "airtime",
-    amount: "₦2,000",
-    tone: "coral",
-  },
-];
 
 function SvgIcon({
   name,
@@ -1470,6 +1402,7 @@ export default function DashboardClient({
   user,
   settings,
   initialWalletBalance,
+  initialCashbackEarned = 0,
   initialTransactions,
   initialNotifications,
   initialVirtualAccount,
@@ -1479,9 +1412,7 @@ export default function DashboardClient({
   const { resolved: resolvedTheme, toggleTheme } = useTheme();
   const [walletBalance, setWalletBalance] = useState(initialWalletBalance);
   const [transactions, setTransactions] = useState<TransactionItem[]>(
-    initialTransactions && initialTransactions.length > 0
-      ? initialTransactions
-      : RECENT_TRANSACTIONS,
+    initialTransactions ?? [],
   );
   const [notifications, setNotifications] = useState(
     initialNotifications ?? [],
@@ -1493,22 +1424,24 @@ export default function DashboardClient({
   const unreadNotificationCount = notifications.filter(
     (n) => !n.read_at,
   ).length;
-  const [cashbackBalance] = useState(420.0);
+  const cashbackBalance = initialCashbackEarned;
   const [showBalance, setShowBalance] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "home" | "services" | "history" | "profile"
   >("home");
   const [transactionFilter, setTransactionFilter] = useState<
-    "all" | "data" | "airtime" | "electricity" | "funding"
+    "all" | "data" | "airtime" | "epin" | "electricity" | "funding"
   >("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const rechargeHistory = useRechargeHistory(transactionFilter === "epin", searchQuery, setTransactions);
   const [showTxHistory, setShowTxHistory] = useState(false);
   const [showAllServices, setShowAllServices] = useState(false);
   const [serviceSearch, setServiceSearch] = useState("");
   const filterChipsRef = useRef<HTMLDivElement>(null);
   const [chipScroll, setChipScroll] = useState({ left: false, right: false });
   const [selectedTx, setSelectedTx] = useState<TransactionItem | null>(null);
+  const rechargeReceiptError = useRechargeReceipt(selectedTx, setSelectedTx, setTransactions, setWalletBalance);
 
   // Modals / Sheet States
   const [showFundModal, setShowFundModal] = useState(false);
@@ -1557,6 +1490,10 @@ export default function DashboardClient({
   const [epinDenomination, setEpinDenomination] = useState<number>(200);
   const [epinQuantity, setEpinQuantity] = useState<number>(1);
   const [epinCardName, setEpinCardName] = useState<string>("Funda");
+  const rechargeCheckout = useRechargeQuote(serviceNetwork, epinDenomination, epinQuantity, showQuickServiceModal?.id === "airtime" && airtimeMode === "epin");
+  const rechargeOffers = useRechargeAvailability(showQuickServiceModal?.id === "airtime" && airtimeMode === "epin");
+  const rechargeOrderLimit = rechargeOffers?.find((offer) => offer.network === serviceNetwork && offer.denomination === epinDenomination)?.maxQuantity ?? RECHARGE_MAX_QUANTITY;
+  const rechargeAttempts = useRef<Record<string, string>>({});
 
   // Beneficiaries & Electricity states
   const [beneficiaries, setBeneficiaries] = useState<BeneficiaryItem[]>([]);
@@ -2111,17 +2048,24 @@ export default function DashboardClient({
   const computedTvTotal = isTvModal
     ? Math.max(0, tvBouquetPrice - (appliedCoupon?.discountAmount || 0))
     : 0;
+  const computedDataTotal = showQuickServiceModal?.id === "data"
+    ? Math.max(
+        0,
+        (selectedLiveProduct?.price ?? 0) -
+          (appliedCoupon?.discountAmount || 0),
+      )
+    : 0;
   const activePayableAmount = isAirtimeModal
-    ? computedAirtimeTotal
+    ? airtimeMode === "epin" ? rechargeCheckout.quote?.payable ?? 0 : computedAirtimeTotal
     : isElectricityModal
       ? computedElectricityTotal
       : isTvModal
         ? computedTvTotal
         : isEducationModal
           ? computedEduTotal
-          : (selectedLiveProduct?.price ?? 0);
+          : computedDataTotal;
   const filteredTransactions = transactions.filter((tx) => {
-    if (transactionFilter !== "all" && tx.category !== transactionFilter)
+    if (transactionFilter === "epin" ? tx.mode !== "epin" : transactionFilter !== "all" && (tx.category !== transactionFilter || (transactionFilter === "airtime" && tx.mode === "epin")))
       return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -2210,6 +2154,81 @@ export default function DashboardClient({
     }
   };
 
+  const [refreshingTxId, setRefreshingTxId] = useState<string | null>(null);
+
+  const handleRefreshTxStatus = async (tx: TransactionItem) => {
+    if (refreshingTxId) return;
+    setRefreshingTxId(tx.id);
+    try {
+      const res = await fetch(
+        `/api/services/transactions/${encodeURIComponent(tx.id)}?refresh=1`,
+        { cache: "no-store" },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.transaction) {
+        throw new Error(data.error || "Could not refresh status yet.");
+      }
+      if (data.purchase) {
+        setSelectedTx((previous) => previous?.id === tx.id ? withRechargeReceipt(previous, data.purchase as RechargeReceipt) : previous);
+        setTransactions((previous) => previous.map((item) => item.id === tx.id ? withRechargeReceipt(item, data.purchase as RechargeReceipt) : item));
+      }
+      if (typeof data.balance === "number") {
+        setWalletBalance(Number(data.balance));
+      }
+      const nextRawStatus = String(data.transaction.status || "");
+      const nextStatus: TransactionItem["status"] =
+        nextRawStatus === "successful"
+          ? "completed"
+          : ["failed", "refunded", "reversed", "cancelled"].includes(
+                nextRawStatus,
+              )
+            ? "failed"
+            : "processing";
+      const nextProviderRef =
+        typeof data.transaction.provider_reference === "string"
+          ? data.transaction.provider_reference
+          : tx.providerReference;
+
+      setTransactions((prev) =>
+        prev.map((item) =>
+          item.id === tx.id
+            ? {
+                ...item,
+                status: nextStatus,
+                providerReference: nextProviderRef,
+              }
+            : item,
+        ),
+      );
+      setSelectedTx((prev) =>
+        prev && prev.id === tx.id
+          ? {
+              ...prev,
+              status: nextStatus,
+              providerReference: nextProviderRef,
+            }
+          : prev,
+      );
+
+      if (data.purchase && !["ready", "refunded"].includes(data.purchase.deliveryStatus)) {
+        showToast(rechargeDeliveryLabel(data.purchase.deliveryStatus), "info");
+      } else if (nextStatus === "completed") {
+        showToast("Delivery confirmed!", "success");
+      } else if (nextStatus === "failed") {
+        showToast(data.purchase?.refunded === false ? "This purchase failed. Check the receipt for its refund status." : "Transaction failed and wallet refunded.", "info");
+      } else {
+        showToast("Still processing with network provider.", "info");
+      }
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not check status.",
+        "error",
+      );
+    } finally {
+      setRefreshingTxId(null);
+    }
+  };
+
   const closeAllServices = () => {
     setShowAllServices(false);
     setServiceSearch("");
@@ -2225,6 +2244,7 @@ export default function DashboardClient({
       return;
     }
     closeAllServices();
+    if (item.serviceId === "airtime") setAirtimeMode(item.id === "epin" ? "epin" : "vtu");
     setShowQuickServiceModal(service);
   };
 
@@ -2577,10 +2597,12 @@ export default function DashboardClient({
     return { total, count };
   }, [transactions]);
 
-  const copyToClipboard = (text: string, fieldId: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(fieldId);
-    setTimeout(() => setCopiedField(null), 2000);
+  const copyToClipboard = async (text: string, fieldId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(fieldId);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch { showToast("Couldn't copy. Select the value and copy it manually.", "error"); }
   };
 
   const handleSimulatePayment = async (e: React.FormEvent) => {
@@ -2622,6 +2644,10 @@ export default function DashboardClient({
         } else {
           if (![100, 200, 500, 1000].includes(epinDenomination)) {
             setServiceError("Select a valid recharge card denomination.");
+            return;
+          }
+          if (!rechargeCheckout.quote || rechargeCheckout.busy || rechargeCheckout.error) {
+            setServiceError(rechargeCheckout.error || "Wait for your recharge-card quote before paying.");
             return;
           }
         }
@@ -2680,7 +2706,25 @@ export default function DashboardClient({
       setServiceBusy(true);
       setServiceError(null);
       try {
-        const idempotencyKey = crypto.randomUUID().replaceAll("-", "");
+        const isRechargeOrder = showQuickServiceModal.id === "airtime" && airtimeMode === "epin";
+        const intent = JSON.stringify([serviceNetwork, epinDenomination, epinQuantity, epinCardName.trim() || "Funda"]);
+        const attemptStorageKey = `funda:recharge-attempts:${user.id}`;
+        if (isRechargeOrder) {
+          try {
+            const stored = JSON.parse(sessionStorage.getItem(attemptStorageKey) || "{}");
+            if (stored && typeof stored === "object" && !Array.isArray(stored)) {
+              const valid = Object.entries(stored).filter((entry): entry is [string, string] => entry[0].length <= 250 && typeof entry[1] === "string" && /^[A-Za-z0-9_-]{16,160}$/.test(entry[1])).slice(-100);
+              rechargeAttempts.current = { ...Object.fromEntries(valid), ...rechargeAttempts.current };
+            }
+          } catch { /* A disabled browser store does not affect server idempotency. */ }
+        }
+        const idempotencyKey = isRechargeOrder && rechargeAttempts.current[intent]
+          ? rechargeAttempts.current[intent]
+          : crypto.randomUUID().replaceAll("-", "");
+        if (isRechargeOrder) {
+          rechargeAttempts.current[intent] = idempotencyKey;
+          try { sessionStorage.setItem(attemptStorageKey, JSON.stringify(rechargeAttempts.current)); } catch {}
+        }
         const destination =
           showQuickServiceModal.id === "airtime" && airtimeMode === "epin"
             ? `${serviceNetwork.toUpperCase()} e-PIN (${epinQuantity}x ₦${epinDenomination})`
@@ -2704,6 +2748,7 @@ export default function DashboardClient({
                 amount: computedAirtimeTotal,
                 quantity: airtimeMode === "epin" ? epinQuantity : 1,
                 cardName: epinCardName.trim() || "Funda",
+                ...(airtimeMode === "epin" ? { quoteId: rechargeCheckout.quote?.quoteId } : {}),
                 destination,
                 idempotencyKey,
               }
@@ -2748,7 +2793,12 @@ export default function DashboardClient({
                       couponCode: appliedCoupon?.code || undefined,
                       idempotencyKey,
                     }
-                  : { productId: servicePackage, destination, idempotencyKey };
+                  : {
+                      productId: servicePackage,
+                      destination,
+                      couponCode: appliedCoupon?.code || undefined,
+                      idempotencyKey,
+                    };
         const response = await fetch("/api/services/purchase", {
           method: "POST",
           headers: {
@@ -2772,6 +2822,10 @@ export default function DashboardClient({
 
         const isSuccess = body.status === "successful";
         const isFailed = body.status === "failed";
+        if (isRechargeOrder && (isSuccess || isFailed)) {
+          delete rechargeAttempts.current[intent];
+          try { sessionStorage.setItem(attemptStorageKey, JSON.stringify(rechargeAttempts.current)); } catch {}
+        }
         const isElectricityPurchase =
           showQuickServiceModal.id === "electricity";
         const isTvPurchase = showQuickServiceModal.id === "tv";
@@ -2779,7 +2833,7 @@ export default function DashboardClient({
         const isEpinPurchase =
           showQuickServiceModal.id === "airtime" && airtimeMode === "epin";
 
-        if (isSuccess || body.status === "pending") {
+        if (isSuccess || ["pending", "processing", "initiated"].includes(body.status)) {
           const newTx: TransactionItem = {
             id: body.transactionId || `tx-${Date.now()}`,
             title:
@@ -2836,9 +2890,22 @@ export default function DashboardClient({
               Array.isArray(body.pins) && body.pins.length > 0
                 ? body.pins
                 : undefined,
+            ...(isEpinPurchase ? { mode: "epin" as const, quantity: body.quantity, unitAmount: body.unitAmount, faceValue: body.faceValue, discountAmount: body.discount, deliveryStatus: body.deliveryStatus, pinCount: body.pinCount, refunded: body.refunded, createdAt: body.createdAt, providerReference: body.providerReference } : {}),
+            originalAmount:
+              isEpinPurchase ? body.faceValue : typeof body.originalAmount === "number"
+                ? body.originalAmount
+                : undefined,
+            discountAmount:
+              isEpinPurchase ? body.discount : typeof body.discountAmount === "number"
+                ? body.discountAmount
+                : undefined,
+            couponCode:
+              typeof body.couponCode === "string"
+                ? body.couponCode
+                : undefined,
           };
 
-          setTransactions((prev) => [newTx, ...prev]);
+          setTransactions((prev) => [newTx, ...prev.filter((tx) => tx.id !== newTx.id)]);
           refreshBeneficiaries();
 
           const newNotif = {
@@ -2864,7 +2931,7 @@ export default function DashboardClient({
                   : isSuccess && isEduPurchase
                     ? `${newTx.title} · ₦${newTx.amount.toLocaleString("en-NG")} — ${newTx.pins && newTx.pins.length > 1 ? `${newTx.pins.length}× PINs` : body.token ? `Token: ${body.token}` : "Exam PIN"} generated. Ready in your receipt vault.`
                     : isSuccess && isEpinPurchase
-                      ? `${newTx.title} · ₦${newTx.amount.toLocaleString("en-NG")} — ${newTx.pins && newTx.pins.length > 1 ? `${newTx.pins.length}× 16-digit PINs` : "16-digit PIN"} ready to dial (*311*PIN#) in your receipt vault.`
+                      ? `${newTx.title} · ${newTx.pins?.length ?? 0} PINs ready in your receipt vault.`
                       : `${newTx.title} for ${newTx.meta} · ₦${newTx.amount.toLocaleString("en-NG")} — ${body.message || "Delivered successfully."}`,
             kind: "transaction",
             read_at: null,
@@ -2943,6 +3010,7 @@ export default function DashboardClient({
             ? error.message
             : "Purchase could not be completed.";
         setServiceError(errMessage);
+        if (showQuickServiceModal.id === "airtime" && airtimeMode === "epin" && /pricing changed|quote/i.test(errMessage)) rechargeCheckout.refresh();
         showToast(errMessage, "error");
       } finally {
         setServiceBusy(false);
@@ -3340,7 +3408,7 @@ export default function DashboardClient({
               </div>
               <div className={styles.cashbackBadgeRow}>
                 <span className={styles.cashbackBadgePill}>
-                  <SvgIcon name="sparkles" size={11} />
+                  <SvgIcon name="wallet" size={11} />
                   <span>
                     Cashback: <strong>₦{cashbackBalance.toFixed(2)}</strong>
                   </span>
@@ -3524,34 +3592,29 @@ export default function DashboardClient({
         {/* ========================================================================= */}
         {/* SMART REPEAT / FREQUENT RECHARGES                                         */}
         {/* ========================================================================= */}
-        <section
+        {beneficiaries.length > 0 ? <section
           className={styles.smartAssistantSection}
           aria-label="Frequent Bills"
         >
           <div className={styles.sectionHeaderRow}>
             <div className={styles.sectionHeadingGroup}>
-              <span className={styles.sectionEyebrow}>
-                <SvgIcon name="sparkles" size={12} /> ONE-TAP RECHARGE
-              </span>
               <h2 className={styles.sectionMainTitle}>Recent Beneficiaries</h2>
             </div>
-            <span className={styles.oneTapPill}>Instant 1-tap</span>
           </div>
 
           <div className={styles.smartRepeatScrollDeck}>
-            {RECENT_BENEFICIARIES.map((item) => (
+            {beneficiaries.map((item) => (
               <div key={item.id} className={styles.smartRepeatCard}>
                 <div className={styles.smartRepeatHeader}>
                   <span
                     className={styles.smartIconSquircle}
-                    data-tone={item.tone}
+                    data-tone={item.serviceType === "electricity" ? "amber" : "violet"}
                   >
-                    <SvgIcon name={item.service} size={19} />
+                    <SvgIcon name={item.serviceType === "electricity" ? "bolt" : item.serviceType} size={19} />
                   </span>
-                  <span className={styles.smartPriceTag}>{item.amount}</span>
                 </div>
                 <div className={styles.smartRepeatBody}>
-                  <strong className={styles.smartTitle}>{item.title}</strong>
+                  <strong className={styles.smartTitle}>{item.label || item.networkOrDisco.toUpperCase()}</strong>
                   <span className={styles.smartRecipient}>
                     {item.recipient}
                   </span>
@@ -3560,18 +3623,19 @@ export default function DashboardClient({
                   type="button"
                   className={styles.smartRepeatBtn}
                   onClick={() => {
-                    showToast(
-                      `Recharged ${item.title} (${item.amount}) instantly!`,
-                      "success",
-                    );
+                    const service = SERVICES.find((service) => service.id === (item.serviceType === "cable_tv" ? "tv" : item.serviceType));
+                    if (!service) return;
+                    if (item.serviceType === "airtime") setAirtimeMode("vtu");
+                    handleSelectBeneficiary(item);
+                    setShowQuickServiceModal(service);
                   }}
                 >
-                  Repeat ⚡
+                  Review purchase
                 </button>
               </div>
             ))}
           </div>
-        </section>
+        </section> : null}
 
         {/* ========================================================================= */}
         {/* TRANSACTIONS SECTION (PayPal Reference Style)                             */}
@@ -3888,7 +3952,7 @@ export default function DashboardClient({
                 />
                 <input
                   type="text"
-                  placeholder="Search phone, meter, or reference..."
+                  placeholder={transactionFilter === "epin" ? "Search recharge reference…" : "Search phone, meter, or reference…"}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={styles.txSearchInput}
@@ -3910,13 +3974,18 @@ export default function DashboardClient({
             >
               {filteredTransactions.length > 0 ? (
                 filteredTransactions.map(renderTxRow)
-              ) : (
+              ) : !(transactionFilter === "epin" && (rechargeHistory.loading || rechargeHistory.error)) ? (
                 <div className={styles.emptyStateBox}>
                   <span className={styles.emptyIcon}>
                     <SvgIcon name="search" size={24} />
                   </span>
                   <strong>No matching transactions</strong>
                   <p>Try clearing your search query or switching filters.</p>
+                </div>
+              ) : null}
+              {transactionFilter === "epin" && (
+                <div className={styles.rechargeHistoryFooter} aria-live="polite">
+                  {rechargeHistory.error ? <><span role="alert">{rechargeHistory.error}</span><button type="button" className={styles.epinActionBtn} onClick={rechargeHistory.retry}>Try again</button></> : rechargeHistory.loading ? <span>Loading recharge cards…</span> : rechargeHistory.hasMore ? <button type="button" className={styles.epinActionBtn} onClick={rechargeHistory.loadMore}>Load older cards</button> : null}
                 </div>
               )}
             </div>
@@ -4329,7 +4398,7 @@ export default function DashboardClient({
                         disabled={isVerifyingTempPayment}
                         onClick={() => void handleCancelTransfer()}
                       >
-                        Cancel Transfer
+                        Cancel
                       </button>
                     </div>
                   </div>
@@ -4344,6 +4413,7 @@ export default function DashboardClient({
       {showQuickServiceModal && (
         <div
           className={styles.modalOverlay}
+          data-recharge-modal={showQuickServiceModal.id === "airtime" && airtimeMode === "epin" || undefined}
           onClick={() => setShowQuickServiceModal(null)}
         >
           <div
@@ -4369,6 +4439,7 @@ export default function DashboardClient({
                 type="button"
                 className={styles.sheetCloseBtn}
                 onClick={() => setShowQuickServiceModal(null)}
+                aria-label="Close purchase"
               >
                 <SvgIcon name="close" size={14} />
               </button>
@@ -5666,44 +5737,11 @@ export default function DashboardClient({
                 </>
               ) : (
                 <>
-                  {/* Subtle Colored Toggle for Recharge PIN (instead of large tab) */}
                   {showQuickServiceModal.id === "airtime" && (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "8px",
-                        fontSize: "12px",
-                      }}
-                    >
-                      <span style={{ color: "#64748b" }}>
-                        {airtimeMode === "epin"
-                          ? "Generating 16-digit dialable PIN"
-                          : "Instant direct wallet top-up"}
-                      </span>
-                      <button
-                        type="button"
-                        style={{
-                          background: "none",
-                          border: "none",
-                          color: "#660033",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          padding: 0,
-                          fontSize: "12px",
-                        }}
-                        onClick={() => {
-                          setAirtimeMode(
-                            airtimeMode === "vtu" ? "epin" : "vtu",
-                          );
-                          setServiceError(null);
-                        }}
-                      >
-                        {airtimeMode === "vtu"
-                          ? "Need a Recharge PIN instead? Generate PIN →"
-                          : "Switch back to Direct Top-Up →"}
-                      </button>
+                    <div className={styles.rechargeModeControl} data-mode={airtimeMode} role="group" aria-label="Airtime purchase type">
+                      {([{ value: "vtu", label: "Direct top-up" }, { value: "epin", label: "Recharge cards" }] as const).map((mode) => (
+                        <button key={mode.value} type="button" aria-pressed={airtimeMode === mode.value} disabled={serviceBusy} onClick={() => { setAirtimeMode(mode.value); setServiceError(null); }}>{mode.label}</button>
+                      ))}
                     </div>
                   )}
 
@@ -5715,7 +5753,11 @@ export default function DashboardClient({
                         type="button"
                         data-net={net.id}
                         className={`${styles.networkSelectBtn} ${net.id === serviceNetwork ? styles.networkActive : ""}`}
-                        onClick={() => setServiceNetwork(net.id)}
+                        onClick={() => {
+                          setServiceNetwork(net.id);
+                          setAppliedCoupon(null);
+                          setCouponError(null);
+                        }}
                       >
                         <span className={styles.networkInitialLogo}>
                           {net.initial}
@@ -5863,6 +5905,7 @@ export default function DashboardClient({
 
                   {/* Data Bundle Rows (Transaction-Style Design with Squircle Icon, Badges, Fixed Height) */}
                   {showQuickServiceModal.id === "data" ? (
+                    <>
                     <div className={styles.bundleRowListContainer}>
                       {filteredLiveProducts.length > 0 ? (
                         filteredLiveProducts.map((product) => {
@@ -5875,12 +5918,23 @@ export default function DashboardClient({
                             isValue,
                           } = parseBundleDisplay(product);
                           const isSelected = product.id === servicePackage;
+                          const healthStatus = product.health?.status;
+                          const isOutage = healthStatus === "outage";
                           return (
                             <button
                               key={product.id}
                               type="button"
+                              disabled={isOutage}
+                              style={isOutage ? { opacity: 0.56, cursor: "not-allowed" } : undefined}
                               className={`${styles.bundleRowItem} ${isSelected ? styles.bundleRowSelected : ""} ${isHot ? styles.bundleRowHot : ""}`}
-                              onClick={() => setServicePackage(product.id)}
+                              onClick={() => {
+                                if (isOutage) return;
+                                if (product.id !== servicePackage) {
+                                  setServicePackage(product.id);
+                                  setAppliedCoupon(null);
+                                  setCouponError(null);
+                                }
+                              }}
                             >
                               <div
                                 className={styles.bundleRowIconWrapper}
@@ -5899,6 +5953,32 @@ export default function DashboardClient({
                                   <span className={styles.bundleRowTitle}>
                                     {product.name}
                                   </span>
+                                  {product.health?.badge ? (
+                                    <span
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        padding: "2px 7px",
+                                        borderRadius: "6px",
+                                        fontSize: "10px",
+                                        fontWeight: 600,
+                                        background:
+                                          healthStatus === "outage"
+                                            ? "rgba(225, 29, 72, 0.1)"
+                                            : healthStatus === "degraded"
+                                              ? "rgba(217, 119, 6, 0.12)"
+                                              : "rgba(14, 165, 233, 0.12)",
+                                        color:
+                                          healthStatus === "outage"
+                                            ? "#be123c"
+                                            : healthStatus === "degraded"
+                                              ? "#b45309"
+                                              : "#0369a1",
+                                      }}
+                                    >
+                                      {product.health.badge}
+                                    </span>
+                                  ) : null}
                                   {isHot && (
                                     <span className={styles.bundleBadgeHot}>
                                       HOT
@@ -5923,7 +6003,13 @@ export default function DashboardClient({
                                 <div className={styles.bundleRowSubRow}>
                                   <span>{validity}</span>
                                   <span className={styles.bundleDotSep}>•</span>
-                                  <span>Instant 4G/5G delivery</span>
+                                  <span>
+                                    {isOutage
+                                      ? "Temporarily unavailable"
+                                      : healthStatus === "degraded"
+                                        ? "Route unstable"
+                                        : "Instant 4G/5G delivery"}
+                                  </span>
                                 </div>
                               </div>
 
@@ -5931,10 +6017,22 @@ export default function DashboardClient({
                                 <span className={styles.bundleRowPrice}>
                                   ₦{product.price.toLocaleString("en-NG")}
                                 </span>
+                                {product.basePrice &&
+                                product.basePrice > product.price ? (
+                                  <span
+                                    style={{
+                                      fontSize: "10.5px",
+                                      color: "#94a3b8",
+                                      textDecoration: "line-through",
+                                    }}
+                                  >
+                                    ₦{product.basePrice.toLocaleString("en-NG")}
+                                  </span>
+                                ) : null}
                                 <span
                                   className={`${styles.bundleRowStatusPill} ${isSelected ? styles.bundleRowStatusActive : ""}`}
                                 >
-                                  {isSelected ? "Selected" : "Select"}
+                                  {isOutage ? "Offline" : isSelected ? "Selected" : "Select"}
                                 </span>
                               </div>
                             </button>
@@ -5946,6 +6044,151 @@ export default function DashboardClient({
                         </div>
                       )}
                     </div>
+
+                    {selectedLiveProduct?.health?.notice ? (
+                      <div
+                        style={{
+                          marginTop: "8px",
+                          padding: "8px 11px",
+                          borderRadius: "9px",
+                          fontSize: "11.5px",
+                          fontWeight: 550,
+                          lineHeight: 1.35,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          background:
+                            selectedLiveProduct.health.status === "outage"
+                              ? "rgba(225, 29, 72, 0.08)"
+                              : selectedLiveProduct.health.status === "degraded"
+                                ? "rgba(217, 119, 6, 0.1)"
+                                : "rgba(14, 165, 233, 0.09)",
+                          color:
+                            selectedLiveProduct.health.status === "outage"
+                              ? "#be123c"
+                              : selectedLiveProduct.health.status === "degraded"
+                                ? "#b45309"
+                                : "#0369a1",
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: "6px",
+                            height: "6px",
+                            borderRadius: "999px",
+                            flexShrink: 0,
+                            background: "currentColor",
+                          }}
+                        />
+                        <span>{selectedLiveProduct.health.notice}</span>
+                      </div>
+                    ) : null}
+
+                    {selectedLiveProduct && (
+                      <div style={{ marginTop: "10px" }}>
+                        {!appliedCoupon ? (
+                          <div className={styles.couponRow}>
+                            <input
+                              type="text"
+                              placeholder="Promo code"
+                              value={couponInput}
+                              onChange={(e) =>
+                                setCouponInput(e.target.value.toUpperCase())
+                              }
+                              className={styles.couponInput}
+                            />
+                            <button
+                              type="button"
+                              disabled={couponBusy || !couponInput.trim()}
+                              onClick={() =>
+                                handleApplyCoupon(
+                                  "data",
+                                  selectedLiveProduct.price,
+                                )
+                              }
+                              className={styles.couponBtn}
+                            >
+                              {couponBusy ? "Checking…" : "Apply"}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className={styles.couponBadge}>
+                            <span>
+                              {appliedCoupon.code} (-₦
+                              {appliedCoupon.discountAmount.toLocaleString("en-NG")})
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setAppliedCoupon(null)}
+                              className={styles.couponBadgeRemove}
+                              aria-label="Remove coupon"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+                        {couponError && (
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "#dc2626",
+                              marginTop: "4px",
+                            }}
+                          >
+                            {couponError}
+                          </div>
+                        )}
+
+                        {(appliedCoupon || selectedLiveProduct.cashback > 0) && (
+                          <div className={styles.orderSummaryCard}>
+                            <div className={styles.orderSummaryRow}>
+                              <span>Bundle</span>
+                              <span>
+                                ₦
+                                {selectedLiveProduct.price.toLocaleString(
+                                  "en-NG",
+                                )}
+                              </span>
+                            </div>
+                            {appliedCoupon && (
+                              <div
+                                className={styles.orderSummaryRow}
+                                style={{ color: "#15803d" }}
+                              >
+                                <span>Discount ({appliedCoupon.code})</span>
+                                <span>
+                                  -₦
+                                  {appliedCoupon.discountAmount.toLocaleString(
+                                    "en-NG",
+                                  )}
+                                </span>
+                              </div>
+                            )}
+                            {selectedLiveProduct.cashback > 0 && (
+                              <div
+                                className={styles.orderSummaryRow}
+                                style={{ color: "#0f766e" }}
+                              >
+                                <span>Wallet Cashback</span>
+                                <span>
+                                  +₦
+                                  {selectedLiveProduct.cashback.toLocaleString(
+                                    "en-NG",
+                                  )}
+                                </span>
+                              </div>
+                            )}
+                            <div className={styles.orderSummaryTotal}>
+                              <span>Total</span>
+                              <span>
+                                ₦{computedDataTotal.toLocaleString("en-NG")}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    </>
                   ) : showQuickServiceModal.id === "airtime" &&
                     airtimeMode === "vtu" ? (
                     <>
@@ -5995,18 +6238,18 @@ export default function DashboardClient({
                       <div className={styles.inputLabel}>
                         <span>Card Denomination</span>
                         <div className={styles.epinDenomGrid}>
-                          {[100, 200, 500, 1000].map((denom) => (
+                          {RECHARGE_DENOMINATIONS.map((denom) => (
                             <button
                               key={denom}
                               type="button"
                               className={`${styles.epinDenomCard} ${epinDenomination === denom ? styles.epinDenomCardActive : ""}`}
+                              disabled={serviceBusy || !rechargeOffers?.some((offer) => offer.network === serviceNetwork && offer.denomination === denom)}
                               onClick={() => {
                                 setEpinDenomination(denom);
                                 setServiceError(null);
                               }}
                             >
                               <strong>₦{denom.toLocaleString("en-NG")}</strong>
-                              <small>16-digit PIN</small>
                             </button>
                           ))}
                         </div>
@@ -6014,21 +6257,7 @@ export default function DashboardClient({
 
                       <div className={styles.inputLabel}>
                         <span>Quantity</span>
-                        <div className={styles.epinQtyRow}>
-                          {[1, 2, 5, 10].map((qty) => (
-                            <button
-                              key={qty}
-                              type="button"
-                              className={`${styles.airtimeQuickBtn} ${epinQuantity === qty ? styles.airtimeQuickBtnActive : ""}`}
-                              onClick={() => {
-                                setEpinQuantity(qty);
-                                setServiceError(null);
-                              }}
-                            >
-                              {qty} {qty === 1 ? "PIN" : "PINs"}
-                            </button>
-                          ))}
-                        </div>
+                        <FundaSelect ariaLabel="Recharge-card quantity" value={String(epinQuantity)} disabled={serviceBusy} onChange={(value) => { setEpinQuantity(Number(value)); setServiceError(null); }} options={Array.from({ length: rechargeOrderLimit }, (_, index) => ({ value: String(index + 1), label: `${index + 1} ${index === 0 ? "card" : "cards"}` }))} />
                       </div>
 
                       <label className={styles.inputLabel}>
@@ -6045,16 +6274,7 @@ export default function DashboardClient({
                         </div>
                       </label>
 
-                      <div className={styles.epinNoteBox}>
-                        <span>
-                          Dial <strong>*311*PIN#</strong> on any network
-                        </span>
-                        <strong>
-                          {epinQuantity} × ₦
-                          {epinDenomination.toLocaleString("en-NG")} = ₦
-                          {computedAirtimeTotal.toLocaleString("en-NG")}
-                        </strong>
-                      </div>
+                      <RechargePriceSummary quote={rechargeCheckout.quote} busy={rechargeCheckout.busy} error={rechargeCheckout.error} onRetry={rechargeCheckout.refresh} />
                     </>
                   ) : (
                     <div className={styles.inputLabel}>
@@ -6146,6 +6366,7 @@ export default function DashboardClient({
                 className={`${styles.submitPrimaryBtn} ${activePayableAmount > 0 && walletBalance < activePayableAmount ? styles.submitFundWalletBtn : ""}`}
                 disabled={
                   serviceBusy ||
+                  (showQuickServiceModal.id === "airtime" && airtimeMode === "epin" && !rechargeCheckout.quote) ||
                   (showQuickServiceModal.id === "data" && !servicePackage) ||
                   (showQuickServiceModal.id === "airtime" &&
                     activePayableAmount < 50) ||
@@ -6195,6 +6416,7 @@ export default function DashboardClient({
       {selectedTx && (
         <div
           className={styles.modalOverlay}
+          data-recharge-modal={selectedTx.mode === "epin" || undefined}
           onClick={() => setSelectedTx(null)}
         >
           <div
@@ -6225,7 +6447,7 @@ export default function DashboardClient({
                     selectedTx.status === "failed"
                       ? "close"
                       : selectedTx.status === "processing"
-                        ? "sparkles"
+                        ? "clock"
                         : "check"
                   }
                   size={24}
@@ -6254,6 +6476,12 @@ export default function DashboardClient({
             </div>
 
             {/* Recharge Card & Exam e-PIN Vault if applicable */}
+            {selectedTx.mode === "epin" && (
+              <div className={styles.receiptDetailsList}>
+                <div className={styles.receiptRow} role="status"><span>Card delivery</span><strong>{rechargeDeliveryLabel(selectedTx.deliveryStatus ?? "awaiting_provider")}</strong></div>
+                {rechargeReceiptError ? <div className={styles.paymentError} role="alert">{rechargeReceiptError}</div> : selectedTx.deliveryStatus === "ready" && !selectedTx.pins?.length ? <div role="status">Opening PIN vault…</div> : null}
+              </div>
+            )}
             {selectedTx.pins && selectedTx.pins.length > 0 && (
               <div className={styles.epinVaultList}>
                 {selectedTx.pins.map((pinItem, idx) => {
@@ -6388,6 +6616,25 @@ export default function DashboardClient({
             ))}
 
             <div className={styles.receiptActionsRow}>
+              {selectedTx.mode === "epin" ? <button type="button" className={styles.receiptSecondaryBtn} onClick={() => { window.dispatchEvent(new CustomEvent("funda:recharge-support", { detail: { reference: selectedTx.reference } })); setSelectedTx(null); }}><SvgIcon name="ticket" size={16} />Get help</button> : null}
+              {selectedTx.mode === "epin" && selectedTx.status === "completed" && Boolean(selectedTx.pins?.length) ? (
+                <button type="button" className={styles.receiptSecondaryBtn} onClick={() => {
+                  const html = rechargeCardPrintHtml((selectedTx.pins ?? []).map((pin) => ({ ...pin, amount: pin.amount ?? selectedTx.unitAmount ?? 0 })), selectedTx.cardName ?? "Funda", selectedTx.reference);
+                  const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+                  const link = document.createElement("a"); link.href = url; link.download = `funda-cards-${selectedTx.reference}.html`; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                }}><SvgIcon name="download" size={16} />Download cards</button>
+              ) : null}
+              {(selectedTx.status === "processing" || (selectedTx.mode === "epin" && (rechargeReceiptError || selectedTx.deliveryStatus !== "ready"))) && (
+                <button
+                  type="button"
+                  className={styles.receiptSecondaryBtn}
+                  onClick={() => void handleRefreshTxStatus(selectedTx)}
+                  disabled={receiptBusy !== null || refreshingTxId === selectedTx.id}
+                >
+                  <SvgIcon name="refresh" size={16} />
+                  {refreshingTxId === selectedTx.id ? "Checking…" : "Check Status"}
+                </button>
+              )}
               <button
                 type="button"
                 className={styles.receiptSecondaryBtn}

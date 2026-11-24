@@ -7,6 +7,7 @@ import { saveProvider } from "../../actions";
 import AdminIcon from "../../admin-icon";
 import AdminSelect from "../../admin-select";
 import styles from "../../../admin.module.css";
+import { FilterChips, statusOptionsFrom } from "@/components/admin/list-controls";
 
 type Provider = {
   id: string;
@@ -69,6 +70,7 @@ export default function ProviderWorkspace({
 }) {
   const [editing, setEditing] = useState<Provider | Omit<Provider, "id"> | null>(null);
   const [notice, setNotice] = useState("");
+  const [providerStatus, setProviderStatus] = useState("");
   const [pending, startTransition] = useTransition();
   const counts = useMemo(
     () => new Map(providers.map((provider) => [provider.id, catalogue.filter((item) => item.provider_id === provider.id).length])),
@@ -105,6 +107,8 @@ export default function ProviderWorkspace({
     });
   }
 
+  const visibleProviders = providerStatus ? providers.filter((provider) => provider.status === providerStatus) : providers;
+
   return (
     <div className={styles.workspacePage}>
       <AdminPageHeader
@@ -128,17 +132,17 @@ export default function ProviderWorkspace({
       {notice && <p className={styles.productNotice}>{notice}</p>}
 
       {/* Unified Provider Master Table */}
-      <section className={`${styles.workspacePanel} ${styles.providerRegistry}`}>
+      <section className={styles.workspacePanel}>
         <div className={styles.directoryHeader}>
           <div className={styles.directoryTop}>
             <div>
               <div className={styles.directoryTitle}>
                 <h2>Provider directory</h2>
-                <span className={styles.countPill}>{providers.length}</span>
+                <span className={styles.countPill}>{visibleProviders.length}</span>
               </div>
-              <p className={styles.directorySub}>Environment, status, priority and catalogue.</p>
             </div>
           </div>
+          <FilterChips options={statusOptionsFrom(providers, (provider) => provider.status)} total={providers.length} value={providerStatus} onChange={setProviderStatus} />
         </div>
 
         <div className={styles.workspaceTableWrap}>
@@ -155,8 +159,8 @@ export default function ProviderWorkspace({
               </tr>
             </thead>
             <tbody>
-              {providers.length ? (
-                providers.map((provider) => (
+              {visibleProviders.length ? (
+                visibleProviders.map((provider) => (
                   <tr key={provider.id}>
                     <td>
                       <div className={styles.tableEntity}>

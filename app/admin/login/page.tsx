@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "../../../lib/admin/auth";
 import AdminLoginForm from "./login-form";
-import styles from "../admin.module.css";
+import styles from "./login.module.css";
 
 export const dynamic = "force-dynamic";
 

@@ -54,6 +54,20 @@ export default function BlogNavHeader() {
           />
 
           <Link
+            href="/coupons"
+            style={{
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            Coupons
+          </Link>
+          <Link
             href="/blog"
             style={{
               fontSize: "14px",

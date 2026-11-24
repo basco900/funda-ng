@@ -124,9 +124,6 @@ export default function CommentsClient({ initialComments }: { initialComments: A
                 <h2>Reader Questions & Discussions</h2>
                 <span className={styles.countPill}>{filtered.length}</span>
               </div>
-              <p className={styles.directorySub}>
-                Moderate questions, reply as Funda Admin, and engage with users.
-              </p>
             </div>
 
             <div className={styles.directoryTools}>

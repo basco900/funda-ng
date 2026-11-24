@@ -2,8 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { AdminPageHeader } from "@/components/admin/page-pattern";
+import { AdminConfirm, AdminFeedback, AdminModal } from "../../(console)/admin-ui";
 import AdminIcon from "../../(console)/admin-icon";
+import AdminSelect from "../../(console)/admin-select";
 import styles from "../../admin.module.css";
+import { FilterPicker, PurchaseStatusFilter, statusOptionsFrom } from "@/components/admin/list-controls";
+import type { PurchaseFilter } from "@/lib/admin/purchases";
 import {
   saveEducationConfig,
   bulkUpdateEducationConfigs,
@@ -65,11 +69,13 @@ export default function EducationWorkspace({
   educationPackages,
   providers,
   recentTransactions,
+  purchaseFilter,
 }: {
   educationConfigs: EducationConfigRow[];
   educationPackages: EducationPackageRow[];
   providers: ProviderRow[];
   recentTransactions: TransactionRow[];
+  purchaseFilter?: PurchaseFilter;
 }) {
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -80,6 +86,7 @@ export default function EducationWorkspace({
   // Filter states
   const [filterExamBody, setFilterExamBody] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [packageStatus, setPackageStatus] = useState("");
 
   // Edit exam config drawer state
   const [editingConfig, setEditingConfig] = useState<EducationConfigRow | null>(null);
@@ -92,6 +99,8 @@ export default function EducationWorkspace({
   // Refund modal state
   const [refundTarget, setRefundTarget] = useState<TransactionRow | null>(null);
   const [refundReason, setRefundReason] = useState("");
+  const [bulkTarget, setBulkTarget] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<EducationPackageRow | null>(null);
 
   // Live tester / simulator states
   const [testExamBody, setTestExamBody] = useState<string>("waec");
@@ -112,7 +121,9 @@ export default function EducationWorkspace({
   const activeConfigsCount = educationConfigs.filter((c) => c.is_active).length;
   const activePackagesCount = educationPackages.filter((p) => p.is_active).length;
 
+  const packageState = (pkg: EducationPackageRow) => (pkg.is_active ? "active" : "standby");
   const filteredPackages = educationPackages.filter((pkg) => {
+    if (packageStatus && packageState(pkg) !== packageStatus) return false;
     if (filterExamBody !== "all" && pkg.exam_body !== filterExamBody) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -156,7 +167,7 @@ export default function EducationWorkspace({
   }
 
   function handleBulkProviderChange(newPrimary: string) {
-    if (!confirm(`Switch primary API provider for ALL Exam Boards to ${newPrimary.toUpperCase()}?`)) return;
+    setBulkTarget(null);
     startTransition(async () => {
       setFeedback(null);
       const res = await bulkUpdateEducationConfigs({ primaryProvider: newPrimary });
@@ -198,7 +209,7 @@ export default function EducationWorkspace({
   }
 
   function handleDeletePackage(id: string) {
-    if (!confirm("Are you sure you want to delete this package from the catalogue?")) return;
+    setDeleteTarget(null);
     startTransition(async () => {
       setFeedback(null);
       const res = await deleteEducationPackage({ id });
@@ -276,521 +287,329 @@ export default function EducationWorkspace({
     }
   }
 
+  const providerOptions = providers.map((p) => ({ value: p.slug, label: p.name }));
+  const providerName = (slug: string | null) => providers.find((p) => p.slug === slug)?.name ?? slug ?? "None";
+  const EXAM_OPTIONS = [{ value: "waec", label: "WAEC" }, { value: "neco", label: "NECO" }, { value: "jamb", label: "JAMB" }, { value: "nabteb", label: "NABTEB" }, { value: "nbais", label: "NBAIS" }];
+  const SERVICE_LABELS: Record<string, string> = { result_checker: "Result checker", registration: "Registration", utme: "UTME e-PIN", de: "Direct Entry", screening: "Screening" };
+  const tabs = [
+    { key: "routing", label: "Exam Boards", icon: "education", count: educationConfigs.length },
+    { key: "packages", label: "Packages", icon: "catalogue", count: educationPackages.length },
+    { key: "simulator", label: "Simulator", icon: "pulse" },
+    { key: "transactions", label: "Transactions", icon: "transactions", count: recentTransactions.length },
+  ] as const;
+  const money = (value: number) => `₦${Number(value || 0).toLocaleString("en-NG")}`;
+
   return (
-    <div className="w-full space-y-6 pb-16 font-sans text-slate-900">
+    <div className={styles.workspacePage}>
       <AdminPageHeader
-        title="Education & Exam PINs"
+        title="Education"
+        actions={
+          <button
+            type="button"
+            className={styles.primaryButton}
+            onClick={() => {
+              setEditingPackage({});
+              setIsPackageDrawerOpen(true);
+            }}
+          >
+            <AdminIcon name="plus" />
+            Add package
+          </button>
+        }
         stats={[
-          { label: "Exam Bodies", value: `${activeConfigsCount} / ${educationConfigs.length}` },
-          { label: "Packages", value: `${activePackagesCount} / ${educationPackages.length}` },
-          { label: "Gateways", value: `${providers.filter((p) => p.status === "active").length} Live` },
-          { label: "PIN Vault", value: "AES-GCM", tone: "success" },
+          { icon: "education", tone: "primary", value: `${activeConfigsCount} of ${educationConfigs.length}`, label: "Boards live" },
+          { icon: "catalogue", tone: "emerald", value: activePackagesCount, label: "Active packages" },
+          { icon: "provider", tone: "slate", value: providers.filter((p) => p.status === "active").length, label: "Gateways" },
+          { icon: "transactions", tone: "amber", value: recentTransactions.length, label: "Recent purchases" },
         ]}
       />
 
-      {/* Notification Banner */}
-      {feedback && (
-        <div
-          className="flex items-center justify-between rounded-[8px] p-3 text-[12.5px] font-medium"
-          style={{
-            backgroundColor: feedback.type === "success" ? "#ecfdf5" : "#fef2f2",
-            color: feedback.type === "success" ? "#065f46" : "#991b1b",
-            border: `1px solid ${feedback.type === "success" ? "#a7f3d0" : "#fecaca"}`,
-          }}
-        >
-          <span>{feedback.text}</span>
-          <button
-            type="button"
-            onClick={() => setFeedback(null)}
-            className="font-bold text-inherit cursor-pointer"
-          >
-            ×
-          </button>
+      {feedback ? <AdminFeedback tone={feedback.type} text={feedback.text} onClose={() => setFeedback(null)} /> : null}
+
+      <section className={styles.workspacePanel}>
+        <div className={styles.directoryHeader} data-tabbed>
+          <nav className={styles.segmentedTabs} aria-label="Education sections">
+            {tabs.map((tab) => (
+              <button key={tab.key} type="button" className={styles.networkUnderlineTab} data-active={activeTab === tab.key} onClick={() => setActiveTab(tab.key)}>
+                <AdminIcon name={tab.icon} />
+                {tab.label}
+                {"count" in tab ? <span className={styles.countPill}>{tab.count}</span> : null}
+              </button>
+            ))}
+          </nav>
+          {activeTab === "routing" ? (
+            <div className={styles.directoryTools}>
+              <AdminSelect value="" placeholder="Switch every board to…" options={providerOptions} onValueChange={(value) => value && setBulkTarget(value)} />
+            </div>
+          ) : null}
+          {activeTab === "packages" ? (
+            <div className={styles.directoryTools}>
+              <label className={styles.directorySearch}>
+                <AdminIcon name="search" />
+                <input placeholder="Search packages" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              </label>
+              <AdminSelect value={filterExamBody} onValueChange={setFilterExamBody} options={[{ value: "all", label: "All boards" }, ...EXAM_OPTIONS]} />
+              <FilterPicker value={packageStatus} onChange={setPackageStatus} options={statusOptionsFrom(educationPackages, packageState)} allLabel="All statuses" width={150} />
+            </div>
+          ) : null}
+          {activeTab === "transactions" && purchaseFilter ? <PurchaseStatusFilter filter={purchaseFilter} /> : null}
         </div>
-      )}
 
-      {/* Navigation Tabs */}
-      <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid var(--admin-line)", marginBottom: "20px" }}>
-        {[
-          { key: "routing", label: "Exam Bodies & API Routing", icon: "provider" },
-          { key: "packages", label: "PIN Packages & Pricing", icon: "catalogue" },
-          { key: "simulator", label: "Live Tester / Simulator", icon: "pulse" },
-          { key: "transactions", label: "Recent PIN Transactions & Refunds", icon: "transactions" },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key as any)}
-            style={{
-              padding: "10px 16px",
-              border: "none",
-              background: "transparent",
-              borderBottom: activeTab === tab.key ? "2px solid #660033" : "2px solid transparent",
-              color: activeTab === tab.key ? "#660033" : "var(--admin-muted)",
-              fontWeight: activeTab === tab.key ? 700 : 500,
-              fontSize: "13.5px",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <AdminIcon name={tab.icon} />
-            <span>{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* TAB 1: EXAM BODIES & API ROUTING */}
-      {activeTab === "routing" && (
-        <section className={styles.workspacePanel}>
-          <div className={styles.workspaceToolbar}>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <h2>Exam Boards &amp; API Switcher</h2>
-              <span className={styles.countPill}>{educationConfigs.length} Boards</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ fontSize: "12px", color: "var(--admin-muted)", fontWeight: 600 }}>Quick Global Switch:</span>
-              <select
-                style={{
-                  height: "38px",
-                  padding: "0 12px",
-                  borderRadius: "10px",
-                  border: "1px solid var(--admin-line)",
-                  background: "var(--admin-surface)",
-                  fontSize: "12.5px",
-                  color: "var(--admin-ink)",
-                  fontWeight: 600,
-                }}
-                defaultValue=""
-                onChange={(e) => {
-                  if (e.target.value) handleBulkProviderChange(e.target.value);
-                  e.target.value = "";
-                }}
-              >
-                <option value="" disabled>Switch All Boards to...</option>
-                {providers.map((p) => (
-                  <option key={p.id} value={p.slug}>{p.name} ({p.slug})</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
+        {activeTab === "routing" ? (
           <div className={styles.workspaceTableWrap}>
             <table className={styles.workspaceTable}>
               <thead>
                 <tr>
-                  <th>Exam Board</th>
-                  <th>Primary API Provider</th>
-                  <th>Fallback Failover Provider</th>
-                  <th>Convenience Fee</th>
-                  <th>Cashback</th>
-                  <th style={{ textAlign: "center" }}>Profile Code Required</th>
-                  <th style={{ textAlign: "center" }}>Status</th>
-                  <th style={{ textAlign: "right" }}>Actions</th>
+                  <th>Board</th>
+                  <th>Providers</th>
+                  <th data-align="right">Fee</th>
+                  <th data-align="right">Cashback</th>
+                  <th>Profile code</th>
+                  <th>Status</th>
+                  <th data-align="right">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {educationConfigs.map((config) => (
                   <tr key={config.exam_body}>
                     <td>
-                      <div style={{ display: "grid", gap: "2px" }}>
-                        <strong style={{ fontSize: "14px", color: "var(--admin-ink)" }}>{config.name}</strong>
-                        <span style={{ fontSize: "12px", color: "var(--admin-muted)" }}>
-                          Code: <strong style={{ color: "#660033" }}>{config.short_name}</strong>
-                          {config.portal_url && (
-                            <> • <a href={config.portal_url} target="_blank" rel="noopener noreferrer" style={{ color: "#660033" }}>Portal ↗</a></>
-                          )}
-                        </span>
+                      <div className={styles.cellTitle}>
+                        <strong>{config.short_name}</strong>
+                        <small>{config.name}</small>
                       </div>
                     </td>
                     <td>
-                      <span className={styles.subtleChip} style={{ fontWeight: 700 }}>
-                        {config.primary_provider.toUpperCase()}
-                      </span>
+                      <div className={styles.cellTitle}>
+                        <strong>{providerName(config.primary_provider)}</strong>
+                        <small>{config.fallback_provider ? `Fallback · ${providerName(config.fallback_provider)}` : "No fallback"}</small>
+                      </div>
                     </td>
+                    <td data-align="right" className={styles.cellPlain}>{money(config.convenience_fee)}</td>
+                    <td data-align="right" className={styles.cellPlain}>{config.cashback_percentage}%</td>
+                    <td className={styles.cellPlain}>{config.requires_profile_code ? "Required" : "—"}</td>
                     <td>
-                      {config.fallback_provider ? (
-                        <span className={styles.subtleChip} style={{ background: "#f8fafc", color: "#64748b" }}>
-                          {config.fallback_provider.toUpperCase()}
-                        </span>
-                      ) : (
-                        <span style={{ color: "var(--admin-faint)", fontSize: "12px" }}>None</span>
-                      )}
-                    </td>
-                    <td>
-                      <strong>₦{Number(config.convenience_fee || 0).toLocaleString("en-NG")}</strong>
-                    </td>
-                    <td>
-                      <span style={{ color: "#059669", fontWeight: 700 }}>
-                        {config.cashback_percentage}%
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      {config.requires_profile_code ? (
-                        <span className={styles.statusPill} style={{ background: "#eff6ff", color: "#1d4ed8", borderColor: "rgba(29, 78, 216, 0.2)" }}>
-                          Yes (10 Digits)
-                        </span>
-                      ) : (
-                        <span style={{ color: "var(--admin-faint)", fontSize: "12px" }}>No</span>
-                      )}
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      <span className={styles.statusPill} data-status={config.is_active ? "active" : "standby"}>
+                      <span className={styles.statusPill} data-status={config.is_active ? "active" : "paused"}>
                         {config.is_active ? "Active" : "Paused"}
                       </span>
                     </td>
-                    <td style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className={styles.secondaryButton}
-                        style={{ height: "34px", padding: "0 12px", fontSize: "12px" }}
-                        onClick={() => {
-                          setEditingConfig(config);
-                          setIsConfigDrawerOpen(true);
-                        }}
-                      >
-                        Edit Routing
-                      </button>
+                    <td data-align="right">
+                      <div className={styles.rowActions}>
+                        {config.portal_url ? (
+                          <a href={config.portal_url} target="_blank" rel="noopener noreferrer" className={styles.iconAction} aria-label="Open portal" data-tip="Open portal">
+                            <AdminIcon name="external" />
+                          </a>
+                        ) : null}
+                        <button
+                          type="button"
+                          className={styles.iconAction}
+                          aria-label="Configure"
+                          data-tip="Configure"
+                          onClick={() => {
+                            setEditingConfig(config);
+                            setIsConfigDrawerOpen(true);
+                          }}
+                        >
+                          <AdminIcon name="pencil" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </section>
-      )}
+        ) : null}
 
-      {/* TAB 2: PACKAGES & PIN CATALOGUE */}
-      {activeTab === "packages" && (
-        <section className={styles.workspacePanel}>
-          <div className={styles.workspaceToolbar}>
-            <label>
-              <AdminIcon name="search" />
-              <input
-                placeholder="Search packages, PIN type, exam code..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </label>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              <select
-                style={{
-                  height: "40px",
-                  padding: "0 12px",
-                  borderRadius: "10px",
-                  border: "1px solid var(--admin-line)",
-                  fontSize: "12.5px",
-                  background: "var(--admin-surface)",
-                  color: "var(--admin-ink)",
-                }}
-                value={filterExamBody}
-                onChange={(e) => setFilterExamBody(e.target.value)}
-              >
-                <option value="all">All Exam Boards</option>
-                <option value="waec">WAEC</option>
-                <option value="neco">NECO</option>
-                <option value="jamb">JAMB</option>
-                <option value="nabteb">NABTEB</option>
-                <option value="nbais">NBAIS</option>
-              </select>
-            </div>
-          </div>
-
-          <div className={styles.workspaceTableWrap}>
-            <table className={styles.workspaceTable}>
-              <thead>
-                <tr>
-                  <th>Exam Board &amp; Code</th>
-                  <th>Package Name</th>
-                  <th>Type</th>
-                  <th style={{ textAlign: "right" }}>Selling Price</th>
-                  <th style={{ textAlign: "right" }}>Cost Price</th>
-                  <th style={{ textAlign: "right" }}>Margin</th>
-                  <th style={{ textAlign: "center" }}>Status</th>
-                  <th style={{ textAlign: "right" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPackages.map((pkg) => {
-                  const profit = pkg.price - pkg.cost_price;
-                  const profitPct = pkg.cost_price > 0 ? ((profit / pkg.cost_price) * 100).toFixed(1) : "—";
-                  return (
-                    <tr key={pkg.id}>
-                      <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <span
-                            style={{
-                              padding: "3px 8px",
-                              borderRadius: "6px",
-                              fontWeight: 700,
-                              fontSize: "11px",
-                              textTransform: "uppercase",
-                              background: "rgba(102, 0, 51, 0.08)",
-                              color: "#660033",
-                            }}
-                          >
-                            {pkg.exam_body}
-                          </span>
-                          <code style={{ fontSize: "12px" }}>{pkg.package_code}</code>
-                        </div>
-                      </td>
-                      <td>
-                        <strong style={{ fontSize: "13.5px", color: "var(--admin-ink)" }}>{pkg.name}</strong>
-                        {pkg.description && (
-                          <div style={{ fontSize: "11.5px", color: "var(--admin-muted)" }}>{pkg.description}</div>
-                        )}
-                      </td>
-                      <td>
-                        <span className={styles.subtleChip}>
-                          {pkg.service_type.replace("_", " ").toUpperCase()}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <strong style={{ fontSize: "14px", color: "var(--admin-ink)" }}>
-                          ₦{pkg.price.toLocaleString("en-NG")}
-                        </strong>
-                      </td>
-                      <td style={{ textAlign: "right", color: "var(--admin-muted)" }}>
-                        ₦{pkg.cost_price.toLocaleString("en-NG")}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <span style={{ color: profit >= 0 ? "#059669" : "#dc2626", fontWeight: 700, fontSize: "12.5px" }}>
-                          +₦{profit.toLocaleString("en-NG")} ({profitPct}%)
-                        </span>
-                      </td>
-                      <td style={{ textAlign: "center" }}>
-                        <span className={styles.statusPill} data-status={pkg.is_active ? "active" : "standby"}>
-                          {pkg.is_active ? "Active" : "Paused"}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <div className={styles.rowActionGroup}>
-                          <button
-                            type="button"
-                            className={styles.ghostButton}
-                            onClick={() => {
-                              setEditingPackage(pkg);
-                              setIsPackageDrawerOpen(true);
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.ghostButton}
-                            style={{ color: "#dc2626" }}
-                            onClick={() => handleDeletePackage(pkg.id)}
-                          >
-                            Delete
-                          </button>
+        {activeTab === "packages" ? (
+          <>
+            <div className={styles.workspaceTableWrap}>
+              <table className={styles.workspaceTable}>
+                <thead>
+                  <tr>
+                    <th>Package</th>
+                    <th>Type</th>
+                    <th data-align="right">Price</th>
+                    <th data-align="right">Cost</th>
+                    <th data-align="right">Margin</th>
+                    <th>Status</th>
+                    <th data-align="right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPackages.length ? (
+                    filteredPackages.map((pkg) => {
+                      const profit = pkg.price - pkg.cost_price;
+                      return (
+                        <tr key={pkg.id}>
+                          <td>
+                            <div className={styles.cellTitle}>
+                              <strong>{pkg.name}</strong>
+                              <small>{pkg.exam_body.toUpperCase()} · {pkg.package_code}</small>
+                            </div>
+                          </td>
+                          <td className={styles.cellPlain}>{SERVICE_LABELS[pkg.service_type] ?? pkg.service_type.replaceAll("_", " ")}</td>
+                          <td data-align="right" className={styles.cellPlain}>{money(pkg.price)}</td>
+                          <td data-align="right" className={styles.cellMuted}>{money(pkg.cost_price)}</td>
+                          <td data-align="right">
+                            <span className={profit >= 0 ? styles.profitText : styles.cellAccent}>{money(profit)}</span>
+                          </td>
+                          <td>
+                            <span className={styles.statusPill} data-status={pkg.is_active ? "active" : "paused"}>
+                              {pkg.is_active ? "Active" : "Paused"}
+                            </span>
+                          </td>
+                          <td data-align="right">
+                            <div className={styles.rowActions}>
+                              <button
+                                type="button"
+                                className={styles.iconAction}
+                                aria-label="Edit package"
+                                data-tip="Edit"
+                                onClick={() => {
+                                  setEditingPackage(pkg);
+                                  setIsPackageDrawerOpen(true);
+                                }}
+                              >
+                                <AdminIcon name="pencil" />
+                              </button>
+                              <button type="button" className={`${styles.iconAction} ${styles.iconActionDanger}`} aria-label="Delete package" data-tip="Delete" onClick={() => setDeleteTarget(pkg)}>
+                                <AdminIcon name="trash" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={7}>
+                        <div className={styles.tableEmpty}>
+                          <AdminIcon name="catalogue" />
+                          <strong>No Packages Match</strong>
                         </div>
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <footer className={styles.workspaceFooter}>
+              <span>Showing {filteredPackages.length} of {educationPackages.length} packages</span>
+            </footer>
+          </>
+        ) : null}
 
-      {/* TAB 3: LIVE SIMULATOR */}
-      {activeTab === "simulator" && (
-        <section className={styles.workspacePanel} style={{ padding: "28px" }}>
-          <div style={{ maxWidth: "680px" }}>
-            <span className={styles.pageEyebrow}>Diagnostic Simulator</span>
-            <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "6px 0 8px" }}>
-              Test Exam PIN Generation &amp; JAMB Profile Validation
-            </h2>
-            <p style={{ color: "var(--admin-muted)", fontSize: "13.5px", marginBottom: "20px" }}>
-              Simulate live API calls across WAEC, NECO, and JAMB gateways before rolling out to students and institutions.
-            </p>
-
-            <div style={{ display: "grid", gap: "16px" }}>
+        {activeTab === "simulator" ? (
+          <div className={styles.testerPane}>
+            <div className={styles.formGrid}>
               <div className={styles.fieldGroup}>
-                <label>Select Examination Body</label>
-                <select
+                <span>Exam board</span>
+                <AdminSelect
                   value={testExamBody}
-                  onChange={(e) => {
-                    setTestExamBody(e.target.value);
-                    const matching = educationPackages.filter((p) => p.exam_body === e.target.value);
+                  onValueChange={(value) => {
+                    setTestExamBody(value);
+                    const matching = educationPackages.filter((p) => p.exam_body === value);
                     if (matching.length > 0) setTestPackageCode(matching[0].package_code);
                   }}
-                >
-                  <option value="waec">WAEC (West African Examinations Council)</option>
-                  <option value="neco">NECO (National Examinations Council)</option>
-                  <option value="jamb">JAMB (Joint Admissions &amp; Matriculation Board)</option>
-                  <option value="nabteb">NABTEB (National Business &amp; Technical Exams)</option>
-                  <option value="nbais">NBAIS (National Board for Arabic &amp; Islamic Studies)</option>
-                </select>
-              </div>
-
-              {testExamBody === "jamb" && (
-                <div className={styles.fieldGroup}>
-                  <label>Candidate 10-Digit JAMB Profile Code</label>
-                  <input
-                    value={testProfileCode}
-                    onChange={(e) => setTestProfileCode(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    placeholder="Enter 10-digit Profile Code"
-                  />
-                  <small style={{ color: "var(--admin-muted)", fontSize: "11.5px" }}>
-                    Simulates instant real-time lookup with JAMB central candidate database.
-                  </small>
-                </div>
-              )}
-
-              <div className={styles.fieldGroup}>
-                <label>Recipient Candidate Phone Number</label>
-                <input
-                  value={testCandidatePhone}
-                  onChange={(e) => setTestCandidatePhone(e.target.value)}
-                  placeholder="08012345678"
+                  options={EXAM_OPTIONS}
                 />
               </div>
-
-              <button
-                type="button"
-                className={styles.primaryButton}
-                onClick={handleRunSimulator}
-                disabled={testingBusy}
-                style={{ height: "46px", marginTop: "8px" }}
-              >
-                {testingBusy ? "Validating & Querying Gateways..." : `Test ${testExamBody.toUpperCase()} Gateway Response →`}
+              <label className={styles.fieldGroup}>
+                <span>Candidate phone</span>
+                <input value={testCandidatePhone} onChange={(e) => setTestCandidatePhone(e.target.value)} placeholder="08012345678" inputMode="tel" />
+              </label>
+              {testExamBody === "jamb" ? (
+                <label className={`${styles.fieldGroup} ${styles.formSpan}`}>
+                  <span>JAMB profile code</span>
+                  <input value={testProfileCode} onChange={(e) => setTestProfileCode(e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10 digits" inputMode="numeric" />
+                </label>
+              ) : null}
+            </div>
+            <div>
+              <button type="button" className={styles.primaryButton} onClick={handleRunSimulator} disabled={testingBusy}>
+                {testingBusy ? "Testing…" : `Test ${testExamBody.toUpperCase()}`}
               </button>
-
-              {testResult && (
-                <div
-                  style={{
-                    padding: "20px",
-                    borderRadius: "14px",
-                    marginTop: "16px",
-                    background: testResult.success ? "#ecfdf5" : "#fef2f2",
-                    border: `1px solid ${testResult.success ? "#a7f3d0" : "#fecaca"}`,
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                    <span style={{ fontSize: "18px" }}>{testResult.success ? "✅" : "❌"}</span>
-                    <strong style={{ color: testResult.success ? "#065f46" : "#991b1b", fontSize: "14px" }}>
-                      {testResult.message}
-                    </strong>
+            </div>
+            {testResult ? (
+              <div className={styles.verifyResult} data-valid={testResult.success}>
+                <strong>
+                  <AdminIcon name={testResult.success ? "check" : "alert"} />
+                  {testResult.message}
+                </strong>
+                {testResult.candidateName || testResult.pin ? (
+                  <div className={styles.summaryList}>
+                    {testResult.candidateName ? <div><span>Candidate</span><strong>{testResult.candidateName}</strong></div> : null}
+                    {testResult.pin ? <div><span>PIN</span><strong>{testResult.pin}</strong></div> : null}
+                    {testResult.serial ? <div><span>Serial</span><strong>{testResult.serial}</strong></div> : null}
                   </div>
-                  {testResult.candidateName && (
-                    <div style={{ fontSize: "13px", color: "#065f46", marginBottom: "6px" }}>
-                      Candidate Name: <strong>{testResult.candidateName}</strong>
-                    </div>
-                  )}
-                  {testResult.pin && (
-                    <div style={{ background: "#ffffff", padding: "12px", borderRadius: "8px", border: "1px solid rgba(0,0,0,0.06)", marginTop: "10px" }}>
-                      <div style={{ fontSize: "11.5px", color: "#64748b", fontWeight: 700 }}>GENERATED EXAM PIN:</div>
-                      <div style={{ fontSize: "20px", fontWeight: 800, color: "#660033", letterSpacing: "1px", margin: "4px 0" }}>
-                        {testResult.pin}
-                      </div>
-                      {testResult.serial && (
-                        <div style={{ fontSize: "12px", color: "#334155" }}>
-                          Serial Number: <strong>{testResult.serial}</strong>
-                        </div>
-                      )}
-                      {testResult.instructions && (
-                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "6px" }}>
-                          Instructions: {testResult.instructions}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                ) : null}
+                {testResult.instructions ? <p>{testResult.instructions}</p> : null}
+              </div>
+            ) : null}
           </div>
-        </section>
-      )}
+        ) : null}
 
-      {/* TAB 4: RECENT TRANSACTIONS & REFUNDS */}
-      {activeTab === "transactions" && (
-        <section className={styles.workspacePanel}>
-          <div className={styles.workspaceToolbar}>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <h2>Recent Education Purchases</h2>
-              <span className={styles.countPill}>{recentTransactions.length} Recorded</span>
-            </div>
-          </div>
-
+        {activeTab === "transactions" ? (
           <div className={styles.workspaceTableWrap}>
             <table className={styles.workspaceTable}>
               <thead>
                 <tr>
-                  <th>Transaction Ref</th>
                   <th>Customer</th>
-                  <th>Exam / Package</th>
-                  <th>Destination (Phone/Profile)</th>
-                  <th>Amount</th>
+                  <th>Package</th>
+                  <th data-align="right">Amount</th>
                   <th>Status</th>
-                  <th>Purchased Time</th>
-                  <th style={{ textAlign: "right" }}>Actions</th>
+                  <th>Date</th>
+                  <th data-align="right">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {recentTransactions.length > 0 ? (
+                {recentTransactions.length ? (
                   recentTransactions.map((tx) => (
                     <tr key={tx.id}>
                       <td>
-                        <code style={{ fontSize: "12px" }}>{tx.internal_reference}</code>
+                        <div className={styles.cellTitle}>
+                          <strong>{tx.user?.phone || tx.user?.email || "Customer"}</strong>
+                          <small>{tx.destination}</small>
+                        </div>
                       </td>
                       <td>
-                        <strong>{tx.user?.phone || tx.user?.email || "Customer"}</strong>
+                        <div className={styles.cellTitle}>
+                          <strong>{String(tx.metadata?.packageName || tx.metadata?.examBody || "Education PIN")}</strong>
+                          <small>{tx.internal_reference}</small>
+                        </div>
                       </td>
+                      <td data-align="right" className={styles.cellPlain}>{money(tx.amount)}</td>
+                      <td><span className={styles.statusPill} data-status={tx.status}>{tx.status}</span></td>
                       <td>
-                        <span className={styles.subtleChip}>
-                          {String(tx.metadata?.packageName || tx.metadata?.examBody || "Education PIN").toUpperCase()}
-                        </span>
+                        <div className={styles.cellValue}>
+                          <strong>{new Date(tx.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}</strong>
+                          <small>{new Date(tx.created_at).toLocaleTimeString("en-NG", { hour: "numeric", minute: "2-digit" })}</small>
+                        </div>
                       </td>
-                      <td>
-                        <strong>{tx.destination}</strong>
-                      </td>
-                      <td>
-                        <strong style={{ fontSize: "13.5px" }}>
-                          ₦{Number(tx.amount).toLocaleString("en-NG")}
-                        </strong>
-                      </td>
-                      <td>
-                        <span className={styles.statusPill} data-status={tx.status}>
-                          {tx.status}
-                        </span>
-                      </td>
-                      <td>
-                        <time style={{ color: "var(--admin-muted)", fontSize: "12px" }}>
-                          {new Date(tx.created_at).toLocaleString("en-NG", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </time>
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        {tx.status === "successful" && (
+                      <td data-align="right">
+                        {tx.status === "successful" ? (
                           <button
                             type="button"
-                            className={styles.ghostButton}
-                            style={{ color: "#dc2626", fontWeight: 700 }}
+                            className={styles.textAction}
                             onClick={() => {
                               setRefundTarget(tx);
-                              setRefundReason("Failed PIN validation / Candidate issue");
+                              setRefundReason("");
                             }}
                           >
-                            Chargeback / Refund
+                            Refund
                           </button>
+                        ) : (
+                          <span className={styles.cellMuted}>—</span>
                         )}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8}>
+                    <td colSpan={6}>
                       <div className={styles.tableEmpty}>
                         <AdminIcon name="transactions" />
-                        <strong>No Education Transactions Yet</strong>
-                        <span>Purchases made on the frontend will appear here with live audit details.</span>
+                        <strong>No Purchases Yet</strong>
                       </div>
                     </td>
                   </tr>
@@ -798,329 +617,174 @@ export default function EducationWorkspace({
               </tbody>
             </table>
           </div>
-        </section>
-      )}
+        ) : null}
+      </section>
 
-      {/* DRAWER: EDIT EXAM CONFIG ROUTING */}
-      {isConfigDrawerOpen && editingConfig && (
-        <div className={styles.productDrawerBackdrop} onClick={() => setIsConfigDrawerOpen(false)}>
-          <div className={styles.productDrawer} onClick={(e) => e.stopPropagation()}>
-            <header>
-              <div>
-                <span>Exam Board API Routing</span>
-                <h2>{editingConfig.name} ({editingConfig.short_name})</h2>
-              </div>
-              <button
-                type="button"
-                className={styles.ghostButton}
-                onClick={() => setIsConfigDrawerOpen(false)}
-              >
-                ✕
+      {isConfigDrawerOpen && editingConfig ? (
+        <AdminModal
+          eyebrow="Exam board"
+          title={editingConfig.name}
+          onClose={() => setIsConfigDrawerOpen(false)}
+          footer={
+            <>
+              <button type="button" className={styles.secondaryButton} onClick={() => setIsConfigDrawerOpen(false)}>Cancel</button>
+              <button type="submit" form="education-config-form" disabled={isPending} className={styles.primaryButton}>
+                {isPending ? "Saving…" : "Save"}
               </button>
-            </header>
-
-            <form onSubmit={handleSaveConfig} style={{ display: "grid", gap: "18px", padding: "24px" }}>
+            </>
+          }
+        >
+          <form id="education-config-form" onSubmit={handleSaveConfig} className={styles.modalForm}>
+            <div className={styles.formGrid}>
               <div className={styles.fieldGroup}>
-                <label>Primary API Provider</label>
-                <select name="primaryProvider" defaultValue={editingConfig.primary_provider}>
-                  {providers.map((p) => (
-                    <option key={p.id} value={p.slug}>{p.name} ({p.slug})</option>
-                  ))}
-                </select>
+                <span>Primary provider</span>
+                <AdminSelect name="primaryProvider" defaultValue={editingConfig.primary_provider} options={providerOptions} />
               </div>
-
               <div className={styles.fieldGroup}>
-                <label>Fallback Provider (Automatic Failover)</label>
-                <select name="fallbackProvider" defaultValue={editingConfig.fallback_provider || ""}>
-                  <option value="">None (No Failover)</option>
-                  {providers.map((p) => (
-                    <option key={p.id} value={p.slug}>{p.name} ({p.slug})</option>
-                  ))}
-                </select>
+                <span>Fallback provider</span>
+                <AdminSelect name="fallbackProvider" defaultValue={editingConfig.fallback_provider || ""} options={[{ value: "", label: "No fallback" }, ...providerOptions]} />
               </div>
-
-              <div className={styles.drawerGrid2}>
-                <div className={styles.fieldGroup}>
-                  <label>Convenience Fee (₦)</label>
-                  <input
-                    type="number"
-                    name="convenienceFee"
-                    defaultValue={editingConfig.convenience_fee}
-                    min="0"
-                    step="50"
-                  />
-                </div>
-                <div className={styles.fieldGroup}>
-                  <label>Cashback Percentage (%)</label>
-                  <input
-                    type="number"
-                    name="cashbackPercentage"
-                    defaultValue={editingConfig.cashback_percentage}
-                    min="0"
-                    max="100"
-                    step="0.5"
-                  />
-                </div>
-              </div>
-
-              <div className={styles.drawerGrid2}>
-                <div className={styles.fieldGroup}>
-                  <label>Board Operational Status</label>
-                  <select name="isActive" defaultValue={String(editingConfig.is_active)}>
-                    <option value="true">Active (Purchases Allowed)</option>
-                    <option value="false">Paused / Inactive</option>
-                  </select>
-                </div>
-                <div className={styles.fieldGroup}>
-                  <label>Requires Candidate Profile Code</label>
-                  <select name="requiresProfileCode" defaultValue={String(editingConfig.requires_profile_code)}>
-                    <option value="false">No (Direct Phone/Email PIN)</option>
-                    <option value="true">Yes (e.g. JAMB Profile Code)</option>
-                  </select>
-                </div>
-              </div>
-
+              <label className={styles.fieldGroup}>
+                <span>Convenience fee (₦)</span>
+                <input type="number" name="convenienceFee" defaultValue={editingConfig.convenience_fee} min="0" step="50" />
+              </label>
+              <label className={styles.fieldGroup}>
+                <span>Cashback %</span>
+                <input type="number" name="cashbackPercentage" defaultValue={editingConfig.cashback_percentage} min="0" max="100" step="0.5" />
+              </label>
               <div className={styles.fieldGroup}>
-                <label>Official Portal URL</label>
-                <input
-                  type="url"
-                  name="portalUrl"
-                  defaultValue={editingConfig.portal_url || ""}
-                  placeholder="https://www.waecdirect.org"
-                />
+                <span>Status</span>
+                <AdminSelect name="isActive" defaultValue={String(editingConfig.is_active)} options={[{ value: "true", label: "Active" }, { value: "false", label: "Paused" }]} />
               </div>
-
               <div className={styles.fieldGroup}>
-                <label>Usage Instructions (Shown on Receipt)</label>
-                <textarea
-                  name="instructions"
-                  defaultValue={editingConfig.instructions || ""}
-                  placeholder="Visit official portal to view result..."
-                  rows={3}
-                />
+                <span>Profile code</span>
+                <AdminSelect name="requiresProfileCode" defaultValue={String(editingConfig.requires_profile_code)} options={[{ value: "false", label: "Not required" }, { value: "true", label: "Required" }]} />
               </div>
+              <label className={`${styles.fieldGroup} ${styles.formSpan}`}>
+                <span>Portal URL</span>
+                <input type="url" name="portalUrl" defaultValue={editingConfig.portal_url || ""} placeholder="https://www.waecdirect.org" />
+              </label>
+              <label className={`${styles.fieldGroup} ${styles.formSpan}`}>
+                <span>Receipt instructions</span>
+                <textarea name="instructions" defaultValue={editingConfig.instructions || ""} placeholder="Visit the official portal to view your result" rows={3} />
+              </label>
+              <label className={`${styles.fieldGroup} ${styles.formSpan}`}>
+                <span>Offline notice</span>
+                <input type="text" name="maintenanceNotice" defaultValue={editingConfig.maintenance_notice || ""} placeholder="Shown to customers while paused" />
+              </label>
+            </div>
+          </form>
+        </AdminModal>
+      ) : null}
 
-              <div className={styles.fieldGroup}>
-                <label>Maintenance / Downtime Notice (Optional)</label>
-                <input
-                  type="text"
-                  name="maintenanceNotice"
-                  defaultValue={editingConfig.maintenance_notice || ""}
-                  placeholder="Leave empty if service is healthy"
-                />
-              </div>
-
-              <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => setIsConfigDrawerOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={styles.primaryButton}
-                  disabled={isPending}
-                  style={{ flex: 1 }}
-                >
-                  {isPending ? "Saving..." : "Save Board Configuration"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* DRAWER: ADD / EDIT PACKAGE */}
-      {isPackageDrawerOpen && editingPackage && (
-        <div className={styles.productDrawerBackdrop} onClick={() => setIsPackageDrawerOpen(false)}>
-          <div className={styles.productDrawer} onClick={(e) => e.stopPropagation()}>
-            <header>
-              <div>
-                <span>Package Catalogue Studio</span>
-                <h2>{editingPackage.id ? "Edit Examination Package" : "Add Examination Package"}</h2>
-              </div>
-              <button
-                type="button"
-                className={styles.ghostButton}
-                onClick={() => setIsPackageDrawerOpen(false)}
-              >
-                ✕
+      {isPackageDrawerOpen && editingPackage ? (
+        <AdminModal
+          eyebrow="Package"
+          title={editingPackage.id ? editingPackage.name ?? "Edit package" : "New package"}
+          onClose={() => setIsPackageDrawerOpen(false)}
+          footer={
+            <>
+              <button type="button" className={styles.secondaryButton} onClick={() => setIsPackageDrawerOpen(false)}>Cancel</button>
+              <button type="submit" form="education-package-form" disabled={isPending} className={styles.primaryButton}>
+                {isPending ? "Saving…" : "Save"}
               </button>
-            </header>
-
-            <form onSubmit={handleSavePackage} style={{ display: "grid", gap: "18px", padding: "24px" }}>
-              <div className={styles.drawerGrid2}>
-                <div className={styles.fieldGroup}>
-                  <label>Exam Board</label>
-                  <select name="examBody" defaultValue={editingPackage.exam_body || "waec"}>
-                    <option value="waec">WAEC</option>
-                    <option value="neco">NECO</option>
-                    <option value="jamb">JAMB</option>
-                    <option value="nabteb">NABTEB</option>
-                    <option value="nbais">NBAIS</option>
-                  </select>
-                </div>
-                <div className={styles.fieldGroup}>
-                  <label>Package Code (Unique)</label>
-                  <input
-                    type="text"
-                    name="packageCode"
-                    defaultValue={editingPackage.package_code || ""}
-                    placeholder="e.g. waec-result"
-                    required
-                  />
-                </div>
-              </div>
-
+            </>
+          }
+        >
+          <form id="education-package-form" onSubmit={handleSavePackage} className={styles.modalForm}>
+            <div className={styles.formGrid}>
               <div className={styles.fieldGroup}>
-                <label>Display Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  defaultValue={editingPackage.name || ""}
-                  placeholder="e.g. WAEC Result Checker e-PIN"
-                  required
-                />
+                <span>Exam board</span>
+                <AdminSelect name="examBody" defaultValue={editingPackage.exam_body || "waec"} options={EXAM_OPTIONS} />
               </div>
-
-              <div className={styles.fieldGroup}>
-                <label>Description (Optional)</label>
-                <input
-                  type="text"
-                  name="description"
-                  defaultValue={editingPackage.description || ""}
-                  placeholder="Short explanation shown to student"
-                />
+              <label className={styles.fieldGroup}>
+                <span>Package code</span>
+                <input type="text" name="packageCode" defaultValue={editingPackage.package_code || ""} placeholder="waec-result" required />
+              </label>
+              <label className={`${styles.fieldGroup} ${styles.formSpan}`}>
+                <span>Name</span>
+                <input type="text" name="name" defaultValue={editingPackage.name || ""} placeholder="WAEC Result Checker" required />
+              </label>
+              <label className={`${styles.fieldGroup} ${styles.formSpan}`}>
+                <span>Description</span>
+                <input type="text" name="description" defaultValue={editingPackage.description || ""} placeholder="Shown to the student" />
+              </label>
+              <div className={`${styles.fieldGroup} ${styles.formSpan}`}>
+                <span>Type</span>
+                <AdminSelect name="serviceType" defaultValue={editingPackage.service_type || "result_checker"} options={Object.entries(SERVICE_LABELS).map(([value, label]) => ({ value, label }))} />
               </div>
+            </div>
+            <div className={styles.formGrid} data-cols="3">
+              <label className={styles.fieldGroup}>
+                <span>Price (₦)</span>
+                <input type="number" name="price" defaultValue={editingPackage.price || 3500} min="100" step="50" required />
+              </label>
+              <label className={styles.fieldGroup}>
+                <span>Cost (₦)</span>
+                <input type="number" name="costPrice" defaultValue={editingPackage.cost_price || 3200} min="0" step="50" />
+              </label>
+              <label className={styles.fieldGroup}>
+                <span>Order</span>
+                <input type="number" name="sortOrder" defaultValue={editingPackage.sort_order ?? 1} />
+              </label>
+            </div>
+            <div className={styles.fieldGroup}>
+              <span>Status</span>
+              <AdminSelect name="isActive" defaultValue={String(editingPackage.is_active ?? true)} options={[{ value: "true", label: "Active" }, { value: "false", label: "Paused" }]} />
+            </div>
+          </form>
+        </AdminModal>
+      ) : null}
 
-              <div className={styles.fieldGroup}>
-                <label>Service Type</label>
-                <select name="serviceType" defaultValue={editingPackage.service_type || "result_checker"}>
-                  <option value="result_checker">Result Checker PIN</option>
-                  <option value="registration">Registration Scratch Card</option>
-                  <option value="utme">JAMB UTME e-PIN</option>
-                  <option value="de">JAMB Direct Entry (DE)</option>
-                  <option value="screening">Post-UTME / Screening</option>
-                </select>
-              </div>
+      {bulkTarget ? (
+        <AdminConfirm
+          tone="primary"
+          title="Switch every board?"
+          body={<>Routes all exam boards through <strong>{providerName(bulkTarget)}</strong>.</>}
+          confirmLabel="Switch"
+          pending={isPending}
+          onConfirm={() => handleBulkProviderChange(bulkTarget)}
+          onCancel={() => setBulkTarget(null)}
+        />
+      ) : null}
 
-              <div className={styles.drawerGrid2}>
-                <div className={styles.fieldGroup}>
-                  <label>Customer Price (₦)</label>
-                  <input
-                    type="number"
-                    name="price"
-                    defaultValue={editingPackage.price || 3500}
-                    min="100"
-                    step="50"
-                    required
-                  />
-                </div>
-                <div className={styles.fieldGroup}>
-                  <label>Gateway Cost Price (₦)</label>
-                  <input
-                    type="number"
-                    name="costPrice"
-                    defaultValue={editingPackage.cost_price || 3200}
-                    min="0"
-                    step="50"
-                  />
-                </div>
-              </div>
+      {deleteTarget ? (
+        <AdminConfirm
+          title="Delete package?"
+          body={<>Removes <strong>{deleteTarget.name}</strong> from the catalogue.</>}
+          confirmLabel="Delete"
+          pending={isPending}
+          onConfirm={() => handleDeletePackage(deleteTarget.id)}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      ) : null}
 
-              <div className={styles.drawerGrid2}>
-                <div className={styles.fieldGroup}>
-                  <label>Sort Order</label>
-                  <input
-                    type="number"
-                    name="sortOrder"
-                    defaultValue={editingPackage.sort_order ?? 1}
-                  />
-                </div>
-                <div className={styles.fieldGroup}>
-                  <label>Status</label>
-                  <select name="isActive" defaultValue={String(editingPackage.is_active ?? true)}>
-                    <option value="true">Active (Live in App)</option>
-                    <option value="false">Paused</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => setIsPackageDrawerOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={styles.primaryButton}
-                  disabled={isPending}
-                  style={{ flex: 1 }}
-                >
-                  {isPending ? "Saving..." : "Save Package"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: ADMIN REFUND / CHARGEBACK */}
-      {refundTarget && (
-        <div className={styles.commandBackdrop} onClick={() => setRefundTarget(null)}>
-          <div
-            className={styles.commandPalette}
-            style={{ width: "min(520px, 94vw)", padding: "24px" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span className={styles.pageEyebrow} style={{ color: "#dc2626" }}>Admin Intervention</span>
-            <h2 style={{ fontSize: "18px", fontWeight: 700, margin: "6px 0 12px" }}>
-              Refund Education Transaction
-            </h2>
-            <p style={{ color: "var(--admin-muted)", fontSize: "13.5px" }}>
-              Instantly credit <strong>₦{Number(refundTarget.amount).toLocaleString("en-NG")}</strong> back to customer{" "}
-              <strong>{refundTarget.user?.phone || refundTarget.user?.email || "Wallet"}</strong>.
+      {refundTarget ? (
+        <AdminModal
+          eyebrow="Refund"
+          title="Refund to wallet"
+          onClose={() => setRefundTarget(null)}
+          width={440}
+          footer={
+            <>
+              <button type="button" className={styles.secondaryButton} onClick={() => setRefundTarget(null)}>Cancel</button>
+              <button type="submit" form="education-refund-form" disabled={isPending || !refundReason.trim()} className={styles.dangerButton}>
+                {isPending ? "Refunding…" : `Refund ${money(refundTarget.amount)}`}
+              </button>
+            </>
+          }
+        >
+          <form id="education-refund-form" onSubmit={handleRefundSubmit} className={styles.modalForm}>
+            <p className={styles.modalText}>
+              Credits <strong>{money(refundTarget.amount)}</strong> back to <strong>{refundTarget.user?.phone || refundTarget.user?.email || "the customer"}</strong> and logs it.
             </p>
-
-            <form onSubmit={handleRefundSubmit} style={{ display: "grid", gap: "14px", marginTop: "16px" }}>
-              <div className={styles.fieldGroup}>
-                <label>Refund Reason (Required for Audit Trail)</label>
-                <input
-                  type="text"
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  placeholder="e.g. Invalid PIN code issued by provider"
-                  required
-                />
-              </div>
-
-              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "8px" }}>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => setRefundTarget(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={styles.primaryButton}
-                  style={{ background: "#dc2626", borderColor: "#dc2626" }}
-                  disabled={isPending}
-                >
-                  {isPending ? "Refunding..." : "Confirm & Execute Refund"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <label className={styles.fieldGroup}>
+              <span>Reason (logged)</span>
+              <textarea rows={3} value={refundReason} onChange={(e) => setRefundReason(e.target.value)} placeholder="Invalid PIN issued by provider" required />
+            </label>
+          </form>
+        </AdminModal>
+      ) : null}
     </div>
   );
 }
-

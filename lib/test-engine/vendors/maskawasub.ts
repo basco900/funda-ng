@@ -25,7 +25,7 @@ async function call(path: string, init?: RequestInit) {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = providerMessage(payload, `Maskawasub returned HTTP ${response.status}.`);
-    throw new ProviderRequestError(message, response.status >= 400 && response.status < 500);
+    throw new ProviderRequestError(message, response.status >= 400 && response.status < 500 && ![408, 409, 429].includes(response.status));
   }
   return payload;
 }
@@ -173,11 +173,6 @@ export const maskawasub: VtuVendor = {
       const isSuccess = statusStr === "successful" || statusStr === "success" || payload.status === true;
       const isFailed = statusStr === "failed" || statusStr === "error" || payload.status === false;
 
-      if (isFailed && !isSuccess) {
-        const msg = payload.msg || payload.message || payload.error || "Maskawasub recharge PIN generation failed.";
-        throw new ProviderRequestError(msg, true);
-      }
-
       const rawPins = Array.isArray(payload.data_pin)
         ? payload.data_pin
         : Array.isArray(payload.pins)
@@ -188,7 +183,7 @@ export const maskawasub: VtuVendor = {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pins: RechargePinItem[] = rawPins.map((item: any) => {
-        const pinCode = String(item?.pin ?? item?.fields?.pin ?? item?.code ?? "").trim();
+        const pinCode = String(typeof item === "string" ? item : item?.pin ?? item?.fields?.pin ?? item?.code ?? "").trim();
         const serial = item?.serial ?? item?.fields?.serial ?? item?.pk ? String(item?.serial ?? item?.fields?.serial ?? item?.pk) : undefined;
         return {
           pin: pinCode,
@@ -200,9 +195,9 @@ export const maskawasub: VtuVendor = {
       }).filter((p: RechargePinItem) => Boolean(p.pin));
 
       return {
-        status: isSuccess ? "successful" : "pending",
+        status: isSuccess ? "successful" : isFailed ? "failed" : "pending",
         reference: input.reference,
-        providerReference: String(payload.id || payload.ident || payload.reference || input.reference),
+        providerReference: payload.id || payload.ident || payload.reference ? String(payload.id || payload.ident || payload.reference) : undefined,
         message: payload.message || payload.msg || `${quantity}x ₦${unitValue} ${network.toUpperCase()} recharge PIN generated via Maskawasub.`,
         pins,
         raw: payload,

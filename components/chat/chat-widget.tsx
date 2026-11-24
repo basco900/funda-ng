@@ -43,6 +43,17 @@ export default function ChatWidget() {
   const [isSending, setIsSending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  useEffect(() => {
+    const openRechargeSupport = (event: Event) => {
+      const reference = (event as CustomEvent<{ reference?: unknown }>).detail?.reference;
+      if (typeof reference !== "string" || reference.length > 160) return;
+      setInputText(`I need help with recharge-card order ${reference}. `);
+      setIsOpen(true);
+    };
+    window.addEventListener("funda:recharge-support", openRechargeSupport);
+    return () => window.removeEventListener("funda:recharge-support", openRechargeSupport);
+  }, []);
+
   // Intake state for first-time visitors
   const [userName, setUserName] = useState("");
   const [userPhone, setUserPhone] = useState("");
@@ -278,6 +289,7 @@ export default function ChatWidget() {
       {/* ---------------------------------------------------------------- */}
       {isOpen && (
         <div
+          data-funda-chat
           style={{
             position: "fixed",
             bottom: "96px",
@@ -668,6 +680,7 @@ export default function ChatWidget() {
       {/* ---------------------------------------------------------------- */}
       <button
         type="button"
+        data-funda-chat
         onClick={() => {
           setIsOpen((prev) => !prev);
           if (!isOpen) setUnreadCount(0);

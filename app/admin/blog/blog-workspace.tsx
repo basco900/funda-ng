@@ -8,6 +8,7 @@ import AdminIcon from "../(console)/admin-icon";
 import { AdminConfirm, AdminFeedback } from "../(console)/admin-ui";
 import { deleteBlogPost, togglePostStatus } from "./actions";
 import styles from "../admin.module.css";
+import { FilterPicker, statusOptionsFrom } from "@/components/admin/list-controls";
 
 export type BlogPostRow = {
   id: string;
@@ -73,7 +74,7 @@ export default function BlogWorkspace({ posts, categories, totalCommentsCount }:
       const res = await togglePostStatus(post.id, post.status);
       if (res.success && res.newStatus) {
         setItems((prev) =>
-          prev.map((p) => (p.id === post.id ? { ...p, status: res.newStatus as any } : p))
+          prev.map((p) => (p.id === post.id ? { ...p, status: res.newStatus as BlogPostRow["status"] } : p))
         );
         setFeedback({
           type: "success",
@@ -168,38 +169,14 @@ export default function BlogWorkspace({ posts, categories, totalCommentsCount }:
                 <h2>Published & Draft Posts</h2>
                 <span className={styles.countPill}>{filteredPosts.length}</span>
               </div>
-              <p className={styles.directorySub}>
-                Manage articles, featured media, live publishing, and AI content generation.
-              </p>
             </div>
 
             <div className={styles.directoryTools}>
               {/* Category filter */}
-              <select
-                className={styles.compactSelect}
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                aria-label="Filter by category"
-              >
-                <option value="all">All Categories</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.slug}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <FilterPicker value={categoryFilter === "all" ? "" : categoryFilter} onChange={(value) => setCategoryFilter(value || "all")} options={categories.map((c) => ({ value: c.slug, label: c.name }))} allLabel="All categories" />
 
               {/* Status filter */}
-              <select
-                className={styles.compactSelect}
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                aria-label="Filter by status"
-              >
-                <option value="all">All Statuses</option>
-                <option value="published">Published</option>
-                <option value="draft">Drafts</option>
-              </select>
+              <FilterPicker value={statusFilter === "all" ? "" : statusFilter} onChange={(value) => setStatusFilter(value || "all")} options={statusOptionsFrom(items, (post) => post.status)} allLabel="All statuses" width={150} />
 
               {/* Search input */}
               <label className={styles.directorySearch}>
@@ -346,11 +323,9 @@ export default function BlogWorkspace({ posts, categories, totalCommentsCount }:
                     </td>
 
                     <td>
-                      <div style={{ fontSize: "12px" }}>
-                        <span>👁 {post.views_count.toLocaleString()}</span>
-                        <span style={{ marginLeft: "8px", color: "var(--admin-muted)" }}>
-                          ♥ {post.likes_count}
-                        </span>
+                      <div className={styles.cellValue}>
+                        <strong>{post.views_count.toLocaleString("en-NG")} views</strong>
+                        <small>{post.likes_count.toLocaleString("en-NG")} likes</small>
                       </div>
                     </td>
 

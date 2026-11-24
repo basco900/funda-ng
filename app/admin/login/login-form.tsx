@@ -2,8 +2,8 @@
 
 import { useActionState, useState } from "react";
 import { loginAdmin, type AdminLoginState } from "./actions";
-import AdminIcon from "../(console)/admin-icon";
-import styles from "../admin.module.css";
+import LoginIcon from "./login-icon";
+import styles from "./login.module.css";
 
 const initialState: AdminLoginState = {};
 
@@ -16,7 +16,7 @@ export default function AdminLoginForm() {
       <div className={styles.loginFieldRow}>
         <label htmlFor="admin-email">Work email</label>
         <div className={styles.loginControl}>
-          <span className={styles.loginIconTile} aria-hidden="true"><AdminIcon name="mail" /></span>
+          <span className={styles.loginIconTile} aria-hidden="true"><LoginIcon name="mail" /></span>
           <input
             id="admin-email"
             name="email"
@@ -33,7 +33,7 @@ export default function AdminLoginForm() {
       <div className={styles.loginFieldRow}>
         <label htmlFor="admin-password">Password</label>
         <div className={styles.loginControl}>
-          <span className={styles.loginIconTile} aria-hidden="true"><AdminIcon name="lock" /></span>
+          <span className={styles.loginIconTile} aria-hidden="true"><LoginIcon name="lock" /></span>
           <input
             id="admin-password"
             name="password"
@@ -51,7 +51,7 @@ export default function AdminLoginForm() {
             aria-pressed={showPassword}
             onClick={() => setShowPassword((visible) => !visible)}
           >
-            <AdminIcon name={showPassword ? "eyeOff" : "eye"} />
+            <LoginIcon name={showPassword ? "eyeOff" : "eye"} />
           </button>
         </div>
       </div>
@@ -67,7 +67,7 @@ export default function AdminLoginForm() {
         ) : (
           <>
             Login
-            <span className={styles.submitIcon} aria-hidden="true"><AdminIcon name="arrowUpRight" /></span>
+            <span className={styles.submitIcon} aria-hidden="true"><LoginIcon name="arrowUpRight" /></span>
           </>
         )}
       </button>

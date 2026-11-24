@@ -31,6 +31,7 @@ export default async function DashboardPage() {
     { data: virtualAccountData },
     { data: notificationsData },
     { data: latestPendingFunding },
+    { data: cashbackEarned },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -45,7 +46,7 @@ export default async function DashboardPage() {
     supabase.from("wallets").select("available_balance").eq("user_id", user.id).maybeSingle(),
     supabase
       .from("service_transactions")
-      .select("id, internal_reference, service_type, destination, amount, cashback_amount, status, metadata, created_at, provider_reference")
+      .select("id, internal_reference, service_type, destination, amount, discount_amount, cashback_amount, status, metadata, created_at, provider_reference")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(40),
@@ -76,6 +77,7 @@ export default async function DashboardPage() {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    admin.rpc("customer_cashback_total", { p_user_id: user.id }),
   ]);
 
   const formatTxTime = (iso: string) => {
@@ -92,8 +94,17 @@ export default async function DashboardPage() {
     const { dateStr, timeStr, ts } = formatTxTime(tx.created_at);
     const metaObj = (tx.metadata as {
       productName?: string;
+      listPrice?: number;
+      discountAmount?: number;
+      couponCode?: string;
       pins?: Array<{ pin: string; serial?: string; amount: number; network: string; dialCode: string }>;
       pins_encrypted?: string;
+      mode?: "vtu" | "epin";
+      quantity?: number;
+      unitAmount?: number;
+      faceValue?: number;
+      deliveryStatus?: string;
+      pinCount?: number;
     } | null) || null;
 
     return {
@@ -104,16 +115,20 @@ export default async function DashboardPage() {
         category: (tx.service_type || "data") as "data" | "electricity" | "airtime" | "tv" | "funding" | "internet",
         type: "debit" as const,
         amount: Number(tx.amount || 0),
+        originalAmount: typeof metaObj?.listPrice === "number" ? metaObj.listPrice : undefined,
+        discountAmount: typeof metaObj?.discountAmount === "number" ? metaObj.discountAmount : undefined,
+        couponCode: metaObj?.couponCode || undefined,
         date: dateStr,
         time: timeStr,
-        status: tx.status === "successful" ? "completed" as const : tx.status === "failed" ? "failed" as const : "processing" as const,
+        status: tx.status === "successful" ? "completed" as const : ["failed", "refunded", "reversed", "cancelled"].includes(tx.status) ? "failed" as const : "processing" as const,
         meta: tx.destination || "",
         reference: tx.internal_reference,
         createdAt: tx.created_at,
         providerReference: tx.provider_reference || undefined,
-        cashback: tx.cashback_amount && tx.cashback_amount > 0 ? `+₦${tx.cashback_amount} cashback` : undefined,
+        cashback: tx.status === "successful" && tx.cashback_amount > 0 ? `+₦${tx.cashback_amount} cashback` : undefined,
         // Legacy rows stored plaintext PINs; new rows keep them encrypted at rest.
-        pins: decryptPins(metaObj?.pins_encrypted) ?? metaObj?.pins,
+        pins: metaObj?.mode === "epin" ? undefined : decryptPins(metaObj?.pins_encrypted) ?? metaObj?.pins,
+        ...(metaObj?.mode === "epin" ? { mode: "epin" as const, quantity: metaObj.quantity, unitAmount: metaObj.unitAmount, faceValue: metaObj.faceValue, originalAmount: metaObj.faceValue, discountAmount: Number(tx.discount_amount), deliveryStatus: metaObj.deliveryStatus, pinCount: metaObj.pinCount } : {}),
       },
     };
   });
@@ -246,6 +261,7 @@ export default async function DashboardPage() {
         timezone: settings?.timezone || "Africa/Lagos",
       }}
       initialWalletBalance={Number(wallet?.available_balance ?? 0)}
+      initialCashbackEarned={Number(cashbackEarned ?? 0)}
       initialTransactions={initialTransactions}
       initialNotifications={notificationsData ?? []}
         initialVirtualAccount={virtualAccountData ?? null}

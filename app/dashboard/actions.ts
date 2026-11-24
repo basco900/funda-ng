@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createAdminClient } from "../../lib/supabase/admin";
 import { createClient } from "../../lib/supabase/server";
+import { isSamePasswordError } from "../../lib/auth/onboarding";
 
 export type AccountActionResult = { ok: true; message: string } | { ok: false; message: string };
 
@@ -128,7 +129,9 @@ export async function changeAccountPassword(input: unknown): Promise<AccountActi
     password: parsed.data.password,
     current_password: parsed.data.currentPassword,
   });
-  if (error) {
+  const keptSameVerifiedPassword =
+    isSamePasswordError(error) && parsed.data.currentPassword === parsed.data.password;
+  if (error && !keptSameVerifiedPassword) {
     const needsReauthentication = error.message.toLowerCase().includes("reauth");
     return {
       ok: false,

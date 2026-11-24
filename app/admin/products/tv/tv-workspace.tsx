@@ -6,6 +6,8 @@ import AdminIcon from "../../(console)/admin-icon";
 import AdminSelect from "../../(console)/admin-select";
 import { AdminConfirm, AdminFeedback, AdminModal, AdminSwitch } from "../../(console)/admin-ui";
 import styles from "../../admin.module.css";
+import { FilterPicker, PurchaseStatusFilter, statusOptionsFrom } from "@/components/admin/list-controls";
+import type { PurchaseFilter } from "@/lib/admin/purchases";
 import {
   saveCableTvConfig,
   bulkUpdateCableTvConfigs,
@@ -77,14 +79,17 @@ export default function CableTvWorkspace({
   tvPackages,
   providers,
   recentTransactions,
+  purchaseFilter,
 }: {
   tvConfigs: TvConfigRow[];
   tvPackages: TvPackageRow[];
   providers: ProviderRow[];
   recentTransactions: TransactionRow[];
+  purchaseFilter?: PurchaseFilter;
 }) {
   const [activeTab, setActiveTab] = useState<"operators" | "packages" | "tester" | "transactions">("operators");
   const [isPending, startTransition] = useTransition();
+  const [packageStatus, setPackageStatus] = useState("");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Edit Single Operator Modal
@@ -249,7 +254,9 @@ export default function CableTvWorkspace({
     });
   }
 
+  const packageState = (pkg: TvPackageRow) => (pkg.is_active ? "active" : "disabled");
   const filteredPackages = tvPackages.filter((p) => {
+    if (packageStatus && packageState(p) !== packageStatus) return false;
     if (packageFilterOperator !== "all" && p.operator_code !== packageFilterOperator) return false;
     if (packageSearch) {
       const q = packageSearch.toLowerCase();
@@ -294,46 +301,31 @@ export default function CableTvWorkspace({
       {feedback ? <AdminFeedback tone={feedback.type} text={feedback.text} onClose={() => setFeedback(null)} /> : null}
 
       <section className={styles.workspacePanel}>
-        <div className={styles.directoryHeader}>
-          <div className={styles.directoryTop}>
-            <div className={styles.directoryTitle}>
-              <h2>{tabs.find((tab) => tab.id === activeTab)?.label}</h2>
-              {activeTab === "packages" ? <span className={styles.countPill}>{filteredPackages.length}</span> : null}
-              {activeTab === "operators" ? <span className={styles.countPill}>{tvConfigs.length}</span> : null}
-              {activeTab === "transactions" ? <span className={styles.countPill}>{recentTransactions.length}</span> : null}
+        <div className={styles.directoryHeader} data-tabbed>
+          <nav className={styles.segmentedTabs} aria-label="Cable TV sections">
+            {tabs.map((tab) => (
+              <button key={tab.id} type="button" className={styles.networkUnderlineTab} data-active={activeTab === tab.id} onClick={() => setActiveTab(tab.id)}>
+                <AdminIcon name={tab.icon} />
+                {tab.label}
+                {"count" in tab ? <span className={styles.countPill}>{tab.count}</span> : null}
+              </button>
+            ))}
+          </nav>
+          {activeTab === "packages" ? (
+            <div className={styles.directoryTools}>
+              <label className={styles.directorySearch}>
+                <AdminIcon name="search" />
+                <input placeholder="Search bouquets" value={packageSearch} onChange={(e) => setPackageSearch(e.target.value)} />
+              </label>
+              <AdminSelect
+                value={packageFilterOperator}
+                onValueChange={setPackageFilterOperator}
+                options={[{ value: "all", label: "All operators", description: String(tvPackages.length) }, ...OPERATOR_OPTIONS.map((o) => ({ value: o.value, label: o.label, description: String(packageCount(o.value)) }))]}
+              />
+              <FilterPicker value={packageStatus} onChange={setPackageStatus} options={statusOptionsFrom(tvPackages, packageState)} allLabel="All statuses" width={150} />
             </div>
-            {activeTab === "packages" ? (
-              <div className={styles.directoryTools}>
-                <label className={styles.directorySearch}>
-                  <AdminIcon name="search" />
-                  <input placeholder="Search bouquets..." value={packageSearch} onChange={(e) => setPackageSearch(e.target.value)} />
-                </label>
-                <AdminSelect
-                  value={packageFilterOperator}
-                  onValueChange={setPackageFilterOperator}
-                  options={[
-                    { value: "all", label: `All operators (${tvPackages.length})` },
-                    ...OPERATOR_OPTIONS.map((o) => ({ value: o.value, label: `${o.label} (${packageCount(o.value)})` })),
-                  ]}
-                />
-              </div>
-            ) : null}
-          </div>
-        <nav className={styles.segmentedTabs} aria-label="Cable TV sections">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={styles.networkUnderlineTab}
-              data-active={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <AdminIcon name={tab.icon} />
-              {tab.label}
-              {"count" in tab ? <span className={styles.countPill}>{tab.count}</span> : null}
-            </button>
-          ))}
-        </nav>
+          ) : null}
+          {activeTab === "transactions" && purchaseFilter ? <PurchaseStatusFilter filter={purchaseFilter} /> : null}
         </div>
 
         {activeTab === "operators" ? (
@@ -341,19 +333,20 @@ export default function CableTvWorkspace({
             {tvConfigs.map((config) => (
               <article key={config.operator_code} className={styles.operatorCard} data-active={config.is_active}>
                 <header>
-                  <div>
-                    <span className={styles.subtleChip}>{config.operator_code}</span>
-                    <h3>{config.operator_name}</h3>
+                  <span className={styles.operatorMark}>{config.operator_name.slice(0, 2).toUpperCase()}</span>
+                  <div className={styles.operatorName}>
+                    <h3>{config.operator_name.replace(/\s*\(.*\)$/, "")}</h3>
+                    <small>{config.operator_code}</small>
                   </div>
                   <span className={styles.statusPill} data-status={config.is_active ? "live" : "paused"}>
-                    {config.is_active ? "Live" : "Maintenance"}
+                    {config.is_active ? "Live" : "Paused"}
                   </span>
                 </header>
                 <dl className={styles.operatorStats}>
                   <div><dt>Primary</dt><dd>{config.primary_provider}</dd></div>
                   <div><dt>Fallback</dt><dd>{config.fallback_provider || "None"}</dd></div>
-                  <div><dt>Fee</dt><dd>₦{config.convenience_fee}</dd></div>
-                  <div><dt>Cashback</dt><dd className={styles.cellAccent}>{config.cashback_percentage}%</dd></div>
+                  <div><dt>Fee</dt><dd>₦{Number(config.convenience_fee).toLocaleString("en-NG")}</dd></div>
+                  <div><dt>Cashback</dt><dd>{config.cashback_percentage}%</dd></div>
                 </dl>
                 {config.maintenance_notice ? <p className={styles.noticeLine}>{config.maintenance_notice}</p> : null}
                 <button type="button" className={styles.secondaryButton} onClick={() => setEditingConfig(config)}>
@@ -536,7 +529,7 @@ export default function CableTvWorkspace({
                         </div>
                       </td>
                       <td data-align="right">
-                        {tx.status !== "failed" ? (
+                        {!["failed", "refunded", "reversed"].includes(tx.status) ? (
                           <button
                             type="button"
                             className={styles.textAction}

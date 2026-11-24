@@ -12,6 +12,7 @@ import { cn } from "../../../lib/utils";
 import { AdminBreadcrumbs } from "../../../components/admin/breadcrumbs";
 import { signOutAdmin } from "../actions";
 import AdminIcon from "./admin-icon";
+import "../admin-theme.css";
 
 const GROUP_ICONS: Record<string, string> = {
   Products: "catalogue",
@@ -66,10 +67,13 @@ export default function AdminShell({ admin, children }: { admin: AdminSession; c
   const activeGroup = groups.find((group) => group.items.some((item) => isActivePath(pathname, item.href)))?.label;
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => (activeGroup ? { [activeGroup]: true } : {}));
 
-  useEffect(() => {
-    if (activeGroup) setOpenGroups((open) => (open[activeGroup] ? open : { ...open, [activeGroup]: true }));
+  // On navigation: open the active group and close the mobile drawer (state adjusted during render).
+  const [seenPath, setSeenPath] = useState(pathname);
+  if (seenPath !== pathname) {
+    setSeenPath(pathname);
     setMobileOpen(false);
-  }, [activeGroup, pathname]);
+    if (activeGroup && !openGroups[activeGroup]) setOpenGroups((open) => ({ ...open, [activeGroup]: true }));
+  }
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -135,172 +139,123 @@ export default function AdminShell({ admin, children }: { admin: AdminSession; c
   };
 
   const firstName = admin.fullName.split(/\s+/)[0] || "Admin";
-  const showLabels = !collapsed || mobileOpen;
   const [overview, ...collapsibleGroups] = groups;
 
-  return (
-    <div
-      data-admin-shell
-      className="flex min-h-[100svh] w-full overflow-visible bg-[#f7f6fb] font-sans lg:h-dvh lg:min-h-0 lg:overflow-hidden text-zinc-900"
-    >
-      {/* Mobile Backdrop */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs lg:hidden animate-in fade-in duration-200"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
+  const compact = collapsed && !mobileOpen;
+  const iconButton =
+    "flex h-9 w-9 items-center justify-center rounded-[9px] border border-a-line bg-a-surface text-zinc-500 transition hover:border-primary/25 hover:bg-primary/[0.05] hover:text-primary";
 
-      {/* Sidebar (Jobly Africa exact styling) */}
+  return (
+    <div data-admin-shell className="flex h-dvh w-full overflow-hidden bg-a-paper text-zinc-900">
+      {mobileOpen && <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} aria-hidden="true" />}
+
       <aside
+        data-font="sans"
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex min-h-0 flex-col border-r border-zinc-200/80 bg-white font-sans shadow-lg transition-all duration-300 ease-in-out lg:relative lg:inset-y-auto lg:h-full lg:translate-x-0 lg:shadow-none",
-          collapsed ? "lg:w-[72px]" : "lg:w-[240px]",
+          "fixed inset-y-0 left-0 z-50 flex min-h-0 flex-col border-r border-a-line bg-a-surface transition-all duration-300 ease-in-out lg:relative lg:inset-y-auto lg:h-full lg:translate-x-0",
+          collapsed ? "lg:w-[64px]" : "lg:w-[220px]",
           "w-[min(280px,calc(100vw-2.5rem))]",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        {/* Sidebar Header */}
-        <div
-          className={cn(
-            "flex h-16 items-center flex-shrink-0",
-            collapsed ? "justify-center px-1.5" : "justify-between px-3.5",
-          )}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-7.5 w-7.5 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-primary text-white font-bold text-xs tracking-tight">
-              f.
-            </div>
-            {showLabels && (
-              <div className="flex flex-col overflow-hidden">
-                <h1 className="text-[14px] font-bold tracking-tight text-zinc-900 leading-none truncate">
-                  Funda Admin
-                </h1>
-              </div>
-            )}
-          </div>
+        <div className={cn("flex h-16 flex-shrink-0 items-center", compact ? "justify-center px-1.5" : "justify-between px-3.5")}>
+          <Link href="/admin/dashboard" className="flex min-w-0 items-center gap-2" aria-label="Funda Admin">
+            <span className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[8px] bg-primary text-[12px] font-semibold tracking-tight text-white">f.</span>
+            {!compact && <span className="truncate text-[14px] leading-none font-semibold tracking-tight text-zinc-900">Funda Admin</span>}
+          </Link>
 
-          {/* Desktop Collapse Button */}
           {!collapsed && (
             <button
+              type="button"
               onClick={() => setCollapsed(true)}
-              aria-label="Collapse admin navigation"
-              className="hidden lg:flex h-7 w-7 items-center justify-center rounded-[7px] border border-primary/20 bg-primary/[0.07] text-primary transition-colors hover:border-primary/35 hover:bg-primary/[0.13]"
+              aria-label="Collapse navigation"
+              title="Collapse navigation"
+              className="hidden h-7 w-7 items-center justify-center rounded-[7px] border border-primary/20 bg-primary/[0.07] text-primary transition-colors hover:border-primary/35 hover:bg-primary/[0.13] lg:flex"
             >
-              <AdminIcon name="chevronsLeft" className="h-4 w-4" />
+              <AdminIcon name="chevronsLeft" className="h-4 w-4" strokeWidth={1.8} />
             </button>
           )}
 
-          {/* Mobile Close Button */}
           <button
+            type="button"
             onClick={() => setMobileOpen(false)}
             aria-label="Close navigation"
-            className="lg:hidden flex h-7 w-7 items-center justify-center rounded-[6px] text-zinc-400 hover:bg-zinc-100"
+            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-zinc-400 hover:bg-zinc-100 lg:hidden"
           >
-            <AdminIcon name="close" className="h-4 w-4" />
+            <AdminIcon name="close" className="h-4 w-4" strokeWidth={1.5} />
           </button>
         </div>
 
-        {/* Desktop Expand Trigger when collapsed */}
         {collapsed && (
           <button
+            type="button"
             onClick={() => setCollapsed(false)}
-            aria-label="Expand admin navigation"
-            className="absolute -right-3.5 top-[4.25rem] z-50 hidden h-7 w-7 items-center justify-center rounded-[7px] border border-primary/25 bg-primary text-white shadow-[0_4px_12px_rgba(102,0,51,0.2)] transition hover:bg-primary/90 lg:flex"
+            aria-label="Expand navigation"
+            title="Expand navigation"
+            className="absolute top-[4.25rem] -right-3.5 z-50 hidden h-7 w-7 items-center justify-center rounded-[7px] border border-primary/20 bg-a-primary-soft text-primary transition hover:bg-primary/[0.14] lg:flex"
           >
-            <AdminIcon name="chevronsRight" className="h-3.5 w-3.5" />
+            <AdminIcon name="chevronsRight" className="h-3.5 w-3.5" strokeWidth={1.8} />
           </button>
         )}
 
-        {/* Nav list */}
-        <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-1" aria-label="Admin navigation">
+        <nav aria-label="Admin navigation" className="flex-1 space-y-1 overflow-y-auto px-2 py-2">
           {overview?.items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "group flex items-center gap-2 rounded-[8px] font-medium transition-all outline-hidden px-2.5 py-2 text-[13px]",
-                isActivePath(pathname, item.href)
-                  ? "bg-primary/[0.08] text-primary font-bold"
-                  : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900",
-                collapsed && !mobileOpen && "justify-center px-1",
-              )}
-              aria-label={collapsed && !mobileOpen ? item.label : undefined}
-            >
-              <AdminIcon
-                name={item.icon}
-                className={cn(
-                  "h-4 w-4 shrink-0 transition-colors",
-                  isActivePath(pathname, item.href) ? "text-primary" : "text-zinc-400 group-hover:text-zinc-700",
-                )}
-              />
-              {showLabels && <span className="truncate">{item.label}</span>}
-            </Link>
+            <NavItem key={item.href} href={item.href} icon={item.icon} label={item.label} badge={item.badge} compact={compact} active={isActivePath(pathname, item.href)} />
           ))}
 
           {collapsibleGroups.map((group) => {
             const groupActive = group.label === activeGroup;
-            const open = Boolean(openGroups[group.label]) && showLabels;
+            const open = Boolean(openGroups[group.label]) && !compact;
+            const icon = GROUP_ICONS[group.label] ?? group.items[0]?.icon ?? "grid";
 
             return (
               <div key={group.label} className="flex flex-col gap-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!showLabels) {
+                {compact ? (
+                  <button
+                    type="button"
+                    title={group.label}
+                    aria-label={group.label}
+                    onClick={() => {
                       setCollapsed(false);
                       setOpenGroups((state) => ({ ...state, [group.label]: true }));
-                      return;
-                    }
-                    setOpenGroups((state) => ({ ...state, [group.label]: !state[group.label] }));
-                  }}
-                  className={cn(
-                    "flex w-full items-center justify-between rounded-[8px] px-2.5 py-2 text-[13px] font-medium transition-all outline-hidden group",
-                    groupActive ? "bg-primary/[0.08] text-primary font-bold" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900",
-                    collapsed && !mobileOpen && "justify-center px-1.5",
-                  )}
-                  aria-label={collapsed && !mobileOpen ? group.label : undefined}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <AdminIcon
-                      name={GROUP_ICONS[group.label] ?? group.items[0]?.icon ?? "grid"}
-                      className={cn(
-                        "h-4 w-4 shrink-0 transition-colors",
-                        groupActive ? "text-primary" : "text-zinc-400 group-hover:text-zinc-700",
-                      )}
-                    />
-                    {showLabels && <span className="truncate">{group.label}</span>}
-                  </div>
-                  {showLabels && (
-                    <AdminIcon
-                      name={open ? "chevronUp" : "chevronDown"}
-                      className="h-3.5 w-3.5 opacity-50 shrink-0"
-                    />
-                  )}
-                </button>
+                    }}
+                    className={navItemClass({ active: groupActive, compact: true })}
+                  >
+                    <AdminIcon name={icon} className={navIconClass({ active: groupActive, compact: true })} strokeWidth={1.5} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setOpenGroups((state) => ({ ...state, [group.label]: !state[group.label] }))}
+                    aria-expanded={open}
+                    className={cn(navItemClass({ active: groupActive }), "justify-between")}
+                  >
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <AdminIcon name={icon} className={navIconClass({ active: groupActive })} strokeWidth={1.5} />
+                      <span className="truncate">{group.label}</span>
+                    </span>
+                    <AdminIcon name={open ? "chevronUp" : "chevronDown"} className="h-3.5 w-3.5 shrink-0 opacity-50" strokeWidth={1.5} />
+                  </button>
+                )}
 
                 {open && (
-                  <div className="relative ml-3 mt-0.5 mb-0.5 flex flex-col gap-1 border-l border-zinc-200/60 pl-3">
+                  <div className="relative mt-0.5 mb-0.5 ml-3.5 flex flex-col gap-0.5 border-l border-zinc-200/70 pl-3">
                     {group.items.map((item) => {
-                      const itemActive = isActivePath(pathname, item.href);
+                      const hasMoreSpecificSibling = group.items.some(
+                        (other) =>
+                          other.href !== item.href &&
+                          other.href.startsWith(`${item.href}/`) &&
+                          isActivePath(pathname, other.href),
+                      );
                       return (
-                        <Link
+                        <NavItem
                           key={item.href}
                           href={item.href}
-                          className={cn(
-                            "group flex items-center justify-between rounded-[8px] px-2 py-1.5 text-[12px] font-medium transition-all outline-hidden",
-                            itemActive
-                              ? "bg-primary/[0.08] text-primary font-bold"
-                              : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900",
-                          )}
-                        >
-                          <span className="truncate">{item.label}</span>
-                          {item.badge && (
-                            <span className="inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.2 text-[9.5px] font-bold text-primary">
-                              {item.badge}
-                            </span>
-                          )}
-                        </Link>
+                          label={item.label}
+                          badge={item.badge}
+                          size="sm"
+                          active={!hasMoreSpecificSibling && isActivePath(pathname, item.href)}
+                        />
                       );
                     })}
                   </div>
@@ -310,62 +265,49 @@ export default function AdminShell({ admin, children }: { admin: AdminSession; c
           })}
         </nav>
 
-        {/* Sidebar Footer */}
-        <div className="p-2 border-t border-zinc-200/80">
-          <Link
-            href="/admin/settings"
-            className={cn(
-              "group flex items-center gap-2 rounded-[8px] px-2.5 py-2 text-[13px] font-medium transition-all text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900",
-              collapsed && !mobileOpen && "justify-center px-1",
-            )}
-            aria-label={collapsed && !mobileOpen ? "Settings" : undefined}
-          >
-            <AdminIcon name="settings" className="h-4 w-4 text-zinc-400 group-hover:text-zinc-700 shrink-0" />
-            {showLabels && <span className="truncate">Settings</span>}
-          </Link>
+        <div className="mt-auto space-y-0.5 p-2">
+          <NavItem href="/admin/settings" icon="settings" label="Settings" compact={compact} active={pathname === "/admin/settings"} />
         </div>
       </aside>
 
-      {/* Main Content Column */}
-      <div className="flex min-h-[100svh] min-w-0 flex-1 flex-col overflow-visible lg:h-full lg:min-h-0 lg:overflow-hidden">
-        {/* Top Header (Jobly Africa exact styling) */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header
           ref={headerRef}
-          className="sticky top-0 z-30 flex h-14 min-h-14 w-full flex-none items-center justify-between border-b border-zinc-200/80 bg-white/95 px-3.5 font-sans shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] backdrop-blur-md transition-all sm:px-6 lg:bg-white/80"
+          data-font="sans"
+          className="sticky top-0 z-30 flex h-14 min-h-14 w-full flex-none items-center justify-between border-b border-a-line bg-a-surface/95 px-3.5 backdrop-blur-md sm:px-6 lg:bg-a-surface/80"
         >
-          {/* Left: Mobile Toggle & Breadcrumbs */}
-          <div className="flex items-center gap-4 w-auto min-w-0">
+          <div className="flex w-auto min-w-0 items-center gap-4">
             <button
+              type="button"
               onClick={() => setMobileOpen(true)}
-              aria-label="Open admin navigation"
-              className="!flex h-8 w-8 items-center justify-center rounded-[9px] border border-primary/25 bg-primary/[0.08] text-primary transition-all hover:border-primary/40 hover:bg-primary/[0.14] active:scale-95 lg:!hidden"
+              aria-label="Open navigation"
+              className="flex h-8 w-8 items-center justify-center rounded-[9px] border border-primary/25 bg-primary/[0.08] text-primary transition-all hover:border-primary/40 hover:bg-primary/[0.14] active:scale-95 lg:hidden"
             >
-              <AdminIcon name="chevronsRight" className="h-4 w-4" />
+              <AdminIcon name="chevronsRight" className="h-4 w-4" strokeWidth={1.8} />
             </button>
-
             <div className="hidden lg:block">
               <AdminBreadcrumbs />
             </div>
           </div>
 
-          {/* Center: Add to site button + dropdown */}
-          <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
+          <div className="absolute top-1/2 left-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
             <button
               type="button"
               onClick={() => setCreateOpen((open) => !open)}
-              aria-label="Create item"
+              aria-label="Create"
               aria-expanded={createOpen}
-              className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-primary text-white shadow-xs transition hover:bg-primary/90 active:scale-95"
+              title="Create"
+              className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-primary text-white transition hover:bg-primary/90 active:scale-95"
             >
-              <AdminIcon name="plus" className="h-4 w-4" />
+              <AdminIcon name="plus" className="h-4 w-4" strokeWidth={2.1} />
             </button>
-
             {createOpen && (
-              <div className="absolute left-1/2 top-full z-50 mt-2 w-[190px] -translate-x-1/2 rounded-[10px] border border-zinc-200 bg-white p-1.5 shadow-[0_14px_35px_rgba(31,18,46,0.14)] animate-in fade-in zoom-in-95 duration-150">
+              <div role="menu" className="a-menu absolute top-full left-1/2 z-50 mt-2 w-[190px] -translate-x-1/2 rounded-[8px] border border-a-line bg-a-surface p-1.5">
                 {CREATE_LINKS.map((link) => (
                   <Link
-                    key={link.label}
+                    key={link.href}
                     href={link.href}
+                    role="menuitem"
                     onClick={() => setCreateOpen(false)}
                     className="flex items-center rounded-[7px] px-3 py-2 text-[12px] font-semibold text-zinc-700 transition hover:bg-primary/[0.06] hover:text-primary"
                   >
@@ -376,147 +318,112 @@ export default function AdminShell({ admin, children }: { admin: AdminSession; c
             )}
           </div>
 
-          {/* Center-Right: Search Input */}
-          <div className="hidden flex-1 justify-end px-4 ml-auto mr-3 lg:flex lg:max-w-xl">
-            <div
-              className="hidden lg:block relative w-full max-w-[240px] group transition-all focus-within:max-w-[320px] cursor-pointer"
-              onClick={() => setPaletteOpen(true)}
-            >
-              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-400 group-focus-within:text-primary transition-colors">
-                <AdminIcon name="search" className="h-3.5 w-3.5" />
-              </div>
-              <input
-                readOnly
-                className="w-full h-8 pl-8 pr-12 rounded-[6px] border border-zinc-200/80 bg-zinc-50/70 text-[11px] font-medium placeholder:text-zinc-400 focus:ring-2 focus:ring-primary/15 focus:border-primary/30 focus:bg-white transition-all outline-hidden cursor-pointer"
-                placeholder="Search resources..."
-                type="text"
-              />
-            </div>
-          </div>
-
-          {/* Right: Actions, Theme, and User Avatar */}
           <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
-            <a
-              href="/"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="View site"
-              className="hidden h-9 w-9 items-center justify-center rounded-[9px] border border-zinc-200 bg-white text-zinc-500 transition hover:border-primary/25 hover:bg-primary/[0.05] hover:text-primary lg:flex"
-            >
-              <AdminIcon name="external" className="h-4 w-4" />
-            </a>
-
             <button
               type="button"
-              onClick={toggleTheme}
-              aria-label="Toggle color mode"
-              className="flex h-9 w-9 items-center justify-center rounded-[9px] border border-zinc-200 bg-white text-zinc-500 transition hover:border-primary/25 hover:bg-primary/[0.05] hover:text-primary"
+              onClick={() => setPaletteOpen(true)}
+              className="mr-1 hidden h-9 w-[240px] items-center gap-2.5 rounded-[8px] border border-a-line bg-a-surface pr-1.5 pl-3 text-left text-[13px] text-zinc-400 transition-colors hover:border-zinc-300 xl:flex"
             >
-              <AdminIcon name={resolved === "dark" ? "sun" : "moon"} className="h-4 w-4" />
+              <AdminIcon name="search" className="h-3.5 w-3.5 shrink-0" />
+              <span className="flex-1 truncate">Search</span>
+              <kbd className="rounded-[5px] border border-a-line bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-400">⌘K</kbd>
+            </button>
+            <button type="button" onClick={() => setPaletteOpen(true)} aria-label="Search" className={cn(iconButton, "xl:hidden")}>
+              <AdminIcon name="search" className="h-4 w-4" strokeWidth={1.8} />
             </button>
 
-            {/* Alerts Popover */}
+            <a href="/" target="_blank" rel="noreferrer" aria-label="View site" title="View site" className={cn(iconButton, "hidden lg:flex")}>
+              <AdminIcon name="external" className="h-4 w-4" strokeWidth={1.8} />
+            </a>
+
+            <button type="button" onClick={toggleTheme} aria-label={resolved === "dark" ? "Light mode" : "Dark mode"} title={resolved === "dark" ? "Light mode" : "Dark mode"} className={cn(iconButton, "hidden sm:flex")}>
+              <AdminIcon name={resolved === "dark" ? "sun" : "moon"} className="h-4 w-4" strokeWidth={1.8} />
+            </button>
+
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setAlertsOpen((open) => !open)}
-                aria-label="Alerts"
-                className="relative flex h-9 w-9 items-center justify-center rounded-[9px] border border-zinc-200 bg-white text-zinc-500 transition hover:border-primary/25 hover:bg-primary/[0.05] hover:text-primary"
+                aria-label={`Alerts, ${ALERTS.length} new`}
+                aria-expanded={alertsOpen}
+                className={cn(
+                  "relative flex h-9 w-9 items-center justify-center rounded-[9px] border bg-a-surface transition",
+                  alertsOpen ? "border-primary/30 bg-primary/[0.06] text-primary" : "border-a-line text-zinc-500 hover:border-primary/25 hover:bg-primary/[0.05] hover:text-primary",
+                )}
               >
-                <AdminIcon name="bell" className="h-4 w-4" />
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500" />
+                <AdminIcon name="bell" className="h-4 w-4" strokeWidth={1.8} />
+                <span className="absolute -top-1.5 -right-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary px-1 text-[10px] leading-none font-semibold text-white tabular-nums">
+                  {ALERTS.length}
+                </span>
               </button>
 
               {alertsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-72 rounded-[10px] bg-white p-2 border border-zinc-200/80 shadow-[0_14px_35px_rgba(31,18,46,0.14)] z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-100">
-                    <strong className="text-[13px] font-bold text-zinc-900">Alerts</strong>
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">3 new</span>
+                <div className="a-menu absolute top-full right-0 z-50 mt-2 flex w-[min(360px,calc(100vw-24px))] flex-col overflow-hidden rounded-[8px] border border-a-line bg-a-surface">
+                  <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+                    <h2 className="text-[15px] font-semibold tracking-[-0.02em] text-zinc-950">Alerts</h2>
+                    <span className="rounded-[6px] bg-primary/[0.08] px-1.5 text-[11px] leading-5 font-semibold text-primary tabular-nums">{ALERTS.length} New</span>
                   </div>
-                  <div className="py-1">
-                    <Link
-                      href="/admin/operations/pending"
-                      onClick={() => setAlertsOpen(false)}
-                      className="flex items-center justify-between px-3 py-2 text-[12px] font-medium text-zinc-700 hover:bg-zinc-50 rounded-[6px]"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-amber-500" /> Payments awaiting review
-                      </span>
-                      <small className="text-zinc-400">Now</small>
-                    </Link>
-                    <Link
-                      href="/admin/products/providers"
-                      onClick={() => setAlertsOpen(false)}
-                      className="flex items-center justify-between px-3 py-2 text-[12px] font-medium text-zinc-700 hover:bg-zinc-50 rounded-[6px]"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-rose-500" /> Provider balance low
-                      </span>
-                      <small className="text-zinc-400">8m</small>
-                    </Link>
-                    <Link
-                      href="/admin/settings/security"
-                      onClick={() => setAlertsOpen(false)}
-                      className="flex items-center justify-between px-3 py-2 text-[12px] font-medium text-zinc-700 hover:bg-zinc-50 rounded-[6px]"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-emerald-500" /> Security scan passed
-                      </span>
-                      <small className="text-zinc-400">42m</small>
-                    </Link>
+                  <div className="border-t border-a-line px-1.5 py-2">
+                    {ALERTS.map((alert) => (
+                      <Link
+                        key={alert.href}
+                        href={alert.href}
+                        onClick={() => setAlertsOpen(false)}
+                        className="flex items-center gap-3 rounded-[8px] px-2.5 py-2.5 transition-colors hover:bg-zinc-50"
+                      >
+                        <span className={cn("size-2 shrink-0 rounded-full", alert.dot)} />
+                        <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-zinc-800">{alert.title}</span>
+                        <span className="shrink-0 text-[11.5px] font-medium text-zinc-400 tabular-nums">{alert.time}</span>
+                      </Link>
+                    ))}
                   </div>
+                  <Link
+                    href="/admin/operations/live"
+                    onClick={() => setAlertsOpen(false)}
+                    className="flex h-11 shrink-0 items-center justify-center gap-1.5 border-t border-a-line text-[12.5px] font-semibold text-primary transition-colors hover:bg-primary/[0.04]"
+                  >
+                    Live Operations
+                    <AdminIcon name="arrowRight" className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
               )}
             </div>
 
-            {/* User Dropdown */}
             <div className="relative">
               <button
-                onClick={() => setProfileOpen(!profileOpen)}
-                className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-[9px] hover:bg-zinc-100 transition-colors"
+                type="button"
+                onClick={() => setProfileOpen((open) => !open)}
+                aria-label="Account menu"
+                aria-expanded={profileOpen}
+                className="flex items-center gap-2 rounded-[9px] py-1 pr-1 pl-2 transition-colors hover:bg-zinc-100"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white text-[10px] font-bold">
-                  {firstName.slice(0, 2).toUpperCase()}
-                </div>
-                <span className="hidden sm:inline text-[13px] font-bold text-zinc-800">
-                  {firstName}
-                </span>
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-white">{initials(admin.fullName || admin.email)}</span>
+                <span className="hidden text-[13px] font-semibold text-zinc-800 sm:inline">{firstName}</span>
               </button>
 
               {profileOpen && (
-                <div className="absolute right-0 top-full mt-2 w-56 rounded-[10px] bg-white p-1.5 border border-zinc-200/80 shadow-[0_14px_35px_rgba(31,18,46,0.14)] z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div role="menu" className="a-menu absolute top-full right-0 z-50 mt-2 w-56 rounded-[8px] border border-a-line bg-a-surface p-1.5">
                   <div className="px-3 py-2">
-                    <p className="text-[13px] font-bold text-zinc-900 truncate">
-                      {admin.fullName}
-                    </p>
-                    <p className="text-[11px] text-zinc-400 font-medium truncate mt-0.5">
-                      {admin.email}
-                    </p>
+                    <p className="truncate text-[13px] font-semibold text-zinc-900">{admin.fullName}</p>
+                    <p className="mt-0.5 truncate text-[11px] font-medium text-zinc-400">{admin.email}</p>
                   </div>
-                  <div className="h-px bg-zinc-100 my-1" />
-                  <Link
-                    href="/admin/settings"
-                    onClick={() => setProfileOpen(false)}
-                    className="flex w-full items-center gap-2 rounded-[7px] px-3 py-2 text-[13px] font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
-                  >
-                    <AdminIcon name="settings" className="h-3.5 w-3.5 text-zinc-400" />
+                  <div className="my-1 h-px bg-zinc-100" />
+                  <Link href="/admin/settings" role="menuitem" onClick={() => setProfileOpen(false)} className={menuRowClass}>
+                    <AdminIcon name="settings" className="h-3.5 w-3.5 text-zinc-400" strokeWidth={1.5} />
                     Settings
                   </Link>
-                  <Link
-                    href="/admin/settings/security"
-                    onClick={() => setProfileOpen(false)}
-                    className="flex w-full items-center gap-2 rounded-[7px] px-3 py-2 text-[13px] font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
-                  >
-                    <AdminIcon name="lock" className="h-3.5 w-3.5 text-zinc-400" />
+                  <button type="button" role="menuitem" onClick={toggleTheme} className={cn(menuRowClass, "sm:hidden")}>
+                    <AdminIcon name={resolved === "dark" ? "sun" : "moon"} className="h-3.5 w-3.5 text-zinc-400" strokeWidth={1.5} />
+                    {resolved === "dark" ? "Light Mode" : "Dark Mode"}
+                  </button>
+                  <Link href="/admin/settings/security" role="menuitem" onClick={() => setProfileOpen(false)} className={menuRowClass}>
+                    <AdminIcon name="lock" className="h-3.5 w-3.5 text-zinc-400" strokeWidth={1.5} />
                     Security
                   </Link>
                   <form action={signOutAdmin}>
-                    <button
-                      type="submit"
-                      className="flex w-full items-center gap-2 rounded-[7px] px-3 py-2 text-[13px] font-medium text-rose-600 transition-colors hover:bg-rose-50"
-                    >
-                      <AdminIcon name="logout" className="h-3.5 w-3.5" />
-                      Sign out
+                    <button type="submit" role="menuitem" className="flex w-full items-center gap-2 rounded-[7px] px-3 py-2 text-[13px] font-medium text-rose-600 transition-colors hover:bg-rose-50">
+                      <AdminIcon name="logout" className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      Sign Out
                     </button>
                   </form>
                 </div>
@@ -525,89 +432,128 @@ export default function AdminShell({ admin, children }: { admin: AdminSession; c
           </div>
         </header>
 
-        {/* Main Content Area (Jobly Africa exact padding and scroll container) */}
-        <main className="min-h-0 min-w-0 flex-1 overflow-visible overscroll-contain bg-[#f7f6fb] px-3.5 pb-8 pt-3.5 sm:px-5 sm:pb-10 sm:pt-5 md:px-10 md:pt-10 lg:overflow-x-hidden lg:overflow-y-auto lg:p-10">
-          {children}
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 pt-4 pb-24 sm:px-6 sm:pt-6 sm:pb-24 lg:p-10">
+          <div className="mx-auto w-full max-w-[1500px]">{children}</div>
         </main>
       </div>
 
-      {/* Global Command Palette */}
       {paletteOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-xs p-4 pt-[12vh] animate-in fade-in duration-150"
-          role="presentation"
-          onMouseDown={() => setPaletteOpen(false)}
-        >
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 p-4 pt-[12vh] backdrop-blur-[2px]" role="presentation" onMouseDown={() => setPaletteOpen(false)}>
           <div
-            className="w-full max-w-lg rounded-[12px] border border-zinc-200 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.18)] overflow-hidden"
+            className="a-menu w-full max-w-lg overflow-hidden rounded-[8px] border border-a-line bg-a-surface"
             role="dialog"
             aria-modal="true"
             aria-label="Search"
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center gap-2.5 border-b border-zinc-200 px-4 py-3">
-              <AdminIcon name="search" className="h-4 w-4 text-zinc-400 shrink-0" />
+            <div className="flex items-center gap-2.5 border-b border-a-line px-4 py-3">
+              <AdminIcon name="search" className="h-4 w-4 shrink-0 text-zinc-400" />
               <input
                 autoFocus
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search pages and records…"
-                className="w-full text-[13px] font-medium text-zinc-900 placeholder:text-zinc-400 outline-hidden bg-transparent"
+                placeholder="Search pages and records"
+                aria-label="Search pages and records"
+                className="w-full bg-transparent text-[14px] text-zinc-900 outline-none placeholder:text-zinc-400"
               />
-              <kbd className="rounded-[4px] border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-400">
-                Esc
-              </kbd>
+              <kbd className="rounded-[5px] border border-a-line bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-400">Esc</kbd>
             </div>
-            <div className="max-h-[360px] overflow-y-auto p-2">
-              <span className="block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                {query ? "Results" : "Jump to"}
-              </span>
-              {recordResults.map((item) => (
+            <div className="max-h-[360px] overflow-y-auto p-1.5">
+              {[...recordResults.map((item) => ({ key: `${item.type}:${item.id}`, href: item.href, title: item.title, detail: item.detail, icon: RECORD_ICONS[item.type] })), ...results.map((item) => ({ key: item.href, href: item.href, title: item.label, detail: item.description, icon: item.icon }))].map((item) => (
                 <button
                   type="button"
-                  key={`${item.type}:${item.id}`}
+                  key={item.key}
                   onClick={() => openResult(item.href)}
-                  className="flex w-full items-center justify-between gap-3 rounded-[7px] px-2.5 py-2 text-left hover:bg-primary/[0.06] hover:text-primary transition-colors group"
+                  className="group flex w-full items-center gap-3 rounded-[8px] px-2.5 py-2 text-left transition-colors hover:bg-primary/[0.06]"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-zinc-100 text-zinc-500 group-hover:bg-primary/10 group-hover:text-primary">
-                      <AdminIcon name={item.type === "customer" ? "users" : item.type === "transaction" ? "transactions" : item.type === "provider" ? "provider" : "catalogue"} className="h-3.5 w-3.5" />
-                    </span>
-                    <div className="min-w-0">
-                      <strong className="block text-[12.5px] font-semibold text-zinc-900 group-hover:text-primary truncate">{item.title}</strong>
-                      <small className="block text-[11px] text-zinc-400 truncate">{item.detail}</small>
-                    </div>
-                  </div>
-                  <span className="text-zinc-400 group-hover:text-primary text-[12px]">↗</span>
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-zinc-100 text-zinc-500 group-hover:bg-primary/10 group-hover:text-primary">
+                    <AdminIcon name={item.icon} className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13.5px] font-semibold text-zinc-900 group-hover:text-primary">{item.title}</span>
+                    <span className="block truncate text-[12px] text-zinc-500">{item.detail}</span>
+                  </span>
+                  <AdminIcon name="arrowRight" className="h-3.5 w-3.5 shrink-0 text-zinc-300 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
                 </button>
               ))}
-              {results.length || recordResults.length ? (
-                results.map((item) => (
-                  <button
-                    type="button"
-                    key={item.href}
-                    onClick={() => openResult(item.href)}
-                    className="flex w-full items-center justify-between gap-3 rounded-[7px] px-2.5 py-2 text-left hover:bg-primary/[0.06] hover:text-primary transition-colors group"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-zinc-100 text-zinc-500 group-hover:bg-primary/10 group-hover:text-primary">
-                        <AdminIcon name={item.icon} className="h-3.5 w-3.5" />
-                      </span>
-                      <div className="min-w-0">
-                        <strong className="block text-[12.5px] font-semibold text-zinc-900 group-hover:text-primary truncate">{item.label}</strong>
-                        <small className="block text-[11px] text-zinc-400 truncate">{item.description}</small>
-                      </div>
-                    </div>
-                    <span className="text-zinc-400 group-hover:text-primary text-[12px]">↗</span>
-                  </button>
-                ))
-              ) : (
-                <div className="p-6 text-center text-[12px] text-zinc-400">No results for “{query}”.</div>
-              )}
+              {!results.length && !recordResults.length && <p className="px-4 py-8 text-center text-[13px] text-zinc-400">No Results for “{query}”</p>}
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+const ALERTS = [
+  { title: "Payments awaiting review", href: "/admin/operations/pending", time: "Now", dot: "bg-amber-500" },
+  { title: "Provider balance low", href: "/admin/products/providers", time: "8m", dot: "bg-rose-500" },
+  { title: "Security scan passed", href: "/admin/settings/security", time: "42m", dot: "bg-emerald-500" },
+];
+
+const RECORD_ICONS: Record<AdminSearchResult["type"], string> = { customer: "users", transaction: "transactions", provider: "provider", product: "catalogue" };
+
+const menuRowClass =
+  "flex w-full items-center gap-2 rounded-[7px] px-3 py-2 text-[13px] font-medium text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900";
+
+function initials(value: string) {
+  const parts = value.trim().split(/[\s@.]+/).filter(Boolean);
+  if (parts.length === 0) return "A";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+}
+
+/* Jobly's shared rail styles (components/ui/sidebar-nav.ts), one source for every row. */
+function navItemClass({ active, compact, size = "default" }: { active?: boolean; compact?: boolean; size?: "default" | "sm" }) {
+  if (compact) {
+    return cn(
+      "group relative mx-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+      active
+        ? "text-primary after:absolute after:bottom-0.5 after:left-1/2 after:h-[2px] after:w-4 after:-translate-x-1/2 after:rounded-full after:bg-primary"
+        : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900",
+    );
+  }
+  if (size === "sm") return "group flex w-full items-center gap-2.5 rounded-[8px] px-2.5 py-1.5 leading-snug transition-colors hover:bg-zinc-50";
+  return cn(
+    "group flex w-full items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-[14.5px] font-medium transition-all",
+    active ? "bg-primary/[0.08] font-semibold text-primary" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900",
+  );
+}
+
+function navIconClass({ active, compact }: { active?: boolean; compact?: boolean }) {
+  return cn(
+    "shrink-0 transition-colors",
+    compact ? "h-[18px] w-[18px]" : "h-[17px] w-[17px]",
+    active ? "text-primary" : compact ? "text-current" : "text-zinc-400 group-hover:text-zinc-700",
+  );
+}
+
+function NavItem({ href, icon, label, badge, compact, active, size = "default" }: { href: string; icon?: string; label: string; badge?: string; compact?: boolean; active?: boolean; size?: "default" | "sm" }) {
+  return (
+    <Link href={href} aria-current={active ? "page" : undefined} title={compact ? label : undefined} aria-label={compact ? label : undefined} className={navItemClass({ active, compact, size })}>
+      {icon && <AdminIcon name={icon} className={navIconClass({ active, compact })} strokeWidth={1.5} />}
+      {!compact && (
+        <span
+          className={cn(
+            "truncate",
+            size === "sm" &&
+              cn(
+                "pb-[2px] text-[14px] transition-colors",
+                active
+                  ? "border-b border-primary/80 font-semibold text-primary"
+                  : "border-b border-transparent font-medium text-zinc-600 group-hover:text-zinc-900",
+              ),
+          )}
+        >
+          {label}
+        </span>
+      )}
+      {!compact && badge && (
+        <span title={badge} aria-label={badge} className="relative ml-auto grid size-4 shrink-0 place-items-center">
+          <span className="absolute size-2 animate-ping rounded-full bg-a-accent/50 [animation-duration:2.4s]" />
+          <span className="size-1.5 rounded-full bg-a-accent" />
+        </span>
+      )}
+    </Link>
   );
 }

@@ -128,6 +128,21 @@
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+
+  /* Admin console tokens; defined on [data-admin-shell] in app/admin/admin-theme.css. */
+  --color-a-paper: var(--a-paper);
+  --color-a-surface: var(--a-surface);
+  --color-a-surface-soft: var(--a-surface-soft);
+  --color-a-line: var(--a-border);
+  --color-a-ink: var(--a-ink);
+  --color-a-muted: var(--a-muted);
+  --color-a-tooltip: var(--a-tooltip);
+  --color-a-thumb: var(--a-thumb);
+  --color-a-head: var(--a-head);
+  --color-a-primary-soft: var(--a-primary-soft);
+  --color-a-accent: var(--a-accent);
+  --color-a-accent-soft: var(--a-accent-soft);
+  --color-a-accent-ink: var(--a-accent-ink);
 }
 
 *,
@@ -151,7 +166,7 @@ body {
 }
 
 /* -------------------------------------------------------------------------- */
-/* DESIGN RULES: DM SANS (Editorial & Flow) + JETBRAINS MONO (Data & Micro)   */
+/* DESIGN RULES: DM SANS (Editorial & Flow) + JETBRAINS MONO (Complementary)   */
 /* -------------------------------------------------------------------------- */
 
 /* Utility font classes */
@@ -163,8 +178,11 @@ body {
   font-family: var(--font-sans) !important;
 }
 
-/* Rule 1: Numerical Data, Financial Amounts, Percentages & Latency */
-.tabular-nums,
+/* Primary numeric figures stay DM Sans with aligned tabular digits; explicit mono opt-ins use JetBrains Mono. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
 [data-font="mono"],
 .font-tabular {
   font-family: var(--font-mono);
@@ -183,7 +201,22 @@ pre,
   font-feature-settings: "tnum" 1;
 }
 
-/* Rule 3: Microcopy, Section Trackers & Helper Tags */
+/* Rule 3: Grey supplementary copy & micro-metadata (never on nav, menus, buttons, links, inputs, or headings) */
+:where(
+  .text-zinc-400,
+  .text-zinc-500,
+  .text-slate-400,
+  .text-slate-500,
+  .text-muted-foreground,
+  .text-a-muted,
+  [class*="text-[var(--text-muted)]"]
+):not(:where(nav, [role="navigation"], [role="menu"], [role="listbox"]) *):not(
+  :where(button, a, [role="tab"], [role="menuitem"], [role="option"], h1, h2, h3, h4, input, textarea, select, [data-font="sans"])
+) {
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+}
+
 .section-tag,
 .helper-tag,
 .micro-label {

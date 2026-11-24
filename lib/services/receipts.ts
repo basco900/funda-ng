@@ -1,4 +1,6 @@
 import "server-only";
+import { createHash } from "node:crypto";
+import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type PurchaseReceiptData = {
@@ -8,6 +10,9 @@ export type PurchaseReceiptData = {
   providerReference?: string | null;
   productName: string;
   amount: number;
+  originalAmount?: number;
+  discountAmount?: number;
+  couponCode?: string | null;
   cashback?: number;
   destination: string;
   network?: string;
@@ -19,10 +24,12 @@ export type PurchaseReceiptData = {
   status: "successful" | "failed" | "pending";
   message?: string;
   balance?: number;
+  refunded?: boolean;
 };
 
-export async function dispatchPurchaseReceipt(data: PurchaseReceiptData) {
+export async function dispatchPurchaseReceipt(data: PurchaseReceiptData, options: { waitForDelivery?: boolean } = {}) {
   const client = createAdminClient();
+  const deliveryId = (kind: string) => createHash("sha256").update(`${data.transactionId}:${data.status}:${kind}`).digest("hex").slice(0, 32).replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, "$1-$2-$3-$4-$5");
 
   // 1. In-App Notification Record (awaited so it is immediately persisted)
   try {
@@ -47,7 +54,7 @@ export async function dispatchPurchaseReceipt(data: PurchaseReceiptData) {
         ? "Data Bundle Activated"
         : "Airtime Top-Up Successful"
       : isFailed
-      ? "Purchase Refunded"
+      ? data.refunded === false ? "Purchase Failed" : "Purchase Refunded"
       : "Purchase Processing";
 
     const body =
@@ -58,29 +65,33 @@ export async function dispatchPurchaseReceipt(data: PurchaseReceiptData) {
         : isSuccess && isEducation
         ? `${data.productName} · ₦${data.amount.toLocaleString("en-NG")} — ${data.token ? `PIN: ${data.token}. ` : ""}${data.pinCount && data.pinCount > 1 ? `${data.pinCount}× PINs generated. ` : ""}${data.message || "Ready for instant checking."}`
         : isSuccess && isEpin
-        ? `${data.productName} · ₦${data.amount.toLocaleString("en-NG")} — ${data.pinCount && data.pinCount > 1 ? `${data.pinCount}× 16-digit PINs` : "16-digit PIN"} ready to dial (*311*PIN#) in your receipt vault.`
+        ? `${data.productName} · ₦${data.amount.toLocaleString("en-NG")} — ${data.pinCount ?? 0} PINs ready in your receipt vault.`
         : `${data.productName} for ${data.destination} · ₦${data.amount.toLocaleString("en-NG")} — ${data.message || (isSuccess ? "Delivered successfully" : "Status pending")}`;
 
-    await client.from("user_notifications").insert({
+    const notification = await client.from("user_notifications").upsert({
+      id: deliveryId("notification"),
       user_id: data.userId,
       title,
       body,
       kind: "transaction",
-    });
+    }, { onConflict: "id", ignoreDuplicates: true });
+    if (notification.error) throw new Error("Receipt notification could not be saved.");
 
-    await client.from("transaction_events").insert({
+    await client.from("transaction_events").upsert({
+      id: deliveryId("event"),
       transaction_id: data.transactionId,
       event_type: "customer_notified",
       summary: title,
       actor_type: "system",
       metadata: { channel: "in_app", reference: data.reference },
-    });
+    }, { onConflict: "id", ignoreDuplicates: true });
   } catch (err) {
+    if (options.waitForDelivery) throw err;
     console.warn("[Receipt] In-app notification error:", err);
   }
 
   // 2. Automated Email Receipt (Resend) & SMS (Termii) in background
-  void (async () => {
+  const deliver = async () => {
     const resendApiKey = process.env.RESEND_API_KEY?.trim();
   if (resendApiKey) {
     try {
@@ -154,6 +165,10 @@ export async function dispatchPurchaseReceipt(data: PurchaseReceiptData) {
                   <td style="padding:11px 0;color:#6f6e6b;border-bottom:1px solid #f3f2f0;">Recipient</td>
                   <td align="right" style="padding:11px 0;font-weight:600;color:#0b0b0c;border-bottom:1px solid #f3f2f0;">${safeDestination}</td>
                 </tr>
+                ${data.discountAmount && data.discountAmount > 0 ? `<tr>
+                  <td style="padding:11px 0;color:#6f6e6b;border-bottom:1px solid #f3f2f0;">Discount${data.couponCode ? ` (${escapeHtml(data.couponCode)})` : ""}</td>
+                  <td align="right" style="padding:11px 0;font-weight:600;color:#15803d;border-bottom:1px solid #f3f2f0;">-&#8358;${data.discountAmount.toLocaleString("en-NG")}</td>
+                </tr>` : ""}
                 <tr>
                   <td style="padding:11px 0;color:#6f6e6b;border-bottom:1px solid #f3f2f0;">Reference</td>
                   <td align="right" style="padding:11px 0;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#0b0b0c;border-bottom:1px solid #f3f2f0;">${safeReference}</td>
@@ -185,11 +200,12 @@ export async function dispatchPurchaseReceipt(data: PurchaseReceiptData) {
 </body>
 </html>`;
 
-        await fetch("https://api.resend.com/emails", {
+        const emailResponse = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${resendApiKey}`,
             "Content-Type": "application/json",
+            "Idempotency-Key": `receipt:${data.transactionId}:${data.status}`,
           },
           body: JSON.stringify({
             from: fromEmail,
@@ -200,8 +216,10 @@ export async function dispatchPurchaseReceipt(data: PurchaseReceiptData) {
           cache: "no-store",
           signal: AbortSignal.timeout(10_000),
         });
+        if (!emailResponse.ok) throw new Error("Receipt email delivery was rejected.");
       }
     } catch (err) {
+      if (options.waitForDelivery) throw err;
       console.warn("[Receipt] Email delivery error:", err);
     }
   }
@@ -209,7 +227,7 @@ export async function dispatchPurchaseReceipt(data: PurchaseReceiptData) {
   // 3. Optional SMS Alert (Termii)
   const termiiApiKey = process.env.TERMII_API_KEY?.trim();
   const termiiSender = process.env.TERMII_SENDER_ID?.trim();
-  if (termiiApiKey && termiiSender && data.status === "successful") {
+  if (termiiApiKey && termiiSender && data.status === "successful" && data.mode !== "epin" && /^(?:0|234)[789]\d{9}$/.test(data.destination)) {
     try {
       const cleanDest = data.destination.startsWith("0") ? `234${data.destination.slice(1)}` : data.destination;
       await fetch("https://api.ng.termii.com/api/sms/send", {
@@ -230,5 +248,7 @@ export async function dispatchPurchaseReceipt(data: PurchaseReceiptData) {
       console.warn("[Receipt] SMS alert error:", err);
     }
   }
-  })();
+  };
+  if (options.waitForDelivery) await deliver();
+  else after(deliver);
 }

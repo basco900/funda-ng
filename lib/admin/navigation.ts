@@ -69,6 +69,7 @@ export const adminNavigation: AdminNavGroup[] = [
       { label: "Blog & Content", href: "/admin/blog", icon: "megaphone", description: "Publish, edit & AI-generate blog posts" },
       { label: "Campaigns", href: "/admin/growth/campaigns", icon: "campaign", description: "Promotional campaigns" },
       { label: "Coupons", href: "/admin/growth/coupons", icon: "coupon", description: "Codes and redemptions" },
+      { label: "Brand Coupons", href: "/admin/growth/brand-coupons", icon: "pricing", description: "Public coupon finder: brands, offers and refreshes" },
       { label: "Notifications", href: "/admin/growth/notifications", icon: "bell", description: "Push, email and SMS" },
       { label: "Announcements", href: "/admin/growth/announcements", icon: "megaphone", description: "In-app notices" },
       { label: "Rewards", href: "/admin/growth/rewards", icon: "gift", description: "Reward programmes" },

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect } from "react";
-import { AdminPageHeader } from "@/components/admin/page-pattern";
+import { button, card, EmptyNote, PageHeader, StatusBadge } from "@/components/admin/kit";
+import { FilterChips, SearchField } from "@/components/admin/list-controls";
+import { cn } from "@/lib/utils";
 import AdminIcon from "../(console)/admin-icon";
 import { AdminConfirm, AdminFeedback } from "../(console)/admin-ui";
 import { adminReplyToThread, adminToggleThreadStatus, adminDeleteThread } from "./actions";
-import styles from "../admin.module.css";
 
 export type AdminSupportMessage = {
   id: string;
@@ -148,402 +149,163 @@ export default function SupportWorkspace({ initialThreads, hasTelegramConfig }: 
   };
 
   const openCount = threads.filter((t) => t.status === "open").length;
+  const resolvedCount = threads.filter((t) => t.status === "resolved").length;
+  const timeOf = (value: string) => new Date(value).toLocaleTimeString("en-NG", { hour: "numeric", minute: "2-digit" });
 
   return (
-    <div className={styles.workspace}>
-      <AdminPageHeader
-        title={
-          <div>
-            <h1 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>
-              Live Chat & Support Desk
-            </h1>
-            <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--text-muted)" }}>
-              Monitor real-time customer conversations from the web, synced seamlessly with Telegram.
-            </p>
+    <div className="space-y-6 pb-6">
+      <PageHeader title="Support" actions={<StatusBadge value={hasTelegramConfig ? "Live" : "Offline"} label={hasTelegramConfig ? "Telegram Live" : "Telegram Offline"} />} />
+
+      {feedback ? <AdminFeedback tone={feedback.type === "error" ? "error" : "success"} text={feedback.text} onClose={() => setFeedback(null)} /> : null}
+
+      <div className="grid min-h-[560px] grid-cols-1 gap-5 lg:h-[calc(100dvh-220px)] lg:grid-cols-[340px_minmax(0,1fr)]">
+        <section className={cn(card, "flex min-h-0 flex-col overflow-hidden")}>
+          <div className="space-y-3 border-b border-a-line p-4">
+            <SearchField value={search} onChange={setSearch} placeholder="Search tickets" className="sm:w-full" />
+            <FilterChips
+              label="Filter conversations"
+              total={threads.length}
+              value={activeTab === "all" ? "" : activeTab}
+              onChange={(value) => setActiveTab((value || "all") as typeof activeTab)}
+              options={[{ value: "open", label: "Open", count: openCount }, { value: "resolved", label: "Resolved", count: resolvedCount }]}
+            />
           </div>
-        }
-        actions={
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span
-              style={{
-                fontSize: "12px",
-                fontWeight: 600,
-                padding: "6px 12px",
-                borderRadius: "20px",
-                background: hasTelegramConfig ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
-                color: hasTelegramConfig ? "#10b981" : "#ef4444",
-                border: `1px solid ${hasTelegramConfig ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)"}`,
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              <span
-                style={{
-                  width: "8px",
-                  height: "8px",
-                  borderRadius: "50%",
-                  background: hasTelegramConfig ? "#10b981" : "#ef4444",
-                }}
-              />
-              <span>{hasTelegramConfig ? "Telegram Relay Active" : "Telegram Config Missing"}</span>
-            </span>
-          </div>
-        }
-      />
-
-      {feedback && (
-        <AdminFeedback
-          tone={feedback.type === "error" ? "error" : "success"}
-          text={feedback.text}
-          onClose={() => setFeedback(null)}
-        />
-      )}
-
-      {/* Main Two-Column Layout */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "340px 1fr",
-          gap: "20px",
-          height: "calc(100vh - 220px)",
-          minHeight: "550px",
-        }}
-      >
-        {/* Left Column: Thread List */}
-        <div
-          style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "14px",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }}
-        >
-          {/* Search & Tabs */}
-          <div style={{ padding: "14px", borderBottom: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: "10px" }}>
-            <div style={{ position: "relative" }}>
-              <input
-                type="text"
-                placeholder="Search ticket, name, phone..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px 12px",
-                  fontSize: "13px",
-                  borderRadius: "8px",
-                  border: "1px solid var(--border)",
-                  background: "var(--background)",
-                  color: "var(--text-primary)",
-                  outline: "none",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-
-            <div style={{ display: "flex", gap: "6px" }}>
-              <button
-                type="button"
-                onClick={() => setActiveTab("all")}
-                style={{
-                  flex: 1,
-                  padding: "5px 0",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  borderRadius: "6px",
-                  border: "none",
-                  background: activeTab === "all" ? "var(--brand-primary, #660033)" : "var(--background)",
-                  color: activeTab === "all" ? "#ffffff" : "var(--text-muted)",
-                  cursor: "pointer",
-                }}
-              >
-                All ({threads.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("open")}
-                style={{
-                  flex: 1,
-                  padding: "5px 0",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  borderRadius: "6px",
-                  border: "none",
-                  background: activeTab === "open" ? "var(--brand-primary, #660033)" : "var(--background)",
-                  color: activeTab === "open" ? "#ffffff" : "var(--text-muted)",
-                  cursor: "pointer",
-                }}
-              >
-                Open ({openCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("resolved")}
-                style={{
-                  flex: 1,
-                  padding: "5px 0",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  borderRadius: "6px",
-                  border: "none",
-                  background: activeTab === "resolved" ? "var(--brand-primary, #660033)" : "var(--background)",
-                  color: activeTab === "resolved" ? "#ffffff" : "var(--text-muted)",
-                  cursor: "pointer",
-                }}
-              >
-                Resolved ({threads.length - openCount})
-              </button>
-            </div>
-          </div>
-
-          {/* Threads List Items */}
-          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+          <div className="min-h-0 flex-1 overflow-y-auto">
             {filteredThreads.length === 0 ? (
-              <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
-                No conversations found.
-              </div>
+              <p className="px-6 py-12 text-center text-[13px] font-medium text-zinc-400">No Conversations</p>
             ) : (
               filteredThreads.map((t) => {
-                const isSelected = t.id === selectedThreadId;
-                const time = new Date(t.last_message_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
+                const selected = t.id === selectedThreadId;
                 return (
                   <button
                     key={t.id}
                     type="button"
                     onClick={() => setSelectedThreadId(t.id)}
-                    style={{
-                      padding: "12px 14px",
-                      borderBottom: "1px solid var(--border)",
-                      borderLeft: isSelected ? "4px solid var(--brand-primary, #660033)" : "4px solid transparent",
-                      background: isSelected ? "var(--accent-subtle, rgba(102, 0, 51, 0.05))" : "transparent",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "4px",
-                      transition: "background 0.15s ease",
-                    }}
+                    className={cn(
+                      "relative flex w-full items-start gap-3 border-b border-a-line px-4 py-3.5 text-left transition-colors last:border-b-0",
+                      selected ? "bg-primary/[0.05] before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-primary" : "hover:bg-zinc-50",
+                    )}
                   >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontFamily: "monospace",
-                          fontWeight: 700,
-                          padding: "2px 6px",
-                          borderRadius: "4px",
-                          background: "var(--background)",
-                          border: "1px solid var(--border)",
-                          color: "var(--brand-primary, #660033)",
-                        }}
-                      >
-                        #{t.ticket_code}
+                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-a-primary-soft text-[12px] font-semibold text-primary">
+                      {(t.visitor_name || "G").slice(0, 1).toUpperCase()}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-baseline justify-between gap-2">
+                        <span className="truncate text-[14px] font-semibold text-zinc-900">{t.visitor_name || "Guest"}</span>
+                        <span className="shrink-0 text-[11.5px] font-medium text-zinc-400 tabular-nums">{timeOf(t.last_message_at)}</span>
                       </span>
-                      <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>{time}</span>
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-primary)" }}>
-                        {t.visitor_name || "Guest Customer"}
+                      <span className="mt-0.5 flex items-center justify-between gap-2">
+                        <span className="truncate text-[12.5px] text-zinc-500">{t.last_message || "No messages yet"}</span>
+                        {t.unread_support_count > 0 ? (
+                          <span className="grid h-[18px] min-w-[18px] shrink-0 place-items-center rounded-full bg-primary px-1 text-[10.5px] font-semibold text-white tabular-nums">{t.unread_support_count}</span>
+                        ) : t.status === "resolved" ? (
+                          <AdminIcon name="check" className="size-3.5 shrink-0 text-emerald-600" />
+                        ) : null}
                       </span>
-                      {t.status === "open" ? (
-                        <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981" }} title="Open ticket" />
-                      ) : (
-                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>✓ Done</span>
-                      )}
-                    </div>
-
-                    <p
-                      style={{
-                        fontSize: "12px",
-                        color: "var(--text-muted)",
-                        margin: 0,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        maxWidth: "280px",
-                      }}
-                    >
-                      {t.last_message || "No messages yet"}
-                    </p>
+                      <span className="mt-1 block text-[11.5px] font-medium text-zinc-400">{t.ticket_code}</span>
+                    </span>
                   </button>
                 );
               })
             )}
           </div>
-        </div>
+        </section>
 
-        {/* Right Column: Chat History & Reply Studio */}
-        <div
-          style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "14px",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }}
-        >
+        <section className={cn(card, "flex min-h-[480px] flex-col overflow-hidden")}>
           {selectedThread ? (
             <>
-              {/* Header Bar */}
-              <div
-                style={{
-                  padding: "14px 20px",
-                  borderBottom: "1px solid var(--border)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  background: "var(--surface)",
-                }}
-              >
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <h3 style={{ fontSize: "15px", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>
-                      {selectedThread.visitor_name || "Guest Customer"}
-                    </h3>
-                    <span
-                      style={{
-                        fontSize: "11px",
-                        padding: "2px 8px",
-                        borderRadius: "12px",
-                        background: selectedThread.status === "open" ? "rgba(16, 185, 129, 0.1)" : "var(--border)",
-                        color: selectedThread.status === "open" ? "#10b981" : "var(--text-muted)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {selectedThread.status.toUpperCase()}
-                    </span>
-                  </div>
-
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px", display: "flex", gap: "12px" }}>
-                    {selectedThread.visitor_phone && <span>📞 {selectedThread.visitor_phone}</span>}
-                    {selectedThread.visitor_email && <span>✉️ {selectedThread.visitor_email}</span>}
-                    {selectedThread.current_page && <span>📍 {selectedThread.current_page}</span>}
+              <header className="flex flex-wrap items-center justify-between gap-3 border-b border-a-line px-5 py-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-a-primary-soft text-[13px] font-semibold text-primary">
+                    {(selectedThread.visitor_name || "G").slice(0, 1).toUpperCase()}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h2 className="truncate text-[16px] font-semibold tracking-[-0.02em] text-zinc-950">{selectedThread.visitor_name || "Guest"}</h2>
+                      <StatusBadge value={selectedThread.status} size="sm" />
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-zinc-500">
+                      <span>{selectedThread.ticket_code}</span>
+                      {selectedThread.visitor_phone ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <AdminIcon name="phone" className="size-3.5 text-zinc-400" />
+                          {selectedThread.visitor_phone}
+                        </span>
+                      ) : null}
+                      {selectedThread.visitor_email ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <AdminIcon name="mail" className="size-3.5 text-zinc-400" />
+                          {selectedThread.visitor_email}
+                        </span>
+                      ) : null}
+                      {selectedThread.current_page ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <AdminIcon name="external" className="size-3.5 text-zinc-400" />
+                          {selectedThread.current_page}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div className="flex items-center gap-1.5">
                   {selectedThread.status === "open" ? (
-                    <button
-                      type="button"
-                      onClick={() => handleToggleStatus("resolved")}
-                      disabled={isPending}
-                      className={styles.secondaryButton}
-                      style={{ fontSize: "12px", padding: "6px 12px" }}
-                    >
-                      Mark Resolved
+                    <button type="button" className={button.secondary} onClick={() => handleToggleStatus("resolved")} disabled={isPending}>
+                      <AdminIcon name="check" />
+                      Resolve
                     </button>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleToggleStatus("open")}
-                      disabled={isPending}
-                      className={styles.secondaryButton}
-                      style={{ fontSize: "12px", padding: "6px 12px" }}
-                    >
-                      Reopen Ticket
+                    <button type="button" className={button.secondary} onClick={() => handleToggleStatus("open")} disabled={isPending}>
+                      <AdminIcon name="refresh" />
+                      Reopen
                     </button>
                   )}
-
                   <button
                     type="button"
                     onClick={() => setDeleteTargetId(selectedThread.id)}
-                    className={styles.dangerButton}
-                    style={{ fontSize: "12px", padding: "6px 10px" }}
-                    title="Delete thread"
+                    aria-label="Delete conversation"
+                    title="Delete conversation"
+                    className="grid size-9 place-items-center rounded-full text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
                   >
-                    <AdminIcon name="trash" />
+                    <AdminIcon name="trash" className="size-4" />
                   </button>
                 </div>
-              </div>
+              </header>
 
-              {/* Messages Stream */}
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  padding: "20px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                  background: "var(--background)",
-                }}
-              >
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-a-paper/60 px-5 py-5">
                 {(selectedThread.messages || []).map((msg) => {
-                  const isUser = msg.sender_type === "user";
-                  const isSystem = msg.sender_type === "system";
-                  const time = new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-                  if (isSystem) {
+                  if (msg.sender_type === "system") {
                     return (
-                      <div key={msg.id} style={{ textAlign: "center", margin: "6px 0" }}>
-                        <span style={{ fontSize: "11px", padding: "3px 10px", borderRadius: "10px", background: "var(--border)", color: "var(--text-muted)" }}>
-                          {msg.message}
-                        </span>
-                      </div>
+                      <p key={msg.id} className="text-center text-[12px] font-medium text-zinc-400">
+                        {msg.message}
+                      </p>
                     );
                   }
-
+                  const mine = msg.sender_type !== "user";
                   return (
-                    <div
-                      key={msg.id}
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: isUser ? "flex-start" : "flex-end",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          color: isUser ? "var(--brand-primary, #660033)" : "var(--text-muted)",
-                          marginBottom: "2px",
-                          marginInline: "4px",
-                        }}
-                      >
-                        {msg.sender_name} {msg.telegram_message_id ? "(via Telegram)" : ""}
+                    <div key={msg.id} className={cn("flex flex-col gap-1", mine ? "items-end" : "items-start")}>
+                      <span className="px-1 text-[11.5px] font-medium text-zinc-400">
+                        {msg.sender_name}
+                        {msg.telegram_message_id ? " · Telegram" : ""} · {timeOf(msg.created_at)}
                       </span>
-
-                      <div
-                        style={{
-                          maxWidth: "70%",
-                          padding: "10px 14px",
-                          borderRadius: isUser ? "16px 16px 16px 4px" : "16px 16px 4px 16px",
-                          background: isUser ? "var(--surface)" : "var(--brand-primary, #660033)",
-                          color: isUser ? "var(--text-primary)" : "#ffffff",
-                          fontSize: "13px",
-                          lineHeight: 1.5,
-                          border: isUser ? "1px solid var(--border)" : "none",
-                          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
-                          whiteSpace: "pre-wrap",
-                          wordBreak: "break-word",
-                        }}
+                      <p
+                        className={cn(
+                          "max-w-[min(520px,85%)] rounded-[12px] px-3.5 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap",
+                          mine ? "rounded-br-[4px] bg-primary text-white" : "rounded-bl-[4px] border border-a-line bg-a-surface text-zinc-800",
+                        )}
                       >
                         {msg.message}
-                      </div>
-
-                      <span style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px", marginInline: "4px" }}>
-                        {time}
-                      </span>
+                      </p>
                     </div>
                   );
                 })}
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Reply Box */}
-              <div
-                style={{
-                  padding: "14px 20px",
-                  borderTop: "1px solid var(--border)",
-                  background: "var(--surface)",
-                  display: "flex",
-                  gap: "10px",
+              <form
+                className="flex items-end gap-2 border-t border-a-line p-3"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleSendReply();
                 }}
               >
                 <textarea
@@ -555,67 +317,36 @@ export default function SupportWorkspace({ initialThreads, hasTelegramConfig }: 
                       handleSendReply();
                     }
                   }}
-                  placeholder="Type reply to customer... (Enter to send, Shift+Enter for new line)"
-                  rows={2}
-                  style={{
-                    flex: 1,
-                    resize: "none",
-                    padding: "10px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid var(--border)",
-                    background: "var(--background)",
-                    color: "var(--text-primary)",
-                    fontSize: "13px",
-                    fontFamily: "inherit",
-                    outline: "none",
-                  }}
+                  placeholder="Reply to customer"
+                  aria-label="Reply to customer"
+                  rows={1}
+                  className="max-h-40 min-h-10 flex-1 resize-none rounded-[8px] border border-a-line bg-a-surface px-3 py-2.5 text-[13px] text-zinc-900 transition outline-none placeholder:text-zinc-400 hover:border-zinc-300 focus:border-primary/40"
                 />
-                <button
-                  type="button"
-                  onClick={handleSendReply}
-                  disabled={!replyInput.trim() || isPending}
-                  className={styles.primaryButton}
-                  style={{ padding: "0 18px", alignSelf: "stretch" }}
-                >
-                  Send Reply
+                <button type="submit" className={cn(button.primary, "h-10")} disabled={isPending || !replyInput.trim()}>
+                  <AdminIcon name="arrowUpRight" />
+                  Send
                 </button>
-              </div>
+              </form>
             </>
           ) : (
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "40px",
-                textAlign: "center",
-                color: "var(--text-muted)",
-              }}
-            >
-              <div style={{ fontSize: "40px", marginBottom: "14px" }}>💬</div>
-              <h3 style={{ fontSize: "16px", fontWeight: 700, margin: "0 0 6px 0", color: "var(--text-primary)" }}>
-                No conversation selected
-              </h3>
-              <p style={{ fontSize: "13px", maxWidth: "320px", margin: 0, lineHeight: 1.5 }}>
-                Select a chat from the left or wait for a customer to start a conversation on the website.
-              </p>
+            <div className="grid flex-1 place-items-center p-6">
+              <EmptyNote icon="support" title="Pick a Conversation" />
             </div>
           )}
-        </div>
+        </section>
       </div>
 
-      {deleteTargetId && (
+      {deleteTargetId ? (
         <AdminConfirm
-          title="Delete Conversation Thread"
-          body="Are you sure you want to delete this chat thread and all its messages? This action cannot be undone."
-          confirmLabel="Delete Thread"
+          title="Delete conversation?"
+          body="The thread and all its messages go. This can't be undone."
+          confirmLabel="Delete"
           tone="danger"
+          pending={isPending}
           onConfirm={handleDelete}
           onCancel={() => setDeleteTargetId(null)}
         />
-      )}
+      ) : null}
     </div>
   );
 }

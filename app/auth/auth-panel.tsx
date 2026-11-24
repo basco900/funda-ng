@@ -12,6 +12,7 @@ import {
   onboardingStepFor,
   passwordIsEnabled,
   profileNameFor,
+  updatePasswordAllowSame,
 } from "../../lib/auth/onboarding";
 import { createClient } from "../../lib/supabase/client";
 import { isSupabaseConfigured } from "../../lib/supabase/config";
@@ -587,10 +588,11 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
       const { data: { user } } = await client.auth.getUser();
       if (!user) return fail("Session expired. Please log in again.");
 
-      const { data: authData, error: updateError } = await client.auth.updateUser({
+      const { error: updateError } = await updatePasswordAllowSame(
+        client,
         password,
-        data: completedOnboardingData(user, name, "password"),
-      });
+        completedOnboardingData(user, name, "password"),
+      );
 
       if (updateError) {
         setBusy(false);
@@ -626,7 +628,7 @@ export default function AuthPanel({ mode, onClose, instance }: { mode: Mode; onC
             password_enabled: true,
             login_preference: "password",
           };
-      const { data, error: updateError } = await client.auth.updateUser({ password, data: nextData });
+      const { data, error: updateError } = await updatePasswordAllowSame(client, password, nextData);
       if (updateError) {
         setBusy(false);
         return fail(updateError.message || "Password must be at least 6 characters.");

@@ -21,14 +21,42 @@ export async function loadCustomer360(userId: string) {
 
 export async function loadTransaction360(transactionId: string) {
   const client = createAdminClient();
-  const { data: transaction, error } = await client.from("service_transactions").select("*, product:service_products(name,network,provider_product_code), provider:provider_registry(name,slug,status), profile:profiles(full_name)").eq("id", transactionId).maybeSingle();
-  if (error || !transaction) return null;
-  const [events, attempts, refunds, disputes, ledger] = await Promise.all([
+  const { data: record, error } = await client
+    .from("service_transactions")
+    .select("*, product:service_products(name,network,provider_product_code), provider:provider_registry(name,slug,status)")
+    .eq("id", transactionId)
+    .maybeSingle();
+  if (error || !record) return null;
+  const { data: profile } = await client.from("profiles").select("full_name").eq("id", record.user_id).maybeSingle();
+  const transaction = { ...record, profile };
+  const [events, attempts, refunds, disputes, ledger, apiLogs, cashback] = await Promise.all([
     client.from("transaction_events").select("*").eq("transaction_id", transactionId).order("created_at", { ascending: true }),
-    client.from("provider_attempts").select("id,attempt_number,outcome,http_status,latency_ms,provider_reference,created_at,response_redacted").eq("transaction_id", transactionId).order("attempt_number", { ascending: true }),
+    client
+      .from("provider_attempts")
+      .select("id,attempt_number,outcome,http_status,latency_ms,provider_reference,created_at,response_redacted,provider:provider_registry(name,slug)")
+      .eq("transaction_id", transactionId)
+      .order("attempt_number", { ascending: true }),
     client.from("refund_requests").select("id,amount,status,reason,created_at,resolved_at").eq("transaction_id", transactionId).order("created_at", { ascending: false }),
     client.from("disputes").select("id,dispute_number,status,priority,category,created_at").eq("transaction_id", transactionId).order("created_at", { ascending: false }),
-    client.from("wallet_ledger_entries").select("id,entry_type,amount,balance_after,reference,metadata,created_at").eq("user_id", transaction.user_id).order("created_at", { ascending: false }).limit(50),
+    client.from("wallet_ledger_entries").select("id,entry_type,amount,balance_after,reference,description,metadata,created_at").eq("user_id", transaction.user_id).eq("metadata->>transaction_id", transactionId).order("created_at", { ascending: true }),
+    client.from("api_request_logs").select("id,provider,method,endpoint:endpoint_redacted,outcome,latency_ms,response_payload:response_redacted,created_at").eq("transaction_reference", transaction.internal_reference).order("created_at", { ascending: false }).limit(20),
+    client.from("cashback_awards").select("id,amount,status,credited_at,created_at").eq("transaction_id", transactionId).maybeSingle(),
   ]);
-  return { transaction, events: events.data ?? [], attempts: attempts.data ?? [], refunds: refunds.data ?? [], disputes: disputes.data ?? [], ledger: (ledger.data ?? []).filter((item) => item.reference === transaction.internal_reference || item.metadata?.transaction_id === transactionId) };
+  return {
+    transaction,
+    events: events.data ?? [],
+    attempts: attempts.data ?? [],
+    refunds: refunds.data ?? [],
+    disputes: disputes.data ?? [],
+    apiLogs: apiLogs.data ?? [],
+    cashbackAward: cashback.data ?? null,
+    ledger: (ledger.data ?? []).filter(
+      (item) =>
+        item.reference === transaction.internal_reference ||
+        item.reference === `DEBIT-${transaction.internal_reference}` ||
+        item.reference === `REFUND-${transaction.internal_reference}` ||
+        item.reference === `CASHBACK-${transaction.internal_reference}` ||
+        item.metadata?.transaction_id === transactionId,
+    ),
+  };
 }

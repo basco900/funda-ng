@@ -58,3 +58,37 @@ export function incompleteOnboardingData(user: User, fullName?: string) {
     onboarding_complete: false,
   };
 }
+
+type AuthPasswordClient = {
+  auth: {
+    updateUser: (attributes: { password?: string; data?: Record<string, unknown> }) => Promise<{
+      data: { user: User | null };
+      error: { code?: string; message?: string } | null;
+    }>;
+  };
+};
+
+/** Detects GoTrue's `same_password` rejection when the submitted password already matches. */
+export function isSamePasswordError(error: { code?: string; message?: string } | null | undefined) {
+  if (!error) return false;
+  return (
+    error.code === "same_password" ||
+    (error.message ?? "").toLowerCase().includes("different from the old password")
+  );
+}
+
+/**
+ * Saves password and onboarding metadata, falling back to a metadata-only update
+ * if GoTrue reports the submitted password already matches the existing password.
+ */
+export async function updatePasswordAllowSame(
+  client: AuthPasswordClient,
+  password: string,
+  data: Record<string, unknown>,
+) {
+  const result = await client.auth.updateUser({ password, data });
+  if (!result.error || !isSamePasswordError(result.error)) {
+    return result;
+  }
+  return client.auth.updateUser({ data });
+}

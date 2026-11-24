@@ -24,14 +24,14 @@ export default function ReviewActions({ reviewId, suggestedCustomer }: { reviewI
         onChange={(event) => setCustomer(event.target.value)}
         placeholder="Customer email or ID"
         aria-label="Customer email or ID"
-        style={{ height: 32, padding: "0 8px", borderRadius: 8, border: "1px solid var(--admin-line)", background: "var(--admin-surface)", color: "var(--admin-ink)" }}
+        className="h-8 rounded-[8px] border border-a-line bg-a-surface px-2.5 text-[12.5px] text-zinc-900 transition outline-none placeholder:text-zinc-400 hover:border-zinc-300 focus:border-primary/40"
       />
       <input
         value={note}
         onChange={(event) => setNote(event.target.value)}
         placeholder="Reason (required, min 5 characters)"
         aria-label="Resolution reason"
-        style={{ height: 32, padding: "0 8px", borderRadius: 8, border: "1px solid var(--admin-line)", background: "var(--admin-surface)", color: "var(--admin-ink)" }}
+        className="h-8 rounded-[8px] border border-a-line bg-a-surface px-2.5 text-[12.5px] text-zinc-900 transition outline-none placeholder:text-zinc-400 hover:border-zinc-300 focus:border-primary/40"
       />
       <div style={{ display: "flex", gap: 6 }}>
         <button type="button" className={styles.primaryButton} disabled={pending || !customer || note.trim().length < 5} onClick={() => run("credit")}>

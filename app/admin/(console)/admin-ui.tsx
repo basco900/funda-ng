@@ -13,6 +13,7 @@ export function AdminModal({
   children,
   footer,
   width = 520,
+  flush = false,
 }: {
   title: string;
   eyebrow?: string;
@@ -20,6 +21,7 @@ export function AdminModal({
   children: ReactNode;
   footer?: ReactNode;
   width?: number;
+  flush?: boolean;
 }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -48,7 +50,7 @@ export function AdminModal({
             <AdminIcon name="close" />
           </button>
         </header>
-        <div className={styles.modalBody}>{children}</div>
+        <div className={flush ? styles.modalBodyFlush : styles.modalBody}>{children}</div>
         {footer ? <footer className={styles.modalFooter}>{footer}</footer> : null}
       </div>
     </div>

@@ -11,14 +11,109 @@ import {
 import { recordAdminAudit } from "../../../lib/admin/security";
 import { createAdminClient } from "../../../lib/supabase/admin";
 import { enqueueAdminJob } from "../../../lib/admin/jobs";
+import { requeryProviderTransaction } from "../../../lib/admin/providers";
+import { dispatchPurchaseReceipt } from "../../../lib/services/receipts";
+import { recordCouponRedemption } from "../../../lib/services/routing";
+import { recordServiceBeneficiary } from "../../../lib/services/beneficiaries";
+import { refreshProductHealth, verifyAllDataBundlesHealth } from "../../../lib/services/plan-health";
 import { getVendor } from "../../../lib/test-engine/vendors";
 import type { NetworkId, VendorId } from "../../../lib/test-engine/types";
+import { matchingAirtimeRule, parseRechargePinBatch, redactRechargeEvidence, rechargeMargin, rechargePrice, type AirtimeRule } from "../../../lib/recharge-cards";
+import { settleRechargeCardResult } from "../../../lib/services/recharge-cards";
 
 export type AdminActionResult<T = undefined> = {
   ok: boolean;
   message: string;
   data?: T;
 };
+
+const rechargeEvidence = z.string().trim().min(10).max(1000).transform(redactRechargeEvidence);
+
+export async function closeRechargeInvestigation(input: unknown): Promise<AdminActionResult> {
+  try {
+    const values = z.object({ transactionId: z.string().uuid(), evidenceReference: z.string().trim().min(1).max(200), reason: rechargeEvidence, confirmed: z.literal(true) }).parse(input);
+    const session = await requireAdminPermission("reconciliation.manage");
+    const actorId = await materializeAdminSession(session);
+    const { error } = await createAdminClient().rpc("close_recharge_investigation", { p_transaction_id: values.transactionId, p_evidence_reference: values.evidenceReference, p_reason: values.reason, p_actor_id: actorId });
+    if (error) throw new Error("This provider conflict could not be closed.");
+    await recordAdminAudit(session, { action: "recharge_card.investigation_closed", entityType: "service_transaction", entityId: values.transactionId, reason: values.reason, newValue: { evidenceReference: values.evidenceReference } });
+    refresh("/admin/products/airtime", `/admin/transactions/${values.transactionId}`);
+    return { ok: true, message: "Provider investigation closed. No customer wallet movement was made." };
+  } catch (error) { return failure(error); }
+}
+
+export async function queueRechargeInventoryCheck(): Promise<AdminActionResult> {
+  try {
+    const session = await requireAdminPermission("providers.manage");
+    const jobId = await enqueueAdminJob("recharge.backfill_claims", {}, `recharge.backfill_claims:${randomUUID()}`);
+    await recordAdminAudit(session, { action: "recharge_card.inventory_check", entityType: "admin_job", entityId: jobId });
+    return { ok: true, message: "Historical PIN inventory check queued. Check worker jobs for its result." };
+  } catch (error) { return failure(error); }
+}
+
+export async function recordRechargeCardCost(input: unknown): Promise<AdminActionResult> {
+  try {
+    const values = z.object({ transactionId: z.string().uuid(), cost: z.coerce.number().nonnegative().max(500000), statementReference: z.string().trim().min(1).max(200), reason: rechargeEvidence }).parse(input);
+    const session = await requireAdminPermission("reconciliation.manage");
+    const actorId = await materializeAdminSession(session);
+    const { error } = await createAdminClient().rpc("record_recharge_provider_cost", { p_transaction_id: values.transactionId, p_cost: values.cost, p_statement_reference: values.statementReference, p_reason: values.reason, p_actor_id: actorId });
+    if (error) throw new Error("The provider cost could not be reconciled.");
+    await recordAdminAudit(session, { action: "recharge_card.cost_reconciled", entityType: "service_transaction", entityId: values.transactionId, reason: values.reason, newValue: { cost: values.cost, statementReference: values.statementReference } });
+    refresh("/admin/products/airtime", `/admin/transactions/${values.transactionId}`, "/admin/analytics/reports");
+    return { ok: true, message: "Statement cost reconciled. Customer debit, discount and cashback are unchanged." };
+  } catch (error) { return failure(error); }
+}
+
+export async function saveRechargeCardOffer(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({ id: z.string().uuid().optional(), network: z.enum(["mtn", "airtel", "glo", "9mobile"]), denomination: z.coerce.number().refine((value) => [100,200,500,1000].includes(value)), unitCost: z.coerce.number().positive().max(100000), maxQuantity: z.coerce.number().int().min(1).max(20), isActive: z.boolean(), verified: z.literal(true) });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("providers.manage");
+    const client = createAdminClient();
+    const [{ data: provider }, { data: rules, error: rulesError }, { data: cashbackFlag }] = await Promise.all([
+      client.from("provider_registry").select("id").eq("slug", "maskawasub").maybeSingle(),
+      client.from("airtime_provider_routes").select("*").eq("is_active", true),
+      client.from("feature_flags").select("enabled").eq("key", "rewards.cashback").maybeSingle(),
+    ]);
+    if (!provider || rulesError) throw new Error("Register the supported recharge-card provider before adding offers.");
+    if (values.isActive) for (let quantity = 1; quantity <= values.maxQuantity; quantity++) {
+      const rule = matchingAirtimeRule((rules ?? []) as AirtimeRule[], values.network, "epin", values.denomination * quantity);
+      if (!rule || rule.primary_provider !== "maskawasub") continue;
+      const price = rechargePrice(values.denomination * quantity, Number(rule.discount_percentage), cashbackFlag?.enabled ? Number(rule.cashback_percentage) : 0);
+      if (rechargeMargin(price.payable, price.cashback, values.unitCost * quantity) < 0) throw new Error(`The current discount/cashback loses money at quantity ${quantity}. Update the range rule or save this offer paused.`);
+    }
+    const record = { network: values.network, denomination: values.denomination, provider_id: provider.id, unit_cost: values.unitCost, max_quantity: values.maxQuantity, is_active: values.isActive, verified_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    const query = values.id ? client.from("recharge_card_catalogue").update(record).eq("id", values.id) : client.from("recharge_card_catalogue").insert(record);
+    const { data, error } = await query.select("id").single();
+    if (error || !data) throw new Error(error?.code === "23505" ? "This denomination already exists for this network. Edit its offer." : "The recharge-card offer could not be saved.");
+    await recordAdminAudit(session, { action: values.id ? "recharge_offer.updated" : "recharge_offer.created", entityType: "recharge_card_catalogue", entityId: data.id, newValue: record });
+    refresh("/admin/products/airtime");
+    return { ok: true, message: "Verified recharge-card offer saved." };
+  } catch (error) { return failure(error); }
+}
+
+export async function resolveRechargeCardPurchase(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({ transactionId: z.string().uuid(), action: z.enum(["recover", "confirm_failure"]), providerReference: z.string().trim().min(1).max(200), reason: rechargeEvidence, pins: z.string().max(20000).default(""), confirmed: z.literal(true) });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission(values.action === "recover" ? "transactions.retry" : "transactions.refund");
+    const actorId = await materializeAdminSession(session);
+    const client = createAdminClient();
+    const { data: tx, error } = await client.from("service_transactions").select("id,user_id,status,provider_id,metadata").eq("id", values.transactionId).maybeSingle();
+    if (error || !tx || tx.metadata?.mode !== "epin" || !tx.provider_id) throw new Error("Recharge-card purchase not found.");
+    const legacyRecovery = tx.status === "successful" && tx.metadata.pipelineVersion !== 2 && tx.metadata.deliveryStatus !== "ready" && values.action === "recover";
+    if (!["initiated", "processing", "pending"].includes(tx.status) && !legacyRecovery) throw new Error("This order is already final. Review its ledger and dispute record.");
+    const expected = { network: tx.metadata.network as NetworkId, denomination: Number(tx.metadata.unitAmount), quantity: Number(tx.metadata.quantity) };
+    if (values.action === "confirm_failure" && (Number(tx.metadata.pinCount ?? 0) > 0 || tx.metadata.pins_encrypted || tx.metadata.pins?.length)) throw new Error("This order contains issued PINs. Obtain provider revocation evidence and use the independently approved finance workflow.");
+    const pins = values.action === "recover" ? parseRechargePinBatch(values.pins, expected) : undefined;
+    const result = await settleRechargeCardResult(tx.id, tx.provider_id, { status: values.action === "recover" ? "successful" : "failed", reference: tx.id, providerReference: values.providerReference, message: values.reason, pins }, expected, actorId, values.reason);
+    await recordAdminAudit(session, { action: `recharge_card.${values.action}`, entityType: "service_transaction", entityId: tx.id, reason: values.reason, newValue: { providerReference: values.providerReference, pinCount: pins?.length ?? 0, status: result.status } });
+    refresh("/admin/products/airtime", `/admin/transactions/${tx.id}`, "/admin/money/ledger", "/admin/analytics/reports");
+    if (result.status === "pending") return { ok: false, message: "This PIN batch has an ownership conflict. The order remains held for investigation; no cashback or refund was issued." };
+    if ((values.action === "recover" && result.status !== "successful") || (values.action === "confirm_failure" && !result.refunded)) return { ok: false, message: "Another outcome finalized this order first. No additional wallet movement was made; review its timeline and provider evidence." };
+    return { ok: true, message: result.refunded ? "Provider non-delivery recorded. The actual wallet debit was refunded once." : "Verified PINs recovered. The receipt and cashback have been settled." };
+  } catch (error) { return failure(error); }
+}
 
 const uuid = z.string().uuid();
 const reason = z.string().trim().min(5).max(1000);
@@ -298,50 +393,330 @@ export async function syncProviderCatalogue(input: unknown): Promise<AdminAction
       if (error) throw new Error(`Catalogue import failed: ${error.message}`);
     }
 
+    // Mark previously synced data plans omitted from this live response as unavailable
+    const activeCodes = new Set(catalogueRows.map((row) => row.provider_product_code));
+    const { data: existingItems } = await client
+      .from("provider_catalogue_items")
+      .select("id,provider_product_code,is_available")
+      .eq("provider_id", provider.id)
+      .eq("service_type", "data")
+      .eq("is_available", true);
+    const retiredIds = (existingItems ?? [])
+      .filter((item) => !activeCodes.has(item.provider_product_code))
+      .map((item) => item.id);
+    if (retiredIds.length) {
+      await client.from("provider_catalogue_items").update({ is_available: false }).in("id", retiredIds);
+    }
+
     const failedNetworks = settled.filter((result) => result.status === "rejected").length;
     const status = failedNetworks ? "degraded" : "operational";
     const latencyMs = Date.now() - startedAt;
     const message = failedNetworks
-      ? `${catalogueRows.length} plans imported; ${failedNetworks} network catalogue${failedNetworks === 1 ? "" : "s"} failed.`
-      : `${catalogueRows.length} live data plans imported successfully.`;
+      ? `${catalogueRows.length} plans imported (${retiredIds.length} retired); ${failedNetworks} network catalogue${failedNetworks === 1 ? "" : "s"} failed.`
+      : `${catalogueRows.length} live data plans imported successfully${retiredIds.length ? ` (${retiredIds.length} retired)` : ""}.`;
     const now = new Date().toISOString();
     const [{ error: healthError }, { error: updateError }] = await Promise.all([
       client.from("provider_health_checks").insert({ provider_id: provider.id, component: "catalogue", status, latency_ms: latencyMs, success_rate: Number((((4 - failedNetworks) / 4) * 100).toFixed(2)), message }),
       client.from("provider_registry").update({ status, last_catalogue_sync_at: now, last_health_check_at: now }).eq("id", provider.id),
     ]);
     if (healthError || updateError) throw new Error(healthError?.message || updateError?.message || "Provider health could not be recorded.");
-    await recordAdminAudit(session, { action: "provider.catalogue_synced", entityType: "provider", entityId: provider.id, oldValue: { status: provider.status }, newValue: { status, imported: catalogueRows.length, failedNetworks, latencyMs } });
-    refresh("/admin/products/providers", "/admin/products/data-bundles", `/admin/products/providers/${provider.id}`);
+    await verifyAllDataBundlesHealth().catch(() => {});
+    await recordAdminAudit(session, { action: "provider.catalogue_synced", entityType: "provider", entityId: provider.id, oldValue: { status: provider.status }, newValue: { status, imported: catalogueRows.length, retired: retiredIds.length, failedNetworks, latencyMs } });
+    refresh("/admin/products/providers", "/admin/products/data-bundles", `/admin/products/providers/${provider.id}`, "/admin/dashboard");
     return { ok: true, message, data: { imported: catalogueRows.length, status } };
+  } catch (error) { return failure(error); }
+}
+
+export async function syncAllDataProviders(): Promise<AdminActionResult<{ imported: number; syncedCount: number }>> {
+  try {
+    await requireAdminPermission("providers.manage");
+    const client = createAdminClient();
+    const { data: rows } = await client
+      .from("provider_registry")
+      .select("id,name,slug")
+      .contains("capabilities", ["data"])
+      .order("priority");
+    const configured = (rows ?? []).filter(
+      (row) => supportedCatalogueVendors.has(row.slug as VendorId) && getVendor(row.slug as VendorId).isConfigured(),
+    );
+    if (!configured.length) {
+      throw new Error("No configured data providers were found on the server.");
+    }
+    let imported = 0;
+    let syncedCount = 0;
+    const errors: string[] = [];
+    for (const row of configured) {
+      const res = await syncProviderCatalogue({ providerId: row.id });
+      if (res.ok) {
+        imported += res.data?.imported ?? 0;
+        syncedCount += 1;
+      } else {
+        errors.push(`${row.name}: ${res.message}`);
+      }
+    }
+    if (!syncedCount) {
+      throw new Error(errors.join(" · ") || "Provider sync failed.");
+    }
+    return {
+      ok: true,
+      message: errors.length
+        ? `Synced ${imported} plans from ${syncedCount} provider(s); ${errors.length} failed.`
+        : `Synced ${imported} live plans across ${syncedCount} provider(s).`,
+      data: { imported, syncedCount },
+    };
+  } catch (error) { return failure(error); }
+}
+
+export async function toggleDataBundleStatus(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({ id: uuid, status: z.enum(["active", "disabled", "draft"]) });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("products.edit");
+    const adminUserId = await materializeAdminSession(session);
+    const client = createAdminClient();
+    const { data: bundle, error: fetchError } = await client
+      .from("service_products")
+      .select("id,status,provider_id,provider_product_code,name")
+      .eq("id", values.id)
+      .single();
+    if (fetchError || !bundle) throw new Error("Bundle was not found.");
+    if (values.status === "active" && !bundle.provider_id) {
+      throw new Error("Link a supplier offer before activating this bundle.");
+    }
+    const { error } = await client
+      .from("service_products")
+      .update({ status: values.status, updated_by: adminUserId })
+      .eq("id", values.id);
+    if (error) throw new Error("Bundle status could not be updated.");
+    await client
+      .from("product_placements")
+      .update({ is_active: values.status === "active" })
+      .eq("product_id", values.id);
+    await recordAdminAudit(session, {
+      action: "data_bundle.status_changed",
+      entityType: "service_product",
+      entityId: values.id,
+      oldValue: { status: bundle.status },
+      newValue: { status: values.status },
+    });
+    refresh("/admin/products/data-bundles", "/admin/dashboard");
+    return { ok: true, message: `${bundle.name} is now ${values.status === "disabled" ? "paused" : values.status}.` };
   } catch (error) { return failure(error); }
 }
 
 export async function saveDataBundle(input: unknown): Promise<AdminActionResult<{ id: string }>> {
   const schema = z.object({
-    id: uuid.optional(), name: z.string().trim().min(2).max(160), network: z.enum(["mtn", "airtel", "glo", "9mobile"]), category: z.string().trim().min(2).max(40), dataAmountMb: z.coerce.number().positive().max(1_000_000), validity: z.string().trim().min(2).max(100), providerCatalogueItemId: uuid.nullable().optional(), providerId: uuid.nullable().optional(), providerProductCode: z.string().trim().max(100).nullable().optional(), providerCost: z.coerce.number().nonnegative().default(0), sellingPrice: z.coerce.number().nonnegative(), placement: z.enum(["none", "home_quick", "data_top", "data_recommended"]).default("none"), badge: z.string().trim().max(24).nullable().optional(), status: z.enum(["draft", "active", "disabled", "archived"]).default("draft"),
-  }).refine((value) => !value.providerId || Boolean(value.providerCatalogueItemId && value.providerProductCode), { message: "Choose a complete provider offer or leave the provider mapping empty.", path: ["providerCatalogueItemId"] }).refine((value) => value.providerId || value.status !== "active", { message: "Link a provider offer before publishing this bundle.", path: ["status"] }).refine((value) => value.sellingPrice >= value.providerCost, { message: "Selling price cannot be below provider cost.", path: ["sellingPrice"] });
+    id: uuid.optional(),
+    name: z.string().trim().min(2).max(160),
+    network: z.enum(["mtn", "airtel", "glo", "9mobile"]),
+    category: z.string().trim().min(2).max(40),
+    dataAmountMb: z.coerce.number().positive().max(1_000_000),
+    validity: z.string().trim().min(2).max(100),
+    providerCatalogueItemId: uuid.nullable().optional(),
+    providerId: uuid.nullable().optional(),
+    providerProductCode: z.string().trim().max(100).nullable().optional(),
+    providerCost: z.coerce.number().nonnegative().default(0),
+    fallbackProviderId: uuid.nullable().optional(),
+    fallbackCatalogueItemId: uuid.nullable().optional(),
+    fallbackProductCode: z.string().trim().max(100).nullable().optional(),
+    fallbackCost: z.coerce.number().nonnegative().default(0),
+    sellingPrice: z.coerce.number().nonnegative(),
+    cashbackAmount: z.coerce.number().nonnegative().default(0),
+    placement: z.enum(["none", "home_quick", "data_top", "data_recommended"]).default("none"),
+    badge: z.string().trim().max(24).nullable().optional(),
+    advisoryNote: z.string().trim().max(240).nullable().optional(),
+    healthOverride: z.enum(["auto", "healthy", "advisory", "outage"]).optional(),
+    status: z.enum(["draft", "active", "disabled", "archived"]).default("draft"),
+  }).refine((value) => !value.providerId || Boolean(value.providerProductCode), { message: "Choose a complete primary supplier offer or leave it empty.", path: ["providerCatalogueItemId"] })
+    .refine((value) => !value.fallbackProviderId || Boolean(value.fallbackProductCode), { message: "Choose a complete fallback supplier offer or clear fallback.", path: ["fallbackCatalogueItemId"] })
+    .refine((value) => value.providerId || value.status !== "active", { message: "Link a primary supplier offer before publishing this bundle.", path: ["status"] })
+    .refine((value) => value.sellingPrice >= value.providerCost, { message: "Selling price cannot be below supplier cost.", path: ["sellingPrice"] })
+    .refine((value) => value.sellingPrice >= value.cashbackAmount, { message: "Selling price must cover cashback.", path: ["cashbackAmount"] });
   try {
     const values = schema.parse(input);
     const session = await requireAdminPermission("products.edit");
     const adminUserId = await materializeAdminSession(session);
     const client = createAdminClient();
     const { data: oldValue } = values.id ? await client.from("service_products").select("*").eq("id", values.id).maybeSingle() : { data: null };
-    const product = { id: values.id, provider_id: values.providerId ?? null, service_type: "data", network: values.network, provider_product_code: values.providerProductCode ?? null, name: values.name, description: `${values.dataAmountMb}MB · ${values.category} · ${values.validity}`, validity: values.validity, provider_cost: values.providerCost, selling_price: values.sellingPrice, status: values.status, featured: values.placement !== "none", metadata: { data_amount_mb: values.dataAmountMb, category: values.category }, created_by: values.id ? oldValue?.created_by : adminUserId, updated_by: adminUserId };
+    const existingMeta = ((oldValue?.metadata as Record<string, unknown> | null) ?? {}) || {};
+    const prevHealth = ((existingMeta.health as Record<string, unknown> | undefined) ?? {}) || {};
+    const nextHealth = {
+      ...prevHealth,
+      ...(values.healthOverride !== undefined ? { overrideStatus: values.healthOverride } : {}),
+      ...(values.advisoryNote !== undefined ? { customNotice: values.advisoryNote?.trim() || null } : {}),
+    };
+    const product = {
+      id: values.id,
+      provider_id: values.providerId ?? null,
+      service_type: "data",
+      network: values.network,
+      provider_product_code: values.providerProductCode ?? null,
+      name: values.name,
+      description: `${values.dataAmountMb}MB · ${values.category} · ${values.validity}`,
+      validity: values.validity,
+      provider_cost: values.providerCost,
+      selling_price: values.sellingPrice,
+      cashback_amount: values.cashbackAmount,
+      status: values.status,
+      featured: values.placement !== "none",
+      metadata: {
+        ...existingMeta,
+        data_amount_mb: values.dataAmountMb,
+        category: values.category,
+        health: nextHealth,
+      },
+      created_by: values.id ? oldValue?.created_by : adminUserId,
+      updated_by: adminUserId,
+    };
     const { data, error } = await client.from("service_products").upsert(product).select("id").single();
     if (error || !data) throw new Error("The data bundle could not be saved.");
     const productId = String(data.id);
-    if (values.providerId && values.providerCatalogueItemId && values.providerProductCode) {
-      const { error: offerError } = await client.from("product_provider_offers").upsert({ product_id: productId, provider_id: values.providerId, provider_catalogue_item_id: values.providerCatalogueItemId, provider_product_code: values.providerProductCode, provider_cost: values.providerCost, priority: 100, status: "active" }, { onConflict: "product_id,provider_id,provider_product_code" });
-      if (offerError) throw new Error("The bundle was saved, but its provider mapping could not be linked.");
+
+    // Pause older mappings before writing active primary (100) + fallback (200) offers
+    if (values.id) {
+      await client.from("product_provider_offers").update({ status: "paused" }).eq("product_id", productId);
     }
+    if (values.providerId && values.providerProductCode) {
+      const { error: offerError } = await client.from("product_provider_offers").upsert(
+        {
+          product_id: productId,
+          provider_id: values.providerId,
+          provider_catalogue_item_id: values.providerCatalogueItemId ?? null,
+          provider_product_code: values.providerProductCode,
+          provider_cost: values.providerCost,
+          priority: 100,
+          status: "active",
+        },
+        { onConflict: "product_id,provider_id,provider_product_code" },
+      );
+      if (offerError) throw new Error("The bundle was saved, but its primary provider mapping could not be linked.");
+    }
+    if (values.fallbackProviderId && values.fallbackProductCode) {
+      const isSamePrimary =
+        values.fallbackProviderId === values.providerId && values.fallbackProductCode === values.providerProductCode;
+      if (!isSamePrimary) {
+        await client.from("product_provider_offers").upsert(
+          {
+            product_id: productId,
+            provider_id: values.fallbackProviderId,
+            provider_catalogue_item_id: values.fallbackCatalogueItemId ?? null,
+            provider_product_code: values.fallbackProductCode,
+            provider_cost: values.fallbackCost,
+            priority: 200,
+            status: "active",
+          },
+          { onConflict: "product_id,provider_id,provider_product_code" },
+        );
+      }
+    }
+
     if (values.placement === "none") await client.from("product_placements").delete().eq("product_id", productId);
     else {
       const { error: placementError } = await client.from("product_placements").upsert({ product_id: productId, surface: values.placement, badge: values.badge ?? null, is_active: values.status === "active" }, { onConflict: "product_id,surface" });
       if (placementError) throw new Error("The bundle was saved, but its placement could not be saved.");
     }
+    await refreshProductHealth(productId).catch(() => {});
     await recordAdminAudit(session, { action: values.id ? "data_bundle.updated" : "data_bundle.created", entityType: "service_product", entityId: productId, oldValue, newValue: product });
     refresh("/admin/products/data-bundles", "/admin/dashboard");
     return { ok: true, message: "Data bundle saved.", data: { id: productId } };
+  } catch (error) { return failure(error); }
+}
+
+export async function runDataBundleHealthCheck(): Promise<AdminActionResult<{ checked: number; healthy: number; advisory: number; degraded: number; outage: number; missingFromCatalogue: number; marginWarnings: number }>> {
+  try {
+    const session = await requireAdminPermission("products.view");
+    let syncNote = "";
+    try {
+      const syncRes = await syncAllDataProviders();
+      if (syncRes.ok) syncNote = `${syncRes.data?.syncedCount ?? 0} provider(s) synced · `;
+    } catch {
+      // Proceed with catalogue & telemetry evaluation even if no live provider key is configured locally
+    }
+    const summary = await verifyAllDataBundlesHealth();
+    await recordAdminAudit(session, {
+      action: "data_bundle.health_checked",
+      entityType: "service_product",
+      newValue: summary,
+    });
+    refresh("/admin/products/data-bundles", "/admin/dashboard");
+    return {
+      ok: true,
+      message: `${syncNote}Checked ${summary.checked} bundles: ${summary.healthy} healthy, ${summary.advisory} SIM-advisory, ${summary.degraded + summary.outage} degraded/unavailable${summary.marginWarnings ? ` · ${summary.marginWarnings} margin alerts` : ""}.`,
+      data: summary,
+    };
+  } catch (error) { return failure(error); }
+}
+
+export async function checkSingleDataBundleHealth(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({ productId: uuid });
+  try {
+    const { productId } = schema.parse(input);
+    const session = await requireAdminPermission("products.view");
+    const client = createAdminClient();
+    const { data: bundle } = await client
+      .from("service_products")
+      .select("id,network,provider_id,provider_product_code,provider:provider_registry(slug)")
+      .eq("id", productId)
+      .maybeSingle();
+
+    let liveChecked = false;
+    const provRel = bundle ? (Array.isArray(bundle.provider) ? bundle.provider[0] : bundle.provider) : null;
+    const slug = provRel?.slug as VendorId | undefined;
+    const network = (bundle?.network || "").toLowerCase() as NetworkId;
+
+    if (
+      bundle?.provider_id &&
+      bundle.provider_product_code &&
+      slug &&
+      supportedCatalogueVendors.has(slug) &&
+      (["mtn", "airtel", "glo", "9mobile"] as const).includes(network)
+    ) {
+      const vendor = getVendor(slug);
+      if (vendor.isConfigured()) {
+        try {
+          const livePlans = await vendor.getDataPlans(network);
+          if (livePlans.length > 0) {
+            liveChecked = true;
+            const matched = livePlans.find((p) => String(p.id) === String(bundle.provider_product_code));
+            await client
+              .from("provider_catalogue_items")
+              .update(
+                matched
+                  ? { is_available: true, provider_cost: matched.amount, imported_at: new Date().toISOString() }
+                  : { is_available: false },
+              )
+              .eq("provider_id", bundle.provider_id)
+              .eq("provider_product_code", bundle.provider_product_code);
+          }
+        } catch {
+          // Fall back cleanly to stored catalogue & telemetry
+        }
+      }
+    }
+
+    const snap = await refreshProductHealth(productId);
+    if (!snap) throw new Error("Bundle not found.");
+    await recordAdminAudit(session, {
+      action: "data_bundle.single_health_checked",
+      entityType: "service_product",
+      entityId: productId,
+      newValue: { liveChecked, status: snap.status, catalogueAvailable: snap.catalogueAvailable, successRate: snap.successRate },
+    });
+    refresh("/admin/products/data-bundles", "/admin/dashboard");
+    const label =
+      snap.status === "outage"
+        ? "Unavailable"
+        : snap.status === "degraded"
+          ? "Degraded"
+          : snap.status === "advisory"
+            ? "SIM Advisory"
+            : snap.status === "healthy"
+              ? "Verified"
+              : "Unchecked";
+    return {
+      ok: true,
+      message: `${label}${snap.successRate !== null ? ` (${snap.successRate}% success)` : ""}${liveChecked ? " · live vendor checked" : ""}.`,
+    };
   } catch (error) { return failure(error); }
 }
 
@@ -513,6 +888,13 @@ export async function queueAdminExport(input: unknown): Promise<AdminActionResul
     const session = await requireAdminPermission("reports.export");
     const adminUserId = await materializeAdminSession(session);
     const client = createAdminClient();
+    if (values.reportType === "recharge_cards") {
+      const period = z.object({ since: z.string().datetime({ offset: true }).optional(), until: z.string().datetime({ offset: true }).optional(), status: z.enum(["initiated", "processing", "pending", "successful", "failed", "refunded", "reversed", "cancelled"]).optional(), network: z.enum(["mtn", "airtel", "glo", "9mobile"]).optional() }).parse(values.filters);
+      const until = period.until ?? new Date().toISOString();
+      const since = period.since ?? new Date(Date.parse(until) - 30 * 86400000).toISOString();
+      if (Date.parse(since) >= Date.parse(until)) throw new Error("Choose a valid report period.");
+      values.filters = { ...period, since, until };
+    }
     const { data, error } = await client.from("admin_export_jobs").insert({ admin_user_id: adminUserId, report_type: values.reportType, format: values.format, filters: values.filters, expires_at: new Date(Date.now() + 7 * 86_400_000).toISOString() }).select("id").single();
     if (error || !data) throw new Error("The export could not be queued.");
     await enqueueAdminJob("report.export", { exportId: data.id }, `report.export:${data.id}`);
@@ -576,8 +958,164 @@ export async function queueProviderRequery(input: unknown): Promise<AdminActionR
     const session = await requireAdminPermission("transactions.retry");
     const jobId = await enqueueAdminJob("provider.requery", { transactionId: values.transactionId }, `provider.requery:${values.transactionId}`);
     await recordAdminAudit(session, { action: "transaction.requery.queued", entityType: "service_transaction", entityId: values.transactionId, newValue: { jobId }, reason: values.reason });
-    refresh("/admin/transactions", "/admin/platform/logs");
+    refresh("/admin/transactions", `/admin/transactions/${values.transactionId}`, "/admin/platform/logs", "/admin/products/data-bundles");
     return { ok: true, message: "Provider requery safely queued.", data: { id: jobId } };
+  } catch (error) { return failure(error); }
+}
+
+export async function runProviderRequeryNow(input: unknown): Promise<AdminActionResult<{ status: string }>> {
+  const schema = z.object({ transactionId: uuid, reason: z.string().trim().min(3).max(500).default("Operator ran live provider status check.") });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("transactions.retry");
+    const res = await requeryProviderTransaction(values.transactionId);
+    await recordAdminAudit(session, {
+      action: "transaction.requery.executed",
+      entityType: "service_transaction",
+      entityId: values.transactionId,
+      newValue: res,
+      reason: values.reason,
+    });
+    refresh("/admin/transactions", `/admin/transactions/${values.transactionId}`, "/admin/operations/live", "/admin/operations/pending", "/admin/operations/failed", "/admin/products/data-bundles", "/admin/dashboard");
+    return {
+      ok: true,
+      message: res.skipped
+        ? `Transaction is already final (${res.status}).`
+        : `Provider responded: ${res.status}${res.refunded ? " (wallet refunded)" : ""}.`,
+      data: { status: res.status },
+    };
+  } catch (error) { return failure(error); }
+}
+
+export async function resolveTransactionConflict(input: unknown): Promise<AdminActionResult<{ status: string; balance: number }>> {
+  const schema = z.object({
+    transactionId: uuid,
+    resolution: z.enum(["settle_success", "refund_fail"]),
+    providerReference: z.string().trim().max(120).optional(),
+    reason,
+  });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission(values.resolution === "refund_fail" ? "transactions.refund" : "transactions.retry");
+    const adminUserId = await materializeAdminSession(session);
+    const client = createAdminClient();
+    const { data: tx, error: txError } = await client
+      .from("service_transactions")
+      .select("id,user_id,internal_reference,provider_reference,service_type,destination,amount,cashback_amount,status,metadata,product:service_products(name,network)")
+      .eq("id", values.transactionId)
+      .single();
+    if (txError || !tx) throw new Error("Transaction not found.");
+
+    const nextStatus = values.resolution === "settle_success" ? "successful" : "failed";
+    if (values.resolution === "settle_success" && ["failed", "refunded", "reversed", "cancelled"].includes(tx.status)) {
+      throw new Error("A refunded or failed transaction cannot be flipped back to successful.");
+    }
+    if (values.resolution === "refund_fail" && ["failed", "refunded", "reversed"].includes(tx.status)) {
+      throw new Error("This transaction has already been refunded.");
+    }
+
+    const settlement = await client.rpc("customer_settle_service_purchase", {
+      p_user_id: tx.user_id,
+      p_transaction_id: tx.id,
+      p_status: nextStatus,
+      p_summary: `Admin resolution (${values.resolution === "settle_success" ? "confirmed delivery" : "failed & refunded"}): ${values.reason}`.slice(0, 1000),
+      p_provider_reference: values.providerReference?.trim() || tx.provider_reference || null,
+      p_metadata: { resolvedBy: adminUserId, resolution: values.resolution, reason: values.reason },
+    });
+    if (settlement.error) throw new Error(settlement.error.message || "Could not settle transaction.");
+
+    const settled = (settlement.data?.[0] ?? {}) as { balance?: number; refunded?: boolean };
+    const meta = (tx.metadata ?? {}) as { productName?: string; network?: string; couponCode?: string | null; discountAmount?: number; listPrice?: number };
+    const productRel = Array.isArray(tx.product) ? tx.product[0] : tx.product;
+    const productName = meta.productName || productRel?.name || `${tx.service_type.toUpperCase()} Purchase`;
+    const network = meta.network || productRel?.network || undefined;
+
+    if (nextStatus === "successful") {
+      if (meta.couponCode) await recordCouponRedemption(meta.couponCode);
+      if ((tx.service_type === "data" || tx.service_type === "airtime") && network) {
+        void recordServiceBeneficiary({
+          userId: tx.user_id,
+          serviceType: tx.service_type,
+          recipient: tx.destination,
+          networkOrDisco: network,
+          label: `${network.toUpperCase()} ${tx.service_type === "data" ? "Data" : "Airtime"}`,
+        });
+      }
+    }
+
+    await dispatchPurchaseReceipt({
+      userId: tx.user_id,
+      transactionId: tx.id,
+      reference: tx.internal_reference,
+      providerReference: values.providerReference?.trim() || tx.provider_reference || null,
+      productName,
+      amount: Number(tx.amount),
+      originalAmount: meta.listPrice,
+      discountAmount: meta.discountAmount,
+      couponCode: meta.couponCode ?? null,
+      cashback: nextStatus === "successful" ? Number(tx.cashback_amount ?? 0) : 0,
+      destination: tx.destination,
+      network,
+      serviceType: tx.service_type,
+      status: nextStatus,
+      message: values.reason,
+      balance: Number(settled.balance ?? 0),
+    });
+
+    await recordAdminAudit(session, {
+      action: `transaction.conflict.${values.resolution}`,
+      entityType: "service_transaction",
+      entityId: tx.id,
+      oldValue: { status: tx.status },
+      newValue: { status: nextStatus, balance: settled.balance, refunded: settled.refunded },
+      reason: values.reason,
+    });
+    refresh("/admin/transactions", `/admin/transactions/${tx.id}`, "/admin/operations/live", "/admin/operations/pending", "/admin/operations/failed", "/admin/products/data-bundles", "/admin/money/refunds", "/admin/dashboard");
+    return {
+      ok: true,
+      message: nextStatus === "failed"
+        ? `Resolved as failed and refunded ₦${Number(tx.amount).toLocaleString("en-NG")} to customer wallet.`
+        : "Resolved as successful and settled customer rewards & receipt.",
+      data: { status: nextStatus, balance: Number(settled.balance ?? 0) },
+    };
+  } catch (error) { return failure(error); }
+}
+
+export async function resendTransactionReceipt(input: unknown): Promise<AdminActionResult> {
+  const schema = z.object({ transactionId: uuid });
+  try {
+    const values = schema.parse(input);
+    const session = await requireAdminPermission("transactions.view");
+    const client = createAdminClient();
+    const { data: tx, error } = await client
+      .from("service_transactions")
+      .select("id,user_id,internal_reference,provider_reference,service_type,destination,amount,cashback_amount,status,metadata,product:service_products(name,network)")
+      .eq("id", values.transactionId)
+      .single();
+    if (error || !tx) throw new Error("Transaction not found.");
+    const meta = (tx.metadata ?? {}) as { productName?: string; network?: string; couponCode?: string | null; discountAmount?: number; listPrice?: number; token?: string | null; units?: string | null };
+    const productRel = Array.isArray(tx.product) ? tx.product[0] : tx.product;
+    const mappedStatus = tx.status === "successful" ? "successful" : tx.status === "failed" || tx.status === "refunded" || tx.status === "reversed" ? "failed" : "pending";
+    await dispatchPurchaseReceipt({
+      userId: tx.user_id,
+      transactionId: tx.id,
+      reference: tx.internal_reference,
+      providerReference: tx.provider_reference ?? null,
+      productName: meta.productName || productRel?.name || `${tx.service_type.toUpperCase()} Purchase`,
+      amount: Number(tx.amount),
+      originalAmount: meta.listPrice,
+      discountAmount: meta.discountAmount,
+      couponCode: meta.couponCode ?? null,
+      cashback: mappedStatus === "successful" ? Number(tx.cashback_amount ?? 0) : 0,
+      destination: tx.destination,
+      network: meta.network || productRel?.network || undefined,
+      serviceType: tx.service_type,
+      token: meta.token ?? null,
+      units: meta.units ?? null,
+      status: mappedStatus,
+    });
+    await recordAdminAudit(session, { action: "transaction.receipt_resent", entityType: "service_transaction", entityId: tx.id });
+    return { ok: true, message: "Receipt notification & email dispatched to customer." };
   } catch (error) { return failure(error); }
 }
 
@@ -650,13 +1188,16 @@ export async function saveAirtimeRoute(input: unknown): Promise<AdminActionResul
     maxAmount: z.coerce.number().min(50).max(500000),
     primaryProvider: z.string().trim().min(2),
     fallbackProvider: z.string().trim().nullable().optional(),
-    discountPercentage: z.coerce.number().min(0).max(100).default(0),
+    discountPercentage: z.coerce.number().min(0).max(99.99).default(0),
     cashbackPercentage: z.coerce.number().min(0).max(100).default(0),
     priority: z.coerce.number().int().min(0).default(0),
     isActive: z.boolean().default(true),
   });
   try {
     const values = schema.parse(input);
+    if (values.minAmount > values.maxAmount) throw new Error("Minimum amount cannot exceed maximum amount.");
+    if (values.primaryProvider === values.fallbackProvider) throw new Error("Primary and fallback providers must differ.");
+    if (values.isActive && values.mode === "epin" && (values.primaryProvider !== "maskawasub" || values.fallbackProvider)) throw new Error("Recharge cards require Maskawasub with no top-up fallback.");
     const session = await requireAdminPermission("providers.manage");
     const client = createAdminClient();
 
@@ -903,11 +1444,12 @@ export async function adminRefundTransaction(input: unknown): Promise<AdminActio
 
     const { data: tx, error: txError } = await client
       .from("service_transactions")
-      .select("id, user_id, amount, status, service_type, internal_reference")
+      .select("id, user_id, amount, status, service_type, internal_reference,metadata")
       .eq("id", values.transactionId)
       .single();
 
     if (txError || !tx) throw new Error("Transaction not found.");
+    if (tx.metadata?.mode === "epin") throw new Error("Use recharge-card recovery to verify non-delivery before refunding.");
 
     if (tx.status === "failed") {
       throw new Error("This transaction has already been refunded.");
@@ -926,7 +1468,8 @@ export async function adminRefundTransaction(input: unknown): Promise<AdminActio
       throw new Error(settlement.error.message || "Could not process refund.");
     }
 
-    const settled = settlement.data?.[0] as { balance?: number } | undefined;
+    const settled = settlement.data?.[0] as { balance?: number; refunded?: boolean } | undefined;
+    if (!settled?.refunded) throw new Error("No refund was issued. Use the approved refund workflow for a completed purchase.");
 
     await recordAdminAudit(session, {
       action: "transaction.admin_refunded",

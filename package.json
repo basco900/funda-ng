@@ -10,11 +10,15 @@
     "start:3001": "node --max-http-header-size=65536 node_modules/next/dist/bin/next start -p 3001",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test:unit": "node --conditions=react-server --test tests/unit/*.test.mjs",
+    "test:recharge-ui": "playwright test --config=playwright.recharge.config.ts",
     "test:e2e": "npm run build && playwright test"
   },
   "dependencies": {
     "@bachs/js": "^0.2.0",
     "@bachs/sdk": "^2.0.0",
+    "@hugeicons/core-free-icons": "^4.3.0",
+    "@hugeicons/react": "^1.1.10",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
     "clsx": "^2.1.1",
@@ -26,6 +30,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.17",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

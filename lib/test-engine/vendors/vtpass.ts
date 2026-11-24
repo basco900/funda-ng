@@ -153,6 +153,7 @@ export const vtpass: VtuVendor = {
   },
 
   async purchase(input) {
+    if (input.type === "airtime" && input.mode === "epin") throw new Error("VTpass recharge-card generation is not implemented. A top-up cannot fulfil a card order.");
     const hasLiveKeys = Boolean(process.env.VTPASS_API_KEY && (process.env.VTPASS_SECRET_KEY || process.env.VTPASS_PUBLIC_KEY));
     if (!hasLiveKeys && process.env.VTPASS_ENV !== "live") {
       const token = input.type === "electricity" ? generateFallbackToken() : undefined;

@@ -1,18 +1,23 @@
+import type { ComponentProps } from "react";
 import { requireAdminPermission } from "../../../../lib/admin/auth";
 import { createAdminClient } from "../../../../lib/supabase/admin";
+import { loadServicePurchases, purchaseStatusFrom } from "../../../../lib/admin/purchases";
 import CableTvWorkspace from "./tv-workspace";
+
+type TransactionRecord = ComponentProps<typeof CableTvWorkspace>["recentTransactions"][number];
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminCableTvPage() {
+export default async function AdminCableTvPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requireAdminPermission("products.view");
+  const purchaseStatus = purchaseStatusFrom(await searchParams);
   const client = createAdminClient();
 
   const [
     { data: tvConfigs },
     { data: tvPackages },
     { data: providers },
-    { data: recentTvTx },
+    { rows: recentTvTx, filter: purchaseFilter },
   ] = await Promise.all([
     client
       .from("cable_tv_configs")
@@ -26,15 +31,10 @@ export default async function AdminCableTvPage() {
       .from("provider_registry")
       .select("id, name, slug, status")
       .order("name"),
-    client
-      .from("service_transactions")
-      .select("id, internal_reference, provider_reference, destination, amount, status, service_type, metadata, created_at, user:users(id, phone, email)")
-      .in("service_type", ["tv", "cable_tv", "cable"])
-      .order("created_at", { ascending: false })
-      .limit(20),
+    loadServicePurchases({ serviceTypes: ["tv", "cable_tv", "cable"], select: "id, internal_reference, provider_reference, destination, amount, status, service_type, metadata, created_at, user:users(id, phone, email)", status: purchaseStatus, limit: 20 }),
   ]);
 
-  const normalizedTx = (recentTvTx ?? []).map((t) => ({
+  const normalizedTx = (recentTvTx as TransactionRecord[]).map((t) => ({
     ...t,
     user: Array.isArray(t.user) ? t.user[0] ?? null : t.user,
   }));
@@ -45,6 +45,7 @@ export default async function AdminCableTvPage() {
       tvPackages={tvPackages ?? []}
       providers={providers ?? []}
       recentTransactions={normalizedTx}
+      purchaseFilter={purchaseFilter}
     />
   );
 }

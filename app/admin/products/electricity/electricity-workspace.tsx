@@ -6,6 +6,8 @@ import AdminIcon from "../../(console)/admin-icon";
 import AdminSelect from "../../(console)/admin-select";
 import { AdminFeedback, AdminModal, AdminSwitch } from "../../(console)/admin-ui";
 import styles from "../../admin.module.css";
+import { FilterChips, PurchaseStatusFilter, statusOptionsFrom } from "@/components/admin/list-controls";
+import type { PurchaseFilter } from "@/lib/admin/purchases";
 import {
   saveElectricityDiscoConfig,
   bulkUpdateElectricityDiscos,
@@ -75,12 +77,15 @@ export default function ElectricityWorkspace({
   discoConfigs,
   providers,
   recentTransactions,
+  purchaseFilter,
 }: {
   discoConfigs: DiscoRow[];
   providers: ProviderRow[];
   recentTransactions: TransactionRow[];
+  purchaseFilter?: PurchaseFilter;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [discoStatus, setDiscoStatus] = useState("");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Edit Single Disco Modal
@@ -238,6 +243,9 @@ export default function ElectricityWorkspace({
     });
   }
 
+  const discoState = (disco: DiscoRow) => (disco.is_active ? "active" : "offline");
+  const visibleDiscos = discoStatus ? discoConfigs.filter((disco) => discoState(disco) === discoStatus) : discoConfigs;
+
   return (
     <div className={styles.workspacePage}>
       <AdminPageHeader
@@ -270,11 +278,11 @@ export default function ElectricityWorkspace({
             <div>
               <div className={styles.directoryTitle}>
                 <h2>Disco directory</h2>
-                <span className={styles.countPill}>{discoConfigs.length}</span>
+                <span className={styles.countPill}>{visibleDiscos.length}</span>
               </div>
-              <p className={styles.directorySub}>Gateway, fee and cashback per Disco.</p>
             </div>
           </div>
+          <FilterChips options={statusOptionsFrom(discoConfigs, discoState)} total={discoConfigs.length} value={discoStatus} onChange={setDiscoStatus} />
         </div>
 
         <div className={styles.workspaceTableWrap}>
@@ -291,7 +299,7 @@ export default function ElectricityWorkspace({
               </tr>
             </thead>
             <tbody>
-              {discoConfigs.map((disco) => (
+              {visibleDiscos.map((disco) => (
                 <tr key={disco.disco_code}>
                   <td>
                     <div className={styles.cellTitle}>
@@ -344,9 +352,9 @@ export default function ElectricityWorkspace({
                 <h2>Recent purchases</h2>
                 <span className={styles.countPill}>{recentTransactions.length}</span>
               </div>
-              <p className={styles.directorySub}>Tokens, units and refunds.</p>
             </div>
           </div>
+          {purchaseFilter ? <PurchaseStatusFilter filter={purchaseFilter} /> : null}
         </div>
 
         <div className={styles.workspaceTableWrap}>
@@ -386,7 +394,7 @@ export default function ElectricityWorkspace({
                         </div>
                       </td>
                     <td data-align="right">
-                      {tx.status !== "failed" ? (
+                      {!["failed", "refunded", "reversed"].includes(tx.status) ? (
                         <button
                           type="button"
                           className={styles.textAction}

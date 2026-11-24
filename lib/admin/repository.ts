@@ -2,12 +2,19 @@ import "server-only";
 
 import { createAdminClient } from "../supabase/admin";
 
-export type AdminWorkspaceRow = Record<string, string | number | null>;
+export type AdminWorkspaceRow = { id: string; href?: string; cells: Record<string, string | number | null> };
 export type AdminWorkspaceData = {
   connected: boolean;
   columns: Array<{ key: string; label: string; align?: "right" }>;
+  /** One page of rows that match the current filters. */
   rows: AdminWorkspaceRow[];
-  metrics: Array<{ label: string; value: string; detail: string }>;
+  /** Rows matching the current filters, across every page. */
+  total: number;
+  /** Rows in this list before any filter. */
+  all: number;
+  filters: AdminWorkspaceFilters;
+  /** Extra figures for the overview band. */
+  metrics: Array<{ label: string; value: string }>;
   source: string;
 };
 
@@ -161,115 +168,371 @@ function productDefinition(serviceType: string): GenericDefinition {
   return { ...genericWorkspaces["/admin/products"], filter: { column: "service_type", values: [serviceType] } };
 }
 
-async function loadGeneric(definition: GenericDefinition): Promise<AdminWorkspaceData> {
-  const client = createAdminClient();
-  let query = client.from(definition.table).select(definition.select, { count: "exact" });
-  if (definition.filter) query = query.in(definition.filter.column, definition.filter.values);
-  query = query.order(definition.order ?? "created_at", { ascending: definition.order === "priority" || definition.order === "name" }).limit(100);
-  const { data, count, error } = await query;
-  if (error) throw error;
-  const raw = (data ?? []) as unknown as Row[];
-  const rows = raw.map((row) => Object.fromEntries(definition.columns.map((column) => [column.key, renderValue(valueAt(row, column.source ?? column.key), column.kind)])));
-  const statuses = definition.statusColumn ? new Set(raw.map((row) => valueAt(row, definition.statusColumn!)).filter(Boolean)).size : 0;
+/* ─── Filtered, paged lists ───────────────────────────────────────────────────
+   Every list filters on the server, across the whole table: status, one facet,
+   text search and a date window, all read from the URL. */
+
+export const ADMIN_PAGE_SIZE = 25;
+const RANGES = ["1", "7", "30", "90"] as const;
+
+export type AdminListQuery = { status: string; facet: string; q: string; range: string; page: number };
+
+export function parseAdminListQuery(params: Record<string, string | string[] | undefined>): AdminListQuery {
+  const one = (key: string) => (typeof params[key] === "string" ? (params[key] as string) : "");
+  return {
+    status: one("status").slice(0, 40),
+    facet: one("facet").slice(0, 60),
+    q: one("q").replaceAll(/[,%()*\\:"]/g, " ").trim().slice(0, 80),
+    range: (RANGES as readonly string[]).includes(one("range")) ? one("range") : "",
+    page: Math.max(1, Math.min(400, Math.floor(Number(one("page"))) || 1)),
+  };
+}
+
+/** Start of the window: "1" means since midnight in Lagos (UTC+1, no DST). */
+export function rangeStart(range: string) {
+  if (!range) return null;
+  if (range === "1") {
+    const lagos = new Date(Date.now() + 3_600_000);
+    lagos.setUTCHours(0, 0, 0, 0);
+    return new Date(lagos.getTime() - 3_600_000).toISOString();
+  }
+  return new Date(Date.now() - Number(range) * 86_400_000).toISOString();
+}
+
+export type AdminFilterOption = { value: string; label: string; count?: number };
+export type AdminWorkspaceFilters = {
+  status?: { label: string; total: number; options: AdminFilterOption[] };
+  facet?: { label: string; options: AdminFilterOption[] };
+  search?: string;
+  range: boolean;
+};
+
+/** The PostgREST calls a list needs. supabase-js builders satisfy it; typing them
+ *  through this narrow shape keeps the compiler out of the builder's deep generics. */
+type Query = PromiseLike<{ data: unknown; count: number | null; error: { message: string } | null }> & {
+  eq(column: string, value: unknown): Query;
+  in(column: string, values: readonly unknown[]): Query;
+  gte(column: string, value: unknown): Query;
+  or(filters: string): Query;
+  ilike(column: string, pattern: string): Query;
+  not(column: string, operator: string, value: string): Query;
+  order(column: string, options: { ascending: boolean }): Query;
+  limit(count: number): Query;
+  range(from: number, to: number): Query;
+};
+
+function table(name: string, select: string, options?: { count: "exact"; head?: boolean }): Query {
+  return createAdminClient().from(name).select(select, options) as unknown as Query;
+}
+
+type ListSpec = {
+  table: string;
+  select: string;
+  order: string;
+  ascending?: boolean;
+  /** Rows this list is limited to before any filter (queues, product types). */
+  fixed?: { column: string; values: readonly string[] };
+  status?: { column: string; label: string; boolean?: boolean; known?: readonly string[] };
+  facet?: { column: string; label: string };
+  search?: readonly string[];
+  searchLabel?: string;
+  dateColumn?: string;
+};
+
+const SEARCHABLE = new Set(["name", "title", "code", "slug", "subject", "email", "full_name", "actor_email", "internal_reference", "destination", "provider_reference", "merchant_reference", "dispute_number", "ticket_number", "case_number", "event_type", "component", "key", "device_name", "description", "reason", "message", "endpoint_redacted", "transaction_reference"]);
+const FACETABLE = ["service_type", "provider", "network", "channel", "category", "campaign_type", "segment_type", "scope_type", "entity_type", "run_type", "entry_type", "platform", "reward_type", "rule_type", "calculation_type", "placement", "signal_type", "action_type", "direction", "method", "severity", "priority", "risk_level", "report_type", "format", "tier", "kyc_tier"];
+
+function applyFilters(query: Query, spec: ListSpec, input: AdminListQuery, skip?: "status" | "facet"): Query {
+  let next = spec.fixed ? query.in(spec.fixed.column, spec.fixed.values) : query;
+  if (skip !== "facet" && spec.facet && input.facet) next = next.eq(spec.facet.column, input.facet);
+  if (spec.search?.length && input.q) next = next.or(spec.search.map((column) => `${column}.ilike.%${input.q}%`).join(","));
+  const since = spec.dateColumn ? rangeStart(input.range) : null;
+  if (since && spec.dateColumn) next = next.gte(spec.dateColumn, since);
+  if (skip !== "status" && spec.status && input.status) next = next.eq(spec.status.column, spec.status.boolean ? input.status === "enabled" : input.status);
+  return next;
+}
+
+async function statusOptions(spec: ListSpec, input: AdminListQuery): Promise<AdminWorkspaceFilters["status"]> {
+  if (!spec.status) return undefined;
+  const { column, label } = spec.status;
+  const head = () => applyFilters(table(spec.table, column, { count: "exact", head: true }), spec, input, "status");
+  let values: string[];
+  if (spec.status.boolean) {
+    values = ["enabled", "disabled"];
+  } else {
+    const { data } = await applyFilters(table(spec.table, column), spec, input, "status").order(spec.order, { ascending: false }).limit(1000);
+    const seen = new Set<string>([...(spec.status.known ?? []), ...(input.status ? [input.status] : [])]);
+    for (const row of (data ?? []) as unknown as Row[]) if (row[column]) seen.add(String(row[column]));
+    values = [...seen];
+  }
+  const [total, ...counts] = await Promise.all([
+    head(),
+    ...values.map((value) => head().eq(column, spec.status!.boolean ? value === "enabled" : value)),
+  ]);
+  const options = values
+    .map((value, index) => ({ value, label: titleCase(value), count: counts[index].count ?? 0 }))
+    .filter((option) => option.count > 0 || option.value === input.status)
+    .sort((a, b) => b.count - a.count);
+  return { label, total: total.count ?? 0, options };
+}
+
+async function facetOptions(spec: ListSpec, input: AdminListQuery): Promise<AdminWorkspaceFilters["facet"]> {
+  if (!spec.facet) return undefined;
+  const { data } = await applyFilters(table(spec.table, spec.facet.column), spec, input, "facet").order(spec.order, { ascending: false }).limit(1000);
+  const values = new Set<string>(input.facet ? [input.facet] : []);
+  for (const row of (data ?? []) as unknown as Row[]) {
+    const value = row[spec.facet.column];
+    if (value !== null && value !== undefined && value !== "") values.add(String(value));
+  }
+  if (values.size < 2 && !input.facet) return undefined;
+  return { label: spec.facet.label, options: [...values].sort().map((value) => ({ value, label: titleCase(value) })) };
+}
+
+async function runList(spec: ListSpec, input: AdminListQuery) {
+  const from = (input.page - 1) * ADMIN_PAGE_SIZE;
+  const [list, everything, status, facet] = await Promise.all([
+    applyFilters(table(spec.table, spec.select, { count: "exact" }), spec, input)
+      .order(spec.order, { ascending: Boolean(spec.ascending) })
+      .range(from, from + ADMIN_PAGE_SIZE - 1),
+    spec.fixed
+      ? table(spec.table, spec.order, { count: "exact", head: true }).in(spec.fixed.column, spec.fixed.values)
+      : table(spec.table, spec.order, { count: "exact", head: true }),
+    statusOptions(spec, input),
+    facetOptions(spec, input),
+  ]);
+  if (list.error) throw list.error;
+  const filters: AdminWorkspaceFilters = {
+    status,
+    facet,
+    search: spec.search?.length ? spec.searchLabel ?? "Search" : undefined,
+    range: Boolean(spec.dateColumn),
+  };
+  return { raw: (list.data ?? []) as unknown as Row[], total: list.count ?? 0, all: everything.count ?? list.count ?? 0, filters };
+}
+
+function specFromDefinition(definition: GenericDefinition): ListSpec {
+  const sourceOf = (column: GenericDefinition["columns"][number]) => column.source ?? column.key;
+  const order = definition.order ?? "created_at";
+  const booleanStatus = !definition.statusColumn ? definition.columns.find((column) => column.key === "status" && column.kind === "boolean") : undefined;
+  const statusSource = definition.statusColumn ?? (booleanStatus ? sourceOf(booleanStatus) : undefined);
+  const statusLabel = definition.columns.find((column) => sourceOf(column) === statusSource)?.label ?? "Status";
+  const facetColumn = FACETABLE.map((name) => definition.columns.find((column) => sourceOf(column) === name && name !== statusSource)).find(Boolean);
+  const search = definition.columns.map(sourceOf).filter((source) => SEARCHABLE.has(source));
+  return {
+    table: definition.table,
+    select: definition.select,
+    order,
+    ascending: order === "priority" || order === "name" || order === "kyc_tier",
+    fixed: definition.filter,
+    status: statusSource ? { column: statusSource, label: statusLabel, boolean: Boolean(booleanStatus) } : undefined,
+    facet: facetColumn ? { column: sourceOf(facetColumn), label: facetColumn.label } : undefined,
+    search,
+    searchLabel: `Search ${definition.columns.filter((column) => search.includes(sourceOf(column))).map((column) => column.label.toLowerCase()).slice(0, 2).join(", ")}`,
+    dateColumn: /(_at|_date)$/.test(order) ? order : undefined,
+  };
+}
+
+async function loadGeneric(definition: GenericDefinition, input: AdminListQuery): Promise<AdminWorkspaceData> {
+  const spec = specFromDefinition(definition);
+  const { raw, total, all, filters } = await runList(spec, input);
   return {
     connected: true,
     source: definition.table,
     columns: definition.columns.map(({ key, label, align }) => ({ key, label, align })),
-    rows,
-    metrics: [
-      { label: "All records", value: String(count ?? rows.length), detail: `Stored in ${definition.table}` },
-      { label: "Visible records", value: String(rows.length), detail: "Latest matching records" },
-      { label: definition.statusColumn ? "Distinct states" : "Data source", value: definition.statusColumn ? String(statuses) : "Live", detail: "Server-side, access controlled" },
-    ],
+    rows: raw.map((row, index) => ({
+      id: String(row.id ?? row.key ?? row.user_id ?? index),
+      cells: Object.fromEntries(definition.columns.map((column) => [column.key, renderValue(valueAt(row, column.source ?? column.key), column.kind)])),
+    })),
+    total,
+    all,
+    filters,
+    metrics: [],
   };
 }
 
-async function loadUsers(): Promise<AdminWorkspaceData> {
+async function loadUsers(input: AdminListQuery): Promise<AdminWorkspaceData> {
   const client = createAdminClient();
-  const [{ data: profiles, count, error }, { data: wallets }, { data: controls }] = await Promise.all([
-    client.from("profiles").select("id,full_name,country_code,state,created_at", { count: "exact" }).order("created_at", { ascending: false }).limit(100),
-    client.from("wallets").select("user_id,available_balance").limit(5000),
-    client.from("customer_account_controls").select("user_id,account_status,risk_level").limit(5000),
+  const STATES = ["active", "review", "suspended", "blocked", "closed"] as const;
+  const restricted = STATES.filter((state) => state !== "active");
+
+  // Account state lives in customer_account_controls; customers without a row are active.
+  let ids: string[] | null = null;
+  let excluded: string[] = [];
+  if (input.status && input.status !== "active") {
+    const { data } = await client.from("customer_account_controls").select("user_id").eq("account_status", input.status).limit(1000);
+    ids = (data ?? []).map((row) => String(row.user_id));
+  } else if (input.status === "active") {
+    const { data } = await client.from("customer_account_controls").select("user_id").in("account_status", restricted).limit(1000);
+    excluded = (data ?? []).map((row) => String(row.user_id));
+  }
+
+  const since = rangeStart(input.range);
+  const scoped = (query: Query) => {
+    let next = query;
+    if (input.q) next = next.ilike("full_name", `%${input.q}%`);
+    if (since) next = next.gte("created_at", since);
+    if (ids) next = next.in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+    if (excluded.length) next = next.not("id", "in", `(${excluded.join(",")})`);
+    return next;
+  };
+  const from = (input.page - 1) * ADMIN_PAGE_SIZE;
+  const [{ data: profiles, count, error }, everyone, stateCounts] = await Promise.all([
+    scoped(table("profiles", "id,full_name,country_code,state,created_at", { count: "exact" })).order("created_at", { ascending: false }).range(from, from + ADMIN_PAGE_SIZE - 1),
+    client.from("profiles").select("id", { count: "exact", head: true }),
+    Promise.all(restricted.map((state) => client.from("customer_account_controls").select("user_id", { count: "exact", head: true }).eq("account_status", state))),
   ]);
   if (error) throw error;
+
+  type Profile = { id: string; full_name: string | null; country_code: string | null; state: string | null; created_at: string };
+  const profileRows = (profiles ?? []) as Profile[];
+  const pageIds = profileRows.map((profile) => profile.id);
+  const [{ data: wallets }, { data: controls }] = await Promise.all([
+    pageIds.length ? client.from("wallets").select("user_id,available_balance").in("user_id", pageIds) : Promise.resolve({ data: [] as Array<{ user_id: string; available_balance: number }> }),
+    pageIds.length ? client.from("customer_account_controls").select("user_id,account_status,risk_level").in("user_id", pageIds) : Promise.resolve({ data: [] as Array<{ user_id: string; account_status: string; risk_level: string }> }),
+  ]);
   const balances = new Map((wallets ?? []).map((row) => [row.user_id, Number(row.available_balance)]));
   const states = new Map((controls ?? []).map((row) => [row.user_id, row]));
-  const rows = (profiles ?? []).map((profile) => ({
-    user: profile.full_name || "Unnamed customer",
-    id: String(profile.id).slice(0, 8),
-    location: [profile.state, profile.country_code].filter(Boolean).join(", ") || "—",
-    balance: formatAdminMoney(balances.get(profile.id) ?? 0),
-    risk: titleCase(String(states.get(profile.id)?.risk_level ?? "low")),
-    status: titleCase(String(states.get(profile.id)?.account_status ?? "active")),
-    joined: dateFormatter.format(new Date(profile.created_at)),
-  }));
-  return { connected: true, source: "profiles", columns: [
-    { key: "user", label: "Customer" }, { key: "id", label: "User ID" }, { key: "location", label: "Location" }, { key: "balance", label: "Wallet", align: "right" }, { key: "risk", label: "Risk" }, { key: "status", label: "Status" }, { key: "joined", label: "Joined" },
-  ], rows, metrics: [
-    { label: "All customers", value: String(count ?? rows.length), detail: "Registered profiles" },
-    { label: "Funded wallets", value: String([...balances.values()].filter((balance) => balance > 0).length), detail: "Balance above zero" },
-    { label: "Restricted", value: String([...states.values()].filter((state) => state.account_status !== "active").length), detail: "Review, suspended or blocked" },
-  ] };
+  const all = everyone.count ?? count ?? 0;
+  const restrictedCounts = restricted.map((state, index) => ({ value: state, label: titleCase(state), count: stateCounts[index].count ?? 0 }));
+  const activeCount = Math.max(0, all - restrictedCounts.reduce((sum, option) => sum + option.count, 0));
+
+  return {
+    connected: true,
+    source: "profiles",
+    columns: [
+      { key: "user", label: "Customer" }, { key: "id", label: "User ID" }, { key: "location", label: "Location" }, { key: "balance", label: "Wallet", align: "right" }, { key: "risk", label: "Risk" }, { key: "status", label: "Status" }, { key: "joined", label: "Joined" },
+    ],
+    rows: profileRows.map((profile) => ({
+      id: String(profile.id),
+      href: `/admin/users/${profile.id}`,
+      cells: {
+        user: profile.full_name || "Unnamed customer",
+        id: String(profile.id).slice(0, 8),
+        location: [profile.state, profile.country_code].filter(Boolean).join(", ") || "—",
+        balance: formatAdminMoney(balances.get(profile.id) ?? 0),
+        risk: titleCase(String(states.get(profile.id)?.risk_level ?? "low")),
+        status: titleCase(String(states.get(profile.id)?.account_status ?? "active")),
+        joined: dateFormatter.format(new Date(profile.created_at)),
+      },
+    })),
+    total: count ?? 0,
+    all,
+    filters: {
+      status: {
+        label: "Status",
+        total: all,
+        options: [{ value: "active", label: "Active", count: activeCount }, ...restrictedCounts].filter((option) => option.count > 0 || option.value === input.status),
+      },
+      search: "Search customers",
+      range: true,
+    },
+    metrics: [],
+  };
 }
 
-async function loadWallets(): Promise<AdminWorkspaceData> {
+async function loadWallets(input: AdminListQuery): Promise<AdminWorkspaceData> {
   const client = createAdminClient();
-  const { data, count, error } = await client.from("wallets").select("user_id,available_balance,currency,updated_at", { count: "exact" }).order("updated_at", { ascending: false }).limit(100);
-  if (error) throw error;
-  const rows = (data ?? []).map((row) => ({ customer: String(row.user_id), balance: formatAdminMoney(Number(row.available_balance)), currency: row.currency, updated: dateTimeFormatter.format(new Date(row.updated_at)) }));
-  const total = (data ?? []).reduce((sum, row) => sum + Number(row.available_balance), 0);
-  return { connected: true, source: "wallets", columns: [{ key: "customer", label: "Customer" }, { key: "balance", label: "Available balance", align: "right" }, { key: "currency", label: "Currency" }, { key: "updated", label: "Updated" }], rows, metrics: [
-    { label: "Wallets", value: String(count ?? rows.length), detail: "Customer wallets" }, { label: "Visible float", value: formatAdminMoney(total), detail: "Latest loaded wallets" }, { label: "Currency", value: "NGN", detail: "Single-currency ledger" },
-  ] };
+  const spec: ListSpec = { table: "wallets", select: "user_id,available_balance,currency,updated_at", order: "updated_at", dateColumn: "updated_at" };
+  const [{ raw, total, all, filters }, { data: balances }] = await Promise.all([
+    runList(spec, input),
+    client.from("wallets").select("available_balance").limit(10000),
+  ]);
+  const float = (balances ?? []).reduce((sum, row) => sum + Number(row.available_balance), 0);
+  return {
+    connected: true,
+    source: "wallets",
+    columns: [{ key: "customer", label: "Customer" }, { key: "balance", label: "Available balance", align: "right" }, { key: "currency", label: "Currency" }, { key: "updated", label: "Updated" }],
+    rows: raw.map((row) => ({
+      id: String(row.user_id),
+      href: `/admin/users/${row.user_id}`,
+      cells: { customer: String(row.user_id), balance: formatAdminMoney(Number(row.available_balance)), currency: String(row.currency ?? "NGN"), updated: dateTimeFormatter.format(new Date(String(row.updated_at))) },
+    })),
+    total,
+    all,
+    filters,
+    metrics: [{ label: "In customer wallets", value: formatAdminMoney(float) }],
+  };
 }
 
-async function loadTransactions(pathname: string): Promise<AdminWorkspaceData> {
-  const client = createAdminClient();
-  let query = client.from("service_transactions").select("id,internal_reference,service_type,destination,amount,status,provider_reference,created_at", { count: "exact" }).order("created_at", { ascending: false }).limit(100);
-  if (pathname.endsWith("/failed")) query = query.eq("status", "failed");
-  if (pathname.endsWith("/pending")) query = query.in("status", ["initiated", "processing", "pending"]);
-  const { data, count, error } = await query;
-  if (error) throw error;
-  const rows = (data ?? []).map((row) => ({ reference: row.internal_reference, service: titleCase(row.service_type), destination: row.destination, amount: formatAdminMoney(Number(row.amount)), status: titleCase(row.status), provider: row.provider_reference || "—", created: dateTimeFormatter.format(new Date(row.created_at)) }));
-  const value = (data ?? []).reduce((sum, row) => sum + Number(row.amount), 0);
-  return { connected: true, source: "service_transactions", columns: [{ key: "reference", label: "Reference" }, { key: "service", label: "Service" }, { key: "destination", label: "Destination" }, { key: "amount", label: "Amount", align: "right" }, { key: "status", label: "Status" }, { key: "provider", label: "Provider ref" }, { key: "created", label: "Created" }], rows, metrics: [
-    { label: "Transactions", value: String(count ?? rows.length), detail: "Matching this queue" }, { label: "Visible value", value: formatAdminMoney(value), detail: "Latest loaded records" }, { label: "Data source", value: "Live", detail: "Full service transaction timeline" },
-  ] };
+const TRANSACTION_STATUSES = ["successful", "pending", "processing", "initiated", "failed", "reversed", "refunded", "cancelled"] as const;
+
+async function loadTransactions(pathname: string, input: AdminListQuery): Promise<AdminWorkspaceData> {
+  const queue = pathname.endsWith("/failed") ? ["failed"] : pathname.endsWith("/pending") ? ["initiated", "processing", "pending"] : null;
+  const spec: ListSpec = {
+    table: "service_transactions",
+    select: "id,internal_reference,service_type,destination,amount,status,provider_reference,created_at",
+    order: "created_at",
+    fixed: queue ? { column: "status", values: queue } : undefined,
+    status: queue?.length === 1 ? undefined : { column: "status", label: "Status", known: queue ?? TRANSACTION_STATUSES },
+    facet: { column: "service_type", label: "Service" },
+    search: ["internal_reference", "destination", "provider_reference"],
+    searchLabel: "Search reference or destination",
+    dateColumn: "created_at",
+  };
+  const { raw, total, all, filters } = await runList(spec, input);
+  return {
+    connected: true,
+    source: "service_transactions",
+    columns: [{ key: "reference", label: "Reference" }, { key: "service", label: "Service" }, { key: "destination", label: "Destination" }, { key: "amount", label: "Amount", align: "right" }, { key: "status", label: "Status" }, { key: "provider", label: "Provider ref" }, { key: "created", label: "Created" }],
+    rows: raw.map((row) => ({
+      id: String(row.id),
+      href: `/admin/transactions/${row.id}`,
+      cells: { reference: String(row.internal_reference), service: titleCase(String(row.service_type)), destination: String(row.destination ?? "—"), amount: formatAdminMoney(Number(row.amount)), status: titleCase(String(row.status)), provider: String(row.provider_reference || "—"), created: dateTimeFormatter.format(new Date(String(row.created_at))) },
+    })),
+    total,
+    all,
+    filters,
+    metrics: [],
+  };
 }
 
-async function loadFunding(): Promise<AdminWorkspaceData> {
-  const client = createAdminClient();
-  const { data, count, error } = await client.from("wallet_funding_transactions").select("merchant_reference,amount,provider,status,created_at", { count: "exact" }).order("created_at", { ascending: false }).limit(100);
-  if (error) throw error;
-  const rows = (data ?? []).map((row) => ({ reference: row.merchant_reference, provider: row.provider, amount: formatAdminMoney(Number(row.amount)), status: titleCase(row.status), created: dateTimeFormatter.format(new Date(row.created_at)) }));
-  return { connected: true, source: "wallet_funding_transactions", columns: [{ key: "reference", label: "Reference" }, { key: "provider", label: "Provider" }, { key: "amount", label: "Amount", align: "right" }, { key: "status", label: "Status" }, { key: "created", label: "Created" }], rows, metrics: [
-    { label: "Funding records", value: String(count ?? rows.length), detail: "All wallet deposits" }, { label: "Visible value", value: formatAdminMoney((data ?? []).reduce((sum, row) => sum + Number(row.amount), 0)), detail: "Latest loaded records" }, { label: "Provider", value: "Bachs", detail: "Current funding rail" },
-  ] };
+async function loadFunding(input: AdminListQuery): Promise<AdminWorkspaceData> {
+  const spec: ListSpec = {
+    table: "wallet_funding_transactions",
+    select: "id,merchant_reference,amount,provider,status,created_at",
+    order: "created_at",
+    status: { column: "status", label: "Status", known: ["succeeded", "pending", "initializing", "review", "underpaid", "failed", "expired"] },
+    facet: { column: "provider", label: "Provider" },
+    search: ["merchant_reference"],
+    searchLabel: "Search reference",
+    dateColumn: "created_at",
+  };
+  const { raw, total, all, filters } = await runList(spec, input);
+  return {
+    connected: true,
+    source: "wallet_funding_transactions",
+    columns: [{ key: "reference", label: "Reference" }, { key: "provider", label: "Provider" }, { key: "amount", label: "Amount", align: "right" }, { key: "status", label: "Status" }, { key: "created", label: "Created" }],
+    rows: raw.map((row) => ({
+      id: String(row.id ?? row.merchant_reference),
+      cells: { reference: String(row.merchant_reference), provider: titleCase(String(row.provider)), amount: formatAdminMoney(Number(row.amount)), status: titleCase(String(row.status)), created: dateTimeFormatter.format(new Date(String(row.created_at))) },
+    })),
+    total,
+    all,
+    filters,
+    metrics: [],
+  };
 }
 
 function emptyWorkspace(source = "not_configured"): AdminWorkspaceData {
-  return { connected: false, source, columns: [], rows: [], metrics: [
-    { label: "Module status", value: "Ready", detail: "Backend schema connected after migration" }, { label: "Visible records", value: "0", detail: "No operational data yet" }, { label: "Security", value: "Locked", detail: "Server-only access" },
-  ] };
+  return { connected: false, source, columns: [], rows: [], total: 0, all: 0, filters: { range: false }, metrics: [] };
 }
 
-export async function loadAdminWorkspace(pathname: string): Promise<AdminWorkspaceData> {
+export async function loadAdminWorkspace(pathname: string, input: AdminListQuery = parseAdminListQuery({})): Promise<AdminWorkspaceData> {
   try {
-    if (pathname === "/admin/users") return await loadUsers();
-    if (pathname === "/admin/customers/wallets") return await loadWallets();
-    if (["/admin/transactions", "/admin/operations/live", "/admin/operations/failed", "/admin/operations/pending", "/admin/analytics/transactions"].includes(pathname)) return await loadTransactions(pathname);
-    if (pathname === "/admin/money/funding") return await loadFunding();
-    if (pathname.startsWith("/admin/services/")) return await loadGeneric(productDefinition(pathname.split("/").at(-1) === "other" ? "other" : pathname.split("/").at(-1)!));
-    if (pathname === "/admin/analytics/services") return await loadGeneric(genericWorkspaces["/admin/products"]);
-    if (pathname === "/admin/analytics/customers") return await loadUsers();
+    if (pathname === "/admin/users" || pathname === "/admin/analytics/customers") return await loadUsers(input);
+    if (pathname === "/admin/customers/wallets") return await loadWallets(input);
+    if (["/admin/transactions", "/admin/operations/live", "/admin/operations/failed", "/admin/operations/pending", "/admin/analytics/transactions"].includes(pathname)) return await loadTransactions(pathname, input);
+    if (pathname === "/admin/money/funding") return await loadFunding(input);
+    if (pathname.startsWith("/admin/services/")) return await loadGeneric(productDefinition(pathname.split("/").at(-1)!), input);
+    if (pathname === "/admin/analytics/services") return await loadGeneric(genericWorkspaces["/admin/products"], input);
     if (pathname === "/admin/analytics/reports") return await loadGeneric({ table: "admin_export_jobs", select: "id,report_type,format,status,row_count,created_at,completed_at", order: "created_at", statusColumn: "status", columns: [
       { key: "report", label: "Report", source: "report_type", kind: "status" }, { key: "format", label: "Format" }, { key: "rows", label: "Rows", source: "row_count" }, { key: "status", label: "Status", kind: "status" }, { key: "created", label: "Created", source: "created_at", kind: "date" }, { key: "completed", label: "Completed", source: "completed_at", kind: "date" },
-    ] });
+    ] }, input);
     if (pathname === "/admin/platform/config" || pathname === "/admin/settings") return await loadGeneric({ table: "app_configuration", select: "key,description,is_sensitive,updated_at", order: "updated_at", columns: [
       { key: "key", label: "Key" }, { key: "description", label: "Description" }, { key: "sensitive", label: "Sensitive", source: "is_sensitive", kind: "boolean" }, { key: "updated", label: "Updated", source: "updated_at", kind: "date" },
-    ] });
+    ] }, input);
     const definition = genericWorkspaces[pathname];
-    return definition ? await loadGeneric(definition) : emptyWorkspace();
+    return definition ? await loadGeneric(definition, input) : emptyWorkspace();
   } catch {
     return emptyWorkspace(pathname);
   }

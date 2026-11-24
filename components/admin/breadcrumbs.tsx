@@ -1,101 +1,74 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Fragment, Suspense } from "react";
+import { usePathname } from "next/navigation";
+import { Fragment } from "react";
 import AdminIcon from "@/app/admin/(console)/admin-icon";
+import { adminNavItems, adminNavigation } from "@/lib/admin/navigation";
 import { cn } from "@/lib/utils";
 
-const ROUTE_NAME_MAP: Record<string, string> = {
-  admin: "Dashboard",
-  dashboard: "Platform Overview",
-  transactions: "Transactions",
-  users: "Customers",
-  money: "Money",
-  products: "Products",
-  growth: "Growth",
-  coupons: "Coupons & Discounts",
-  airtime: "Airtime",
-  electricity: "Electricity",
-  tv: "Cable TV",
-  education: "Education PINs",
-  "data-bundles": "Data Bundles",
-  providers: "Providers",
-  operations: "Operations",
-  analytics: "Analytics",
-  settings: "Settings",
-  audit: "Audit Logs",
-  health: "System Health",
-  security: "Security",
-};
+/** Section names for path segments that are groups, not pages. */
+const GROUP_LABELS: Record<string, string> = Object.fromEntries(
+  adminNavigation.map((group) => [group.label.toLowerCase().replace(/\s*&\s*/g, "-").replace(/\s+/g, "-"), group.label]),
+);
+const SEGMENT_LABELS: Record<string, string> = { ...GROUP_LABELS, money: "Money", customers: "Customers", risk: "Risk & Compliance", settings: "Administration", platform: "Platform" };
+const PAGE_LABELS = new Map(adminNavItems.map((item) => [item.href, item.label]));
+/** Detail pages hang off these lists. */
+const DETAIL_PARENTS: Record<string, string> = { "/admin/users": "Customer", "/admin/transactions": "Transaction" };
 
-function BreadcrumbsContent() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+type Crumb = { href: string; label: string; page: boolean };
 
-  if (!pathname) return null;
-
-  const segments = pathname.split("/").filter(Boolean);
-
-  const breadcrumbs = segments.map((segment, index) => {
-    const path = `/${segments.slice(0, index + 1).join("/")}`;
-    const isLast = index === segments.length - 1;
-
-    let label = ROUTE_NAME_MAP[segment] || segment;
-    if (!ROUTE_NAME_MAP[segment]) {
-      label = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
-    }
-
-    return {
-      href: path,
-      label,
-      isLast,
-      isRoot: segment === "admin",
-    };
+function crumbsFor(pathname: string): Crumb[] {
+  const segments = pathname.split("/").filter(Boolean).slice(1);
+  const crumbs: Crumb[] = [];
+  segments.forEach((segment, index) => {
+    const href = `/admin/${segments.slice(0, index + 1).join("/")}`;
+    if (href === "/admin/dashboard") return;
+    const parent = `/admin/${segments.slice(0, index).join("/")}`;
+    const label =
+      PAGE_LABELS.get(href) ??
+      (DETAIL_PARENTS[parent] ? DETAIL_PARENTS[parent] : SEGMENT_LABELS[segment] ?? segment.replace(/-/g, " ").replace(/^\w/, (letter) => letter.toUpperCase()));
+    crumbs.push({ href, label, page: PAGE_LABELS.has(href) || Boolean(DETAIL_PARENTS[parent]) });
   });
-
-  const tab = searchParams.get("tab");
-  if (tab) {
-    const last = breadcrumbs[breadcrumbs.length - 1];
-    if (last) last.isLast = false;
-
-    breadcrumbs.push({
-      href: `${pathname}?tab=${tab}`,
-      label: tab.charAt(0).toUpperCase() + tab.slice(1),
-      isLast: true,
-      isRoot: false,
-    });
-  }
-
-  return (
-    <nav className="flex items-center text-sm text-zinc-400" aria-label="Admin breadcrumbs">
-      {breadcrumbs.map((item, index) => (
-        <Fragment key={item.href}>
-          {index > 0 && (
-            <AdminIcon name="chevron" className="w-3.5 h-3.5 mx-1.5 text-zinc-300 shrink-0" />
-          )}
-
-          <Link
-            href={item.href}
-            className={cn(
-              "flex items-center gap-1.5 text-[12px] font-medium transition-colors hover:text-zinc-800",
-              item.isLast && "font-semibold text-zinc-900 pointer-events-none",
-            )}
-          >
-            {item.isRoot && <AdminIcon name="grid" className="w-3.5 h-3.5 mr-0.5" />}
-            <span>{item.isRoot ? "" : item.label}</span>
-          </Link>
-        </Fragment>
-      ))}
-    </nav>
-  );
+  return crumbs;
 }
 
 export function AdminBreadcrumbs() {
+  const pathname = usePathname() ?? "/admin/dashboard";
+  const crumbs = crumbsFor(pathname);
+
   return (
-    <Suspense fallback={<div className="h-4" />}>
-      <BreadcrumbsContent />
-    </Suspense>
+    <nav aria-label="Breadcrumb" className="flex items-center text-sm">
+      <Link
+        href="/admin/dashboard"
+        className={cn(
+          "flex items-center gap-1.5 rounded-[6px] px-1.5 py-1 font-medium transition-colors",
+          crumbs.length ? "text-zinc-400 hover:text-zinc-700" : "text-zinc-900",
+        )}
+      >
+        <AdminIcon name="grid" className="h-4 w-4" strokeWidth={1.5} />
+        Control Centre
+      </Link>
+      {crumbs.map((crumb, index) => {
+        const last = index === crumbs.length - 1;
+        const tone = last ? "text-zinc-900" : "text-zinc-400";
+        return (
+          <Fragment key={crumb.href}>
+            <AdminIcon name="chevron" className="mx-1.5 h-4 w-4 text-zinc-300" />
+            {crumb.page ? (
+              <Link
+                href={crumb.href}
+                aria-current={last ? "page" : undefined}
+                className={cn("rounded-[6px] px-1.5 py-1 font-medium transition-colors", tone, !last && "hover:text-zinc-700")}
+              >
+                {crumb.label}
+              </Link>
+            ) : (
+              <span className={cn("px-1.5 py-1 font-medium", tone)}>{crumb.label}</span>
+            )}
+          </Fragment>
+        );
+      })}
+    </nav>
   );
 }
-

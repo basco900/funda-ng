@@ -75,7 +75,7 @@ export async function generateDailyFinancialSnapshot(dateInput: string | Date) {
   const { data: existing } = await client.from("daily_financial_snapshots").select("*").eq("snapshot_date", snapshotDate).maybeSingle();
   if (existing) return existing;
   const [{ data: transactions, error }, { data: refunds }] = await Promise.all([
-    client.from("service_transactions").select("amount,provider_cost,platform_fee,discount_amount,cashback_amount,status").in("status", ["successful", "refunded"]).gte("created_at", start.toISOString()).lt("created_at", end.toISOString()).limit(50_000),
+    client.from("service_transactions").select("amount,provider_cost,platform_fee,discount_amount,cashback_amount,status,metadata").in("status", ["successful", "refunded"]).gte("created_at", start.toISOString()).lt("created_at", end.toISOString()).limit(50_000),
     client.from("refund_requests").select("amount").eq("status", "refunded").gte("resolved_at", start.toISOString()).lt("resolved_at", end.toISOString()).limit(50_000),
   ]);
   if (error) throw error;
@@ -84,9 +84,10 @@ export async function generateDailyFinancialSnapshot(dateInput: string | Date) {
   const providerCost = rows.reduce((sum, row) => sum + Number(row.provider_cost), 0);
   const fees = rows.reduce((sum, row) => sum + Number(row.platform_fee), 0);
   const discounts = rows.reduce((sum, row) => sum + Number(row.discount_amount), 0);
+  const alreadyDiscounted = rows.filter((row) => row.metadata?.mode === "epin").reduce((sum, row) => sum + Number(row.discount_amount), 0);
   const cashback = rows.reduce((sum, row) => sum + Number(row.cashback_amount), 0);
   const refundValue = (refunds ?? []).reduce((sum, row) => sum + Number(row.amount), 0);
-  const record = { snapshot_date: snapshotDate, gross_transaction_value: gross, provider_cost: providerCost, fees, discount_expense: discounts, cashback_expense: cashback, refund_value: refundValue, net_revenue: gross + fees - discounts - cashback - refundValue, gross_profit: gross + fees - providerCost - discounts - cashback - refundValue, transaction_count: rows.length, successful_count: rows.filter((row) => row.status === "successful").length };
+  const record = { snapshot_date: snapshotDate, gross_transaction_value: gross, provider_cost: providerCost, fees, discount_expense: discounts, cashback_expense: cashback, refund_value: refundValue, net_revenue: gross + fees - discounts + alreadyDiscounted - cashback - refundValue, gross_profit: gross + fees - providerCost - discounts + alreadyDiscounted - cashback - refundValue, transaction_count: rows.length, successful_count: rows.filter((row) => row.status === "successful").length };
   const { data, error: insertError } = await client.from("daily_financial_snapshots").insert(record).select("*").single();
   if (insertError) throw insertError;
   return data;

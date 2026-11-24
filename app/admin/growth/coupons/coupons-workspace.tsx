@@ -6,6 +6,7 @@ import AdminIcon from "../../(console)/admin-icon";
 import AdminSelect from "../../(console)/admin-select";
 import { AdminConfirm, AdminFeedback, AdminModal, AdminSwitch } from "../../(console)/admin-ui";
 import styles from "../../admin.module.css";
+import { FilterPicker, statusOptionsFrom } from "@/components/admin/list-controls";
 import { saveDiscountCoupon, deleteDiscountCoupon } from "../../(console)/actions";
 
 type CouponRow = {
@@ -50,9 +51,11 @@ export default function CouponsWorkspace({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterService, setFilterService] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; code: string } | null>(null);
 
   const filteredCoupons = coupons.filter((c) => {
+    if (filterStatus && couponState(c) !== filterStatus) return false;
     if (filterService !== "all" && c.service_type !== "all" && c.service_type !== filterService) return false;
     if (searchQuery && !c.code.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
@@ -170,7 +173,6 @@ export default function CouponsWorkspace({
                 <h2>Coupon directory</h2>
                 <span className={styles.countPill}>{filteredCoupons.length}</span>
               </div>
-              <p className={styles.directorySub}>Codes, discounts, limits and expiry.</p>
             </div>
             <div className={styles.directoryTools}>
               <label className={styles.directorySearch}>
@@ -182,6 +184,7 @@ export default function CouponsWorkspace({
                 onValueChange={setFilterService}
                 options={[{ value: "all", label: "All services" }, ...SERVICE_OPTIONS.slice(1)]}
               />
+              <FilterPicker value={filterStatus} onChange={setFilterStatus} options={statusOptionsFrom(coupons, couponState)} allLabel="All statuses" width={150} />
             </div>
           </div>
         </div>
@@ -238,10 +241,10 @@ export default function CouponsWorkspace({
                         onClick={() => handleToggleActive(coupon)}
                         disabled={isPending}
                         className={`${styles.statusPill} ${styles.statusToggle}`}
-                        data-status={coupon.is_active ? "active" : "paused"}
+                        data-status={couponState(coupon)}
                         aria-label={coupon.is_active ? "Pause coupon" : "Activate coupon"}
                       >
-                        {coupon.is_active ? "Active" : "Paused"}
+                        {couponState(coupon)}
                       </button>
                     </td>
                     <td data-align="right">
@@ -364,4 +367,10 @@ export default function CouponsWorkspace({
       ) : null}
     </div>
   );
+}
+
+/** Expired codes read as expired whatever their switch says. */
+function couponState(coupon: { is_active: boolean; expires_at: string | null }) {
+  if (coupon.expires_at && new Date(coupon.expires_at).getTime() < Date.now()) return "expired";
+  return coupon.is_active ? "active" : "paused";
 }

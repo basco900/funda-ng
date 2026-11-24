@@ -1,5 +1,5 @@
 import "server-only";
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:crypto";
 import type { RechargePinItem } from "../test-engine/types";
 
 // Recharge PINs are bearer value, so they are stored encrypted (AES-256-GCM)
@@ -14,7 +14,7 @@ function key() {
 }
 
 export function pinVaultConfigured() {
-  return key() !== null;
+  try { return key() !== null; } catch { return false; }
 }
 
 export function encryptPins(pins: RechargePinItem[]) {
@@ -24,6 +24,12 @@ export function encryptPins(pins: RechargePinItem[]) {
   const cipher = createCipheriv("aes-256-gcm", secret, iv);
   const ciphertext = Buffer.concat([cipher.update(JSON.stringify(pins), "utf8"), cipher.final()]);
   return `v1.${iv.toString("base64")}.${cipher.getAuthTag().toString("base64")}.${ciphertext.toString("base64")}`;
+}
+
+export function fingerprintRechargePin(network: string, pin: string) {
+  const secret = key();
+  if (!secret) throw new Error("Recharge PIN storage is unavailable.");
+  return createHmac("sha256", secret).update(`${network.toLowerCase()}:${pin.replace(/[\s-]/g, "")}`).digest("hex");
 }
 
 export function decryptPins(sealed: unknown): RechargePinItem[] | undefined {

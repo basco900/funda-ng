@@ -1,0 +1,262 @@
+/* ==========================================================================
+   FUNDA ADMIN THEME — Jobly Africa's member dashboard, in Funda burgundy.
+
+   Every value below is what Jobly's /dashboard renders after its global
+   overrides (8px cards, 8px controls, 7px badges, hairline borders, no
+   shadows, DM Sans with JetBrains Mono for small labels, 600 max weight).
+
+   Tokens live on [data-admin-shell]; Tailwind reads them as `a-*` colours
+   (see the @theme block in app/globals.css). In dark mode the zinc and
+   status scales are remapped inside the shell, so markup written with
+   Jobly's own classes (text-zinc-500, bg-emerald-50…) flips by itself.
+   ========================================================================== */
+
+[data-admin-shell] {
+  --a-paper: #f7f6fb;
+  --a-surface: #ffffff;
+  --a-surface-soft: #f4f1f4;
+  --a-line: #e7e3eb;
+  --a-border: color-mix(in srgb, var(--a-line) 70%, transparent);
+  --a-ink: #25283a;
+  --a-muted: #707383;
+  --a-tooltip: #25283a;
+  --a-thumb: #ffffff;
+  --a-head: #f7f6fb;
+
+  /* Brand: Funda burgundy, its light shade, and the gold accent. */
+  --a-primary: #660033;
+  --a-primary-hover: #4d0026;
+  --a-primary-soft: #f7eaf0;
+  --a-accent: #d9b46a;
+  --a-accent-soft: #f8f0dd;
+  --a-accent-ink: #8a6420;
+
+  --a-radius-card: 8px;
+  --a-radius-control: 8px;
+  --a-radius-badge: 7px;
+  --a-radius-chip: 5px;
+  --a-ease: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Tailwind's bg-primary/text-primary read --primary (inline theme). */
+  --primary: var(--a-primary);
+
+  /* The scales the console uses, defined here so CSS modules can read them too
+     (Tailwind only emits theme variables it sees used). */
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-600: #52525b;
+  --color-zinc-700: #3f3f46;
+  --color-zinc-800: #27272a;
+  --color-zinc-900: #18181b;
+  --color-zinc-950: #09090b;
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+  --color-amber-50: #fffbeb;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+  --color-rose-50: #fff1f2;
+  --color-rose-500: #f43f5e;
+  --color-rose-600: #e11d48;
+  --color-rose-700: #be123c;
+  --color-sky-50: #f0f9ff;
+  --color-sky-500: #0ea5e9;
+  --color-sky-700: #0369a1;
+  --color-indigo-50: #eef2ff;
+  --color-indigo-700: #4338ca;
+  --color-violet-50: #f5f3ff;
+  --color-violet-700: #6d28d9;
+
+  /* Earlier console token names, still read by inline styles in the blog editor,
+     education and payment-review screens. New code uses the --a-* tokens. */
+  --admin-bg: var(--a-paper);
+  --admin-surface: var(--a-surface);
+  --admin-surface-soft: var(--a-surface-soft);
+  --admin-ink: var(--color-zinc-900);
+  --admin-muted: var(--color-zinc-500);
+  --admin-faint: var(--color-zinc-400);
+  --admin-line: var(--a-border);
+  --admin-green: var(--a-primary);
+  --admin-green-dark: var(--a-primary-hover);
+  --admin-green-soft: var(--a-primary-soft);
+  --admin-gold-ink: var(--a-accent-ink);
+  --admin-gold-soft: var(--a-accent-soft);
+  --admin-red: var(--color-rose-600);
+  --admin-red-soft: var(--color-rose-50);
+  --admin-amber: var(--color-amber-700);
+  --admin-amber-soft: var(--color-amber-50);
+  --admin-emerald: var(--color-emerald-700);
+  --admin-emerald-soft: var(--color-emerald-50);
+  --admin-radius: var(--a-radius-control);
+
+  /* App-wide tokens some admin screens style with inline (support chat), mapped to the console. */
+  --background: var(--a-paper);
+  --surface: var(--a-surface);
+  --surface-subtle: var(--a-surface-soft);
+  --surface-elevated: var(--a-surface);
+  --border: var(--a-border);
+  --border-subtle: var(--a-border);
+  --border-strong: var(--color-zinc-300);
+  --text-primary: var(--color-zinc-900);
+  --text-secondary: var(--color-zinc-700);
+  --text-muted: var(--color-zinc-500);
+  --brand-primary: var(--a-primary);
+  --accent: var(--a-primary);
+  --accent-subtle: color-mix(in srgb, var(--a-primary) 6%, transparent);
+  --accent-light: var(--a-primary-soft);
+
+  color-scheme: light;
+  background: var(--a-paper);
+  color: var(--color-zinc-900);
+  font-family: var(--font-dm-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+[data-theme="dark"] [data-admin-shell] {
+  --a-paper: #120f13;
+  --a-surface: #1c171e;
+  --a-surface-soft: #27202a;
+  --a-line: #2e2632;
+  --a-ink: #f4f4f5;
+  --a-muted: #a1a1aa;
+  --a-tooltip: #f4f4f5;
+  --a-thumb: #3a3240;
+  --a-head: #221c24;
+
+  --a-primary: #b0306c;
+  --a-primary-hover: #c03d7a;
+  --a-primary-soft: rgba(176, 48, 108, 0.16);
+  --a-accent: #d9b46a;
+  --a-accent-soft: rgba(217, 180, 106, 0.14);
+  --a-accent-ink: #e6c785;
+
+  /* Zinc runs the other way on a dark canvas. */
+  --color-zinc-950: #fafafa;
+  --color-zinc-900: #f4f4f5;
+  --color-zinc-800: #e4e4e7;
+  --color-zinc-700: #d4d4d8;
+  --color-zinc-600: #b4b4bc;
+  --color-zinc-500: #9a9aa3;
+  --color-zinc-400: #77777f;
+  --color-zinc-300: #55555c;
+  --color-zinc-200: #3a3240;
+  --color-zinc-100: #2a232d;
+  --color-zinc-50: #231d25;
+
+  /* Status tints: translucent fills, light ink. Dots (-500) stay as they are. */
+  --color-emerald-50: rgba(52, 211, 153, 0.12);
+  --color-emerald-600: #34d399;
+  --color-emerald-700: #6ee7b7;
+  --color-amber-50: rgba(251, 191, 36, 0.12);
+  --color-amber-600: #fbbf24;
+  --color-amber-700: #fcd34d;
+  --color-rose-50: rgba(251, 113, 133, 0.12);
+  --color-rose-600: #fb7185;
+  --color-rose-700: #fda4af;
+  --color-sky-50: rgba(56, 189, 248, 0.12);
+  --color-sky-700: #7dd3fc;
+  --color-indigo-50: rgba(129, 140, 248, 0.14);
+  --color-indigo-700: #a5b4fc;
+  --color-violet-50: rgba(167, 139, 250, 0.14);
+  --color-violet-700: #c4b5fd;
+
+  color-scheme: dark;
+}
+
+/* ─── Type ──────────────────────────────────────────────────────────────────
+   Jobly caps every heavy weight at 600. */
+[data-admin-shell] :where(.font-bold, .font-extrabold, .font-black, b, strong, h1, h2, h3, h4, th) {
+  font-weight: 600;
+}
+
+/* Numbers stay in DM Sans with tabular figures. */
+[data-admin-shell] .tabular-nums {
+  font-family: var(--font-dm-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-admin-shell] [data-font="sans"] {
+  font-family: var(--font-dm-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: normal;
+}
+
+/* JetBrains Mono complements DM Sans across grey supplementary copy, uppercase eyebrows, 9–11px metadata, and code.
+   Never overrides buttons, links, navigation, menus, tabs, inputs, headings, or explicit [data-font="sans"] figures. */
+[data-admin-shell] :where(
+  .uppercase,
+  code,
+  kbd,
+  samp,
+  .font-mono,
+  .text-zinc-400,
+  .text-zinc-500,
+  .text-a-muted,
+  .text-muted-foreground,
+  [class*="text-[9px]"],
+  [class*="text-[10px]"],
+  [class*="text-[11px]"]
+):not(:where(nav, [role="navigation"], [role="menu"], [role="listbox"]) *):not(
+  :where(button, a, [role="tab"], [role="menuitem"], [role="option"], h1, h2, h3, h4, input, textarea, select, [data-font="sans"])
+) {
+  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: -0.02em;
+}
+
+[data-admin-shell] :where(.uppercase):not(:where(nav, [role="menu"], [role="listbox"]) *):not(:where(button, a, [data-font="sans"])) {
+  letter-spacing: 0.06em;
+}
+
+/* ─── Focus ─────────────────────────────────────────────────────────────────
+   No click rings; a quiet 1px burgundy ring for keyboard users. */
+[data-admin-shell] :is(button, a, [role="tab"], [role="checkbox"]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--a-primary) 24%, transparent);
+}
+
+[data-admin-shell] :is(button, a):focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Rail links keep focus after a client navigation; show it as the row's hover tint, not a box. */
+[data-admin-shell] aside nav a:focus-visible,
+[data-admin-shell] aside nav button:focus-visible {
+  box-shadow: none;
+  background-color: var(--color-zinc-50);
+}
+
+/* ─── Motion (Jobly's ap-* set) ─────────────────────────────────────────── */
+[data-admin-shell] .a-in { animation: a-in 380ms var(--a-ease) both; }
+[data-admin-shell] .a-grow { animation: a-grow 620ms var(--a-ease) both; transform-origin: left; }
+[data-admin-shell] .a-rise { animation: a-rise 620ms var(--a-ease) both; transform-origin: bottom; }
+[data-admin-shell] .a-ring { animation: a-ring 900ms var(--a-ease) 120ms both; }
+[data-admin-shell] .a-menu { animation: a-menu 150ms ease-out both; transform-origin: top; }
+
+@keyframes a-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes a-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes a-rise {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes a-ring {
+  from { stroke-dashoffset: var(--a-ring-from); }
+}
+@keyframes a-menu {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-admin-shell] :is(.a-in, .a-grow, .a-rise, .a-ring, .a-menu) { animation: none; }
+}
